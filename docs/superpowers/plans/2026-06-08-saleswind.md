@@ -3564,6 +3564,7 @@ git commit -m "chore: production build and deployment config"
 
 ## Notes for the Implementer
 
+- **Dependency versions (REQUIRED):** install the **latest stable** release of every framework, library, and tool — never pin to an older major. Always use `npm install <pkg>@latest` (and `create-next-app@latest`). Before installing, check the current stable with `npm view <pkg> version`; if a package's newest is a pre-release/`beta`/`rc`, install the latest non-prerelease stable with `npm view <pkg> dist-tags.latest`. Note: `next-auth` v5 is published under the `beta` tag and is the current line for the App Router — install `next-auth@latest`; if that resolves to a v4 stable, install `next-auth@beta` (v5) instead, since the split-config/middleware code in this plan targets v5. After install, run `npm view next @prisma/client react version` (etc.) is not needed, but do confirm the app builds against whatever latest resolves to and adjust any minor API drift.
 - **Test database:** integration tests run against `.env.test`'s `DATABASE_URL`. Always prefix with `npx dotenv -e .env.test --` so they never touch dev/prod data. Run `npx dotenv -e .env.test -- prisma migrate deploy` whenever the schema changes.
 - **Decimal handling:** Prisma returns `Decimal` for `revenue`/`marginPct`. Always wrap with `Number(...)` before passing to `grossProfit` or formatting.
 - **Status reset on transition:** advancing or moving back clears `statusId` (each state has its own status vocabulary); the user picks a new status in the new state. This is intentional — see Task 18.
