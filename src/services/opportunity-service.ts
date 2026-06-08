@@ -89,7 +89,7 @@ export async function transitionOpportunity(id: string, kind: TransitionKind, us
     if (o.isCancelled) throw new Error("Opportunity is cancelled");
 
     let newState = o.state;
-    let isCancelled = o.isCancelled;
+    let isCancelled: boolean = o.isCancelled;
 
     if (kind === "advance") {
       if (!canAdvance(o.state)) throw new Error("Cannot advance past the final state");
