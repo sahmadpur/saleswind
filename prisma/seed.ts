@@ -3,7 +3,18 @@ import { PrismaClient, State } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import bcrypt from "bcryptjs";
 
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+// Encrypt to a self-signed cert without CA verification; strip sslmode so
+// node-postgres doesn't force verify-full. Mirrors src/lib/pg-ssl.ts.
+function pgConfig() {
+  const raw = process.env.DATABASE_URL ?? "";
+  if (!/[?&]sslmode=(require|prefer|verify-ca|verify-full|no-verify)/.test(raw)) {
+    return { connectionString: raw || undefined };
+  }
+  const url = new URL(raw);
+  url.searchParams.delete("sslmode");
+  return { connectionString: url.toString(), ssl: { rejectUnauthorized: false } };
+}
+const adapter = new PrismaPg(pgConfig());
 const db = new PrismaClient({ adapter });
 
 const STATUSES: Record<State, string[]> = {
