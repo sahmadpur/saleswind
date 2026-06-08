@@ -142,14 +142,21 @@ DATABASE_URL="postgresql://postgres:postgres@localhost:5432/saleswind_test?schem
 
 - [ ] **Step 3: Create the Prisma client singleton**
 
+> **Prisma 7 requires a driver adapter.** `new PrismaClient({ datasources })` is invalid in v7 — you must pass a driver adapter. Install `@prisma/adapter-pg pg` (+ `-D @types/pg`) and wire the `PrismaPg` adapter with the connection string from `DATABASE_URL`. Any code that constructs a `PrismaClient` (this singleton, `prisma/seed.ts`) must use this pattern.
+
 `src/lib/db.ts`:
 ```ts
 import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
 
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
-export const db =
-  globalForPrisma.prisma ?? new PrismaClient();
+function createPrismaClient() {
+  const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+  return new PrismaClient({ adapter });
+}
+
+export const db = globalForPrisma.prisma ?? createPrismaClient();
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = db;
 ```
@@ -418,13 +425,15 @@ npm install -D @types/bcryptjs
 
 - [ ] **Step 2: Write the seed script**
 
-`prisma/seed.ts` (Prisma 7: the client needs an explicit `datasources.url`; `dotenv/config` loads it from `.env`, or from `.env.test` when run via `dotenv-cli`):
+`prisma/seed.ts` (Prisma 7: construct the client with the `PrismaPg` adapter; `dotenv/config` loads `DATABASE_URL` from `.env`, or from `.env.test` when run via `dotenv-cli`):
 ```ts
 import "dotenv/config";
 import { PrismaClient, State } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
 import bcrypt from "bcryptjs";
 
-const db = new PrismaClient({ datasources: { db: { url: process.env.DATABASE_URL } } });
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+const db = new PrismaClient({ adapter });
 
 const STATUSES: Record<State, string[]> = {
   PROSPECT: ["Not Started", "Cancelled", "In Progress"],
@@ -480,7 +489,7 @@ npx prisma db seed   # or: npx tsx prisma/seed.ts
 ```
 Then verify counts without the interactive Studio:
 ```bash
-npx tsx -e "import('@prisma/client').then(async ({PrismaClient,State})=>{const d=new PrismaClient({datasources:{db:{url:process.env.DATABASE_URL}}});console.log('users',await d.user.count(),'statuses',await d.status.count(),'tags',await d.tag.count());await d.$disconnect();})"
+npx tsx -e "import('dotenv/config').then(()=>Promise.all([import('@prisma/client'),import('@prisma/adapter-pg')])).then(async ([{PrismaClient},{PrismaPg}])=>{const d=new PrismaClient({adapter:new PrismaPg({connectionString:process.env.DATABASE_URL})});console.log('users',await d.user.count(),'statuses',await d.status.count(),'tags',await d.tag.count());await d.\$disconnect();})"
 ```
 Expected: 1 admin user, 13 statuses, 36 tags across the four states. (`npx prisma studio` is also available but is interactive — skip in automated runs.)
 
