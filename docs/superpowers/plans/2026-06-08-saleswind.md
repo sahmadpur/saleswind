@@ -166,13 +166,21 @@ git commit -m "chore: add Prisma client and database config"
 **Files:**
 - Create: `vitest.config.ts`, `tests/unit/.gitkeep`, `tests/integration/setup.ts`
 
-- [ ] **Step 1: Install Vitest**
+- [ ] **Step 1: Install Vitest (+ dotenv tooling)**
 
 ```bash
-npm install -D vitest @vitest/coverage-v8 dotenv
+npm install -D vitest@latest @vitest/coverage-v8@latest dotenv@latest dotenv-cli@latest
 ```
+`dotenv` (library) loads `.env.test` inside Vitest; `dotenv-cli` provides the `dotenv` binary used to point Prisma CLI commands at the test DB.
 
-- [ ] **Step 2: Configure Vitest**
+- [ ] **Step 2: Configure Vitest to auto-load the test DB env**
+
+Create `tests/setup-env.ts` (runs before any test module imports `@/lib/db`, so `DATABASE_URL` points at `saleswind_test`):
+```ts
+import { config } from "dotenv";
+// override:true so the test DB URL wins even if a dev .env was already loaded
+config({ path: ".env.test", override: true });
+```
 
 `vitest.config.ts`:
 ```ts
@@ -183,13 +191,19 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["tests/unit/**/*.test.ts", "tests/integration/**/*.test.ts"],
+    setupFiles: ["tests/setup-env.ts"],
     globals: true,
+    // Integration tests share one test database and use broad deleteMany() cleanup.
+    // Run test files sequentially so concurrent files don't clobber each other's rows.
+    fileParallelism: false,
   },
   resolve: {
     alias: { "@": path.resolve(__dirname, "src") },
   },
 });
 ```
+
+> Note (Prisma 7): integration tests get their connection from `DATABASE_URL` (loaded above) because `src/lib/db.ts` constructs `PrismaClient` with `datasources.db.url = process.env.DATABASE_URL`. No `npx dotenv -e …` wrapper is needed for `npm test` — just ensure the test DB has migrations applied (`npx dotenv-cli -e .env.test -- npx prisma migrate deploy`).
 
 - [ ] **Step 3: Add test scripts to package.json**
 
@@ -404,12 +418,13 @@ npm install -D @types/bcryptjs
 
 - [ ] **Step 2: Write the seed script**
 
-`prisma/seed.ts`:
+`prisma/seed.ts` (Prisma 7: the client needs an explicit `datasources.url`; `dotenv/config` loads it from `.env`, or from `.env.test` when run via `dotenv-cli`):
 ```ts
+import "dotenv/config";
 import { PrismaClient, State } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
-const db = new PrismaClient();
+const db = new PrismaClient({ datasources: { db: { url: process.env.DATABASE_URL } } });
 
 const STATUSES: Record<State, string[]> = {
   PROSPECT: ["Not Started", "Cancelled", "In Progress"],
@@ -446,21 +461,28 @@ async function main() {
 main().then(() => db.$disconnect()).catch((e) => { console.error(e); db.$disconnect(); process.exit(1); });
 ```
 
-- [ ] **Step 3: Register the seed command**
+- [ ] **Step 3: Register the seed command (Prisma 7 → `prisma.config.ts`)**
 
-In `package.json` add a top-level key:
-```json
-"prisma": { "seed": "tsx prisma/seed.ts" }
+Prisma 7 no longer reads the `package.json` `"prisma".seed` key. Add the seed to `prisma.config.ts` instead, inside the existing `migrations` block:
+```ts
+  migrations: {
+    path: "prisma/migrations",
+    seed: "tsx prisma/seed.ts",
+  },
 ```
+If `npx prisma db seed` does not pick this up on the installed Prisma version, verify the correct key with `npx prisma db seed --help`; the seed can always be run directly with `npx tsx prisma/seed.ts` as a fallback (it is self-contained).
 
 - [ ] **Step 4: Run the seed and verify**
 
-Run:
+Run (dev DB):
 ```bash
-npx prisma db seed
-npx prisma studio
+npx prisma db seed   # or: npx tsx prisma/seed.ts
 ```
-Expected: 1 admin user, 13 statuses, 36 tags across the four states.
+Then verify counts without the interactive Studio:
+```bash
+npx tsx -e "import('@prisma/client').then(async ({PrismaClient,State})=>{const d=new PrismaClient({datasources:{db:{url:process.env.DATABASE_URL}}});console.log('users',await d.user.count(),'statuses',await d.status.count(),'tags',await d.tag.count());await d.$disconnect();})"
+```
+Expected: 1 admin user, 13 statuses, 36 tags across the four states. (`npx prisma studio` is also available but is interactive — skip in automated runs.)
 
 - [ ] **Step 5: Commit**
 
@@ -1296,8 +1318,8 @@ describe("account-service", () => {
 
 - [ ] **Step 3: Run test to verify it fails**
 
-First create the test DB: `npx dotenv -e .env.test -- prisma migrate deploy`
-Run: `npx dotenv -e .env.test -- vitest run account-service`
+First migrate the test DB: `npx dotenv-cli -e .env.test -- npx prisma migrate deploy`
+Run: `npm test -- account-service`
 Expected: FAIL — module not found.
 
 - [ ] **Step 4: Implement the service**
@@ -1327,7 +1349,7 @@ export async function updateAccount(id: string, input: AccountInput) {
 
 - [ ] **Step 5: Run test to verify it passes**
 
-Run: `npx dotenv -e .env.test -- vitest run account-service`
+Run: `npm test -- account-service`
 Expected: passing.
 
 - [ ] **Step 6: Write the actions**
@@ -1595,7 +1617,7 @@ describe("opportunity-service", () => {
 
 - [ ] **Step 4: Run test to verify it fails**
 
-Run: `npx dotenv -e .env.test -- vitest run opportunity-service`
+Run: `npm test -- opportunity-service`
 Expected: FAIL — module not found.
 
 - [ ] **Step 5: Implement the service**
@@ -1687,7 +1709,7 @@ export async function getOpportunity(id: string) {
 
 - [ ] **Step 6: Run test to verify it passes**
 
-Run: `npx dotenv -e .env.test -- vitest run opportunity-service`
+Run: `npm test -- opportunity-service`
 Expected: 2 passing.
 
 - [ ] **Step 7: Commit**
@@ -1753,7 +1775,7 @@ describe("transitionOpportunity", () => {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `npx dotenv -e .env.test -- vitest run opportunity-transition`
+Run: `npm test -- opportunity-transition`
 Expected: FAIL — `transitionOpportunity` not exported.
 
 - [ ] **Step 3: Implement the transition**
@@ -1808,7 +1830,7 @@ export async function transitionOpportunity(id: string, kind: TransitionKind, us
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `npx dotenv -e .env.test -- vitest run opportunity-transition`
+Run: `npm test -- opportunity-transition`
 Expected: all passing.
 
 - [ ] **Step 5: Commit**
@@ -2372,7 +2394,7 @@ describe("tags", () => {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `npx dotenv -e .env.test -- vitest run opportunity-tags`
+Run: `npm test -- opportunity-tags`
 Expected: FAIL — `attachTag` not exported.
 
 - [ ] **Step 3: Implement in the service**
@@ -2400,7 +2422,7 @@ export async function detachTag(opportunityId: string, tagId: string, userId: st
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `npx dotenv -e .env.test -- vitest run opportunity-tags`
+Run: `npm test -- opportunity-tags`
 Expected: passing.
 
 - [ ] **Step 5: Add the tag actions**
@@ -2503,7 +2525,7 @@ describe("comment-service", () => {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `npx dotenv -e .env.test -- vitest run comment-service`
+Run: `npm test -- comment-service`
 Expected: FAIL — module not found.
 
 - [ ] **Step 3: Implement the service**
@@ -2534,7 +2556,7 @@ export async function listComments(opportunityId: string) {
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `npx dotenv -e .env.test -- vitest run comment-service`
+Run: `npm test -- comment-service`
 Expected: passing.
 
 - [ ] **Step 5: Write the actions**
@@ -2705,7 +2727,7 @@ describe("notification-service", () => {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `npx dotenv -e .env.test -- vitest run notification-service`
+Run: `npm test -- notification-service`
 Expected: FAIL — `listNotifications` not exported.
 
 - [ ] **Step 3: Extend the service**
@@ -2729,7 +2751,7 @@ export async function markAllRead(userId: string) {
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `npx dotenv -e .env.test -- vitest run notification-service`
+Run: `npm test -- notification-service`
 Expected: passing.
 
 - [ ] **Step 5: Write the action**
@@ -2843,7 +2865,7 @@ describe("dictionary-service", () => {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `npx dotenv -e .env.test -- vitest run dictionary-service`
+Run: `npm test -- dictionary-service`
 Expected: FAIL — module not found.
 
 - [ ] **Step 3: Implement the service**
@@ -2889,7 +2911,7 @@ export async function upsertDefinition(term: string, definition: string) {
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `npx dotenv -e .env.test -- vitest run dictionary-service`
+Run: `npm test -- dictionary-service`
 Expected: passing.
 
 - [ ] **Step 5: Write the actions (admin-guarded)**
@@ -3081,7 +3103,7 @@ describe("user-service", () => {
 
 - [ ] **Step 3: Run test to verify it fails**
 
-Run: `npx dotenv -e .env.test -- vitest run user-service`
+Run: `npm test -- user-service`
 Expected: FAIL — module not found.
 
 - [ ] **Step 4: Implement the service**
@@ -3104,7 +3126,7 @@ export async function listUsers() {
 
 - [ ] **Step 5: Run test to verify it passes**
 
-Run: `npx dotenv -e .env.test -- vitest run user-service`
+Run: `npm test -- user-service`
 Expected: passing.
 
 - [ ] **Step 6: Write the action**
@@ -3221,7 +3243,7 @@ describe("report-service", () => {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `npx dotenv -e .env.test -- vitest run report-service`
+Run: `npm test -- report-service`
 Expected: FAIL — module not found.
 
 - [ ] **Step 3: Implement the service**
@@ -3256,7 +3278,7 @@ export async function opportunitiesForExport() {
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `npx dotenv -e .env.test -- vitest run report-service`
+Run: `npm test -- report-service`
 Expected: passing.
 
 - [ ] **Step 5: Commit**
@@ -3565,7 +3587,7 @@ git commit -m "chore: production build and deployment config"
 ## Notes for the Implementer
 
 - **Dependency versions (REQUIRED):** install the **latest stable** release of every framework, library, and tool — never pin to an older major. Always use `npm install <pkg>@latest` (and `create-next-app@latest`). Before installing, check the current stable with `npm view <pkg> version`; if a package's newest is a pre-release/`beta`/`rc`, install the latest non-prerelease stable with `npm view <pkg> dist-tags.latest`. Note: `next-auth` v5 is published under the `beta` tag and is the current line for the App Router — install `next-auth@latest`; if that resolves to a v4 stable, install `next-auth@beta` (v5) instead, since the split-config/middleware code in this plan targets v5. After install, run `npm view next @prisma/client react version` (etc.) is not needed, but do confirm the app builds against whatever latest resolves to and adjust any minor API drift.
-- **Test database:** integration tests run against `.env.test`'s `DATABASE_URL`. Always prefix with `npx dotenv -e .env.test --` so they never touch dev/prod data. Run `npx dotenv -e .env.test -- prisma migrate deploy` whenever the schema changes.
+- **Test database (Prisma 7 + Vitest):** Vitest auto-loads `.env.test` via the `tests/setup-env.ts` setup file (configured in `vitest.config.ts`), so integration tests run against `saleswind_test` automatically — just run `npm test` (no per-command env wrapper needed). Whenever the schema changes, re-apply migrations to the test DB with `npx dotenv-cli -e .env.test -- npx prisma migrate deploy`. Note: `prisma.config.ts` loads `.env` (dev) via `dotenv/config` with `override:false`, so the outer `dotenv-cli -e .env.test` wins for CLI commands.
 - **Decimal handling:** Prisma returns `Decimal` for `revenue`/`marginPct`. Always wrap with `Number(...)` before passing to `grossProfit` or formatting.
 - **Status reset on transition:** advancing or moving back clears `statusId` (each state has its own status vocabulary); the user picks a new status in the new state. This is intentional — see Task 18.
 - **Auth in tests:** services take an explicit `userId`, so integration tests don't need a session. Permission enforcement is tested separately (Task 8) and applied in actions via `requireRole`.
