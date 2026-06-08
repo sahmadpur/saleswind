@@ -12,7 +12,7 @@ export async function addCommentAction(opportunityId: string, formData: FormData
 }
 
 export async function deleteCommentAction(opportunityId: string, commentId: string) {
-  await requireRole("comment:write");
-  await deleteComment(commentId);
+  const user = await requireRole("comment:write");
+  await deleteComment(commentId, user.id, user.role);
   revalidatePath(`/opportunities/${opportunityId}`);
 }

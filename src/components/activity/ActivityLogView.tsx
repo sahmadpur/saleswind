@@ -11,6 +11,7 @@ function describe(e: Entry): string {
     case "cancel": return "Cancelled the opportunity";
     case "tag-added": return `Added tag "${e.newValue}"`;
     case "tag-removed": return `Removed tag "${e.oldValue}"`;
+    case "comment-deleted": return "Deleted a comment";
     default: return e.actionType;
   }
 }
