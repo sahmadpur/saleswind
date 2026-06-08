@@ -2,6 +2,7 @@ import "server-only";
 import { db } from "@/lib/db";
 import { diffFields } from "@/lib/domain/activity-diff";
 import { notify } from "@/services/notification-service";
+import { nextState, prevState, canAdvance, canMoveBack } from "@/lib/domain/lifecycle";
 import type { OpportunityCreateInput, OpportunityUpdateInput } from "@/schemas/opportunity";
 
 function parseMeeting(v?: string): Date | null {
@@ -77,5 +78,45 @@ export async function getOpportunity(id: string) {
       comments: { where: { deletedAt: null }, include: { author: true }, orderBy: { createdAt: "asc" } },
       activities: { orderBy: { createdAt: "desc" } },
     },
+  });
+}
+
+export type TransitionKind = "advance" | "back" | "cancel";
+
+export async function transitionOpportunity(id: string, kind: TransitionKind, userId: string, reason?: string) {
+  return db.$transaction(async (tx) => {
+    const o = await tx.opportunity.findUniqueOrThrow({ where: { id } });
+    if (o.isCancelled) throw new Error("Opportunity is cancelled");
+
+    let newState = o.state;
+    let isCancelled = o.isCancelled;
+
+    if (kind === "advance") {
+      if (!canAdvance(o.state)) throw new Error("Cannot advance past the final state");
+      newState = nextState(o.state)!;
+    } else if (kind === "back") {
+      if (!reason) throw new Error("A reason is required to move back");
+      if (!canMoveBack(o.state)) throw new Error("Cannot move back from the first state");
+      newState = prevState(o.state)!;
+    } else {
+      if (!reason) throw new Error("A reason is required to cancel");
+      isCancelled = true;
+    }
+
+    const updated = await tx.opportunity.update({
+      where: { id },
+      data: { state: newState, isCancelled, statusId: kind === "cancel" ? o.statusId : null, lastReason: reason ?? null, lastModifiedAt: new Date(), lastModifiedById: userId },
+    });
+
+    await tx.activityLog.create({
+      data: { opportunityId: id, userId, actionType: kind, fieldChanged: "state", oldValue: o.state, newValue: isCancelled ? "CANCELLED" : newState },
+    });
+
+    if (o.ownerId !== userId) {
+      const verb = kind === "cancel" ? "was cancelled" : `moved to ${newState}`;
+      await notify(tx, o.ownerId, id, "state", `"${o.title}" ${verb}`);
+    }
+
+    return updated;
   });
 }
