@@ -1,0 +1,29 @@
+# Saleswind app — runs on the same server as the database.
+# Joins the existing Postgres stack's network (saleswind_default) and connects
+# to the db over the internal Docker network, so the DB is never exposed.
+# Cloudflare Tunnel (on the host) routes the public hostname -> 127.0.0.1:8090.
+name: saleswind-app
+
+services:
+  app:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    image: saleswind-app:latest
+    container_name: saleswind-app
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      AUTH_SECRET: ${AUTH_SECRET}
+      AUTH_TRUST_HOST: "true"
+      NODE_ENV: production
+    ports:
+      # Bound to loopback only — cloudflared (host) proxies to it.
+      - "127.0.0.1:8090:3000"
+    networks:
+      - saleswind_default
+
+networks:
+  # Created by deploy/postgres (docker compose project "saleswind").
+  saleswind_default:
+    external: true
