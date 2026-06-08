@@ -4,5 +4,14 @@ import { NotificationBell } from "@/components/nav/NotificationBell";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const user = await requireUser();
-  return <AppShell role={user.role} userName={user.name ?? user.email ?? "Account"} bell={<NotificationBell />}>{children}</AppShell>;
+  return (
+    <AppShell
+      role={user.role}
+      userName={user.name ?? user.email ?? "Account"}
+      userEmail={user.email ?? ""}
+      bell={<NotificationBell />}
+    >
+      {children}
+    </AppShell>
+  );
 }
