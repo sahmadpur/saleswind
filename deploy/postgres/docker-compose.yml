@@ -1,0 +1,41 @@
+# Saleswind Postgres — run this on YOUR Docker server.
+# Vercel (build + runtime) connects to it over the internet with TLS.
+#
+# Setup (see README.md for details):
+#   1. cp .env.example .env   then set a strong POSTGRES_PASSWORD
+#   2. ./gen-cert.sh          generates a self-signed TLS cert into ./certs
+#   3. docker compose up -d
+#   4. open port 5432 on the server firewall
+name: saleswind
+
+services:
+  db:
+    image: postgres:17
+    container_name: saleswind-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    # Enable TLS so credentials/data are encrypted in transit (self-signed cert).
+    command:
+      - postgres
+      - -c
+      - ssl=on
+      - -c
+      - ssl_cert_file=/certs/server.crt
+      - -c
+      - ssl_key_file=/certs/server.key
+    ports:
+      - "5432:5432"
+    volumes:
+      - saleswind-db-data:/var/lib/postgresql/data
+      - ./certs:/certs:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  saleswind-db-data:
