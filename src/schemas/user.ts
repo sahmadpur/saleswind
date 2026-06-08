@@ -6,3 +6,15 @@ export const userCreateSchema = z.object({
   role: z.enum(["ADMIN", "MANAGER", "AGENT"]),
 });
 export type UserCreateInput = z.infer<typeof userCreateSchema>;
+
+export const passwordChangeSchema = z
+  .object({
+    currentPassword: z.string().min(1),
+    newPassword: z.string().min(8),
+    confirm: z.string().min(1),
+  })
+  .refine((d) => d.newPassword === d.confirm, {
+    message: "Passwords do not match",
+    path: ["confirm"],
+  });
+export type PasswordChangeInput = z.infer<typeof passwordChangeSchema>;

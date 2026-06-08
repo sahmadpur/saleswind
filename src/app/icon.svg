@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="Saleswind">
+  <rect width="64" height="64" rx="14" fill="#1a73e8"/>
+  <text x="50%" y="52%" dy="0.02em" text-anchor="middle" dominant-baseline="central"
+        font-family="Roboto, 'Helvetica Neue', Arial, system-ui, sans-serif"
+        font-size="42" font-weight="700" fill="#ffffff">S</text>
+</svg>

@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { Avatar } from "@/components/ui/Avatar";
 import { signOutAction } from "@/actions/auth-actions";
 
@@ -46,6 +47,14 @@ export function AccountMenu({
             </span>
           </div>
           <div className="border-t border-gline-2 p-2">
+            <Link
+              href="/settings"
+              onClick={() => setOpen(false)}
+              className="flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-sm text-gink-2 transition-colors hover:bg-ghover"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: 20 }}>lock</span>
+              Change password
+            </Link>
             <form action={signOutAction}>
               <button
                 type="submit"

@@ -9,13 +9,6 @@ export function SideNav({ items }: { items: Item[] }) {
   const pathname = usePathname();
   return (
     <nav className="flex flex-col gap-1">
-      <Link
-        href="/opportunities/new"
-        className="g-press mb-3 inline-flex h-12 w-fit items-center gap-3 rounded-2xl bg-gblue-100 pl-4 pr-6 text-sm font-medium text-gblue-dark shadow-g1 transition-shadow hover:bg-gblue-200 hover:shadow-g2"
-      >
-        <span className="material-symbols-outlined" style={{ fontSize: 22 }}>edit_square</span>
-        New
-      </Link>
       {items.map((i) => {
         const active = pathname === i.href || pathname.startsWith(i.href + "/");
         return (
