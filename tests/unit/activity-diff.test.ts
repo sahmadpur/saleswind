@@ -16,4 +16,9 @@ describe("diffFields", () => {
     const entries = diffFields({ revenue: 100 }, { revenue: 200 });
     expect(entries).toEqual([{ fieldChanged: "revenue", oldValue: "100", newValue: "200" }]);
   });
+  it("captures a field removed in after", () => {
+    expect(diffFields({ title: "A", note: "x" }, { title: "A" })).toEqual([
+      { fieldChanged: "note", oldValue: "x", newValue: null },
+    ]);
+  });
 });

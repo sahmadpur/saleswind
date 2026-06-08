@@ -1,6 +1,6 @@
 import type { State } from "@prisma/client";
 
-export const ORDER: State[] = ["PROSPECT", "SALES", "CONTRACT", "PROJECT"];
+export const ORDER: readonly State[] = ["PROSPECT", "SALES", "CONTRACT", "PROJECT"];
 
 export function nextState(s: State): State | null {
   const i = ORDER.indexOf(s);

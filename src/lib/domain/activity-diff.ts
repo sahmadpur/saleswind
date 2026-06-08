@@ -14,7 +14,8 @@ export function diffFields(
   after: Record<string, unknown>
 ): FieldChange[] {
   const changes: FieldChange[] = [];
-  for (const key of Object.keys(after)) {
+  const keys = new Set([...Object.keys(before), ...Object.keys(after)]);
+  for (const key of keys) {
     if (toStr(before[key]) !== toStr(after[key])) {
       changes.push({ fieldChanged: key, oldValue: toStr(before[key]), newValue: toStr(after[key]) });
     }
