@@ -1,7 +1,7 @@
-# Saleswind app — runs on the same server as the database.
-# Joins the existing Postgres stack's network (saleswind_default) and connects
-# to the db over the internal Docker network, so the DB is never exposed.
-# Cloudflare Tunnel (on the host) routes the public hostname -> 127.0.0.1:8090.
+# Saleswind app — same deployment pattern as docai.az on this server:
+# Cloudflare Tunnel -> Traefik (:80) -> this container, routed by Host() label.
+# The app joins the shared "proxy" network (Traefik) and "saleswind_default"
+# (to reach the Postgres container). The DB is never exposed publicly.
 name: saleswind-app
 
 services:
@@ -12,18 +12,22 @@ services:
     image: saleswind-app:latest
     container_name: saleswind-app
     restart: unless-stopped
+    env_file: .env
     environment:
-      DATABASE_URL: ${DATABASE_URL}
-      AUTH_SECRET: ${AUTH_SECRET}
       AUTH_TRUST_HOST: "true"
       NODE_ENV: production
-    ports:
-      # Bound to loopback only — cloudflared (host) proxies to it.
-      - "127.0.0.1:8090:3000"
     networks:
+      - proxy
       - saleswind_default
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=proxy
+      - traefik.http.routers.saleswind.entrypoints=web
+      - traefik.http.routers.saleswind.rule=Host(`${APP_HOST}`)
+      - traefik.http.services.saleswind.loadbalancer.server.port=3000
 
 networks:
-  # Created by deploy/postgres (docker compose project "saleswind").
+  proxy:
+    external: true            # Traefik's network (shared)
   saleswind_default:
-    external: true
+    external: true            # created by deploy/postgres

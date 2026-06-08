@@ -1,66 +1,55 @@
-# Saleswind app — self-hosted on the same server as the DB
+# Saleswind app — self-hosted (same pattern as docai.az)
 
-The app runs in Docker next to the Postgres stack (`deploy/postgres`), connects
-to it over the internal Docker network, and is exposed through a Cloudflare
-Tunnel. The database is never published to the internet.
+Runs as a container next to the Postgres stack. Exposed through Traefik +
+Cloudflare Tunnel, exactly like the other apps on this server:
 
 ```
 Browser ──HTTPS──> Cloudflare ──tunnel──> cloudflared (host)
-                                              │  http://127.0.0.1:8090
+                                              │  http://localhost:80
                                               ▼
-                                       saleswind-app ──┐ (saleswind_default network)
-                                                        ▼
-                                                  saleswind-db:5432
+                                          Traefik ──Host() label──> saleswind-app
+                                                                        │ (saleswind_default)
+                                                                        ▼
+                                                                   saleswind-db:5432
 ```
 
-## Prerequisites
-
-- `deploy/postgres` is already running (network `saleswind_default`, container
-  `saleswind-db`).
-- Cloudflare Tunnel (`cloudflared`) installed on the host.
+- App joins the shared **`proxy`** network (Traefik) and **`saleswind_default`**
+  (to reach Postgres). The DB is never published.
+- Traefik routes by the `Host()` label (entrypoint `web` / :80). Cloudflare
+  terminates TLS.
 
 ## Deploy
 
 ```bash
-# on the server, in the repo root
+# on the server, in the repo
+cd /home/saleswind-app && git pull
 cd deploy/app
 cp .env.example .env
+#   APP_HOST=saleswind.example.com           # your hostname
 #   DATABASE_URL=postgresql://saleswind:<DB_PASSWORD>@saleswind-db:5432/saleswind
 #   AUTH_SECRET=$(openssl rand -base64 32)
 
 docker compose up -d --build
-docker compose logs -f app        # wait for "Starting Next.js" + ready
-curl -sI http://127.0.0.1:8090/login   # 200 OK
+docker compose logs -f app          # wait for "Starting Next.js" + ready
 ```
 
 Migrations run automatically at container start (`prisma migrate deploy`).
 
-## Cloudflare Tunnel
+## Cloudflare Tunnel (dashboard-managed)
 
-Point your hostname at the app. For a config-file tunnel
-(`/etc/cloudflared/config.yml`):
+The tunnel here runs with a token, so public hostnames are configured in the
+Cloudflare dashboard (not a local file):
 
-```yaml
-ingress:
-  - hostname: app.example.com
-    service: http://localhost:8090
-  - service: http_status:404
-```
+Zero Trust → Networks → Tunnels → *your tunnel* → Public Hostname → **Add**:
+- **Subdomain/Domain**: `saleswind.example.com` (same value as `APP_HOST`)
+- **Service**: `HTTP` → `localhost:80`  *(points at Traefik, same as docai.az)*
 
-```bash
-cloudflared tunnel route dns <tunnel-name> app.example.com   # if not already
-systemctl restart cloudflared
-```
-
-For a dashboard-managed tunnel: Zero Trust → Networks → Tunnels → your tunnel →
-Public Hostname → add `app.example.com` → service `http://localhost:8090`.
+Traefik then routes that host to this container via the `Host()` label.
 
 ## Update / redeploy
 
 ```bash
-git pull
-cd deploy/app
-docker compose up -d --build
+cd /home/saleswind-app && git pull && cd deploy/app && docker compose up -d --build
 ```
 
 ## First admin login
