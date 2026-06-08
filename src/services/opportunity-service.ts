@@ -120,3 +120,21 @@ export async function transitionOpportunity(id: string, kind: TransitionKind, us
     return updated;
   });
 }
+
+export async function attachTag(opportunityId: string, tagId: string, userId: string) {
+  await db.$transaction(async (tx) => {
+    await tx.opportunityTag.create({ data: { opportunityId, tagId } });
+    const tag = await tx.tag.findUniqueOrThrow({ where: { id: tagId } });
+    await tx.activityLog.create({ data: { opportunityId, userId, actionType: "tag-added", newValue: tag.label } });
+    await tx.opportunity.update({ where: { id: opportunityId }, data: { lastModifiedAt: new Date(), lastModifiedById: userId } });
+  });
+}
+
+export async function detachTag(opportunityId: string, tagId: string, userId: string) {
+  await db.$transaction(async (tx) => {
+    await tx.opportunityTag.delete({ where: { opportunityId_tagId: { opportunityId, tagId } } });
+    const tag = await tx.tag.findUniqueOrThrow({ where: { id: tagId } });
+    await tx.activityLog.create({ data: { opportunityId, userId, actionType: "tag-removed", oldValue: tag.label } });
+    await tx.opportunity.update({ where: { id: opportunityId }, data: { lastModifiedAt: new Date(), lastModifiedById: userId } });
+  });
+}
