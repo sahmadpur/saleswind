@@ -205,10 +205,18 @@ export default defineConfig({
     fileParallelism: false,
   },
   resolve: {
-    alias: { "@": path.resolve(__dirname, "src") },
+    alias: {
+      "@": path.resolve(__dirname, "src"),
+      // Services start with `import "server-only"`, which throws when imported in
+      // Vitest's node environment. Alias it (and client-only) to a no-op stub so
+      // integration tests can import services directly.
+      "server-only": path.resolve(__dirname, "tests/stubs/empty.ts"),
+      "client-only": path.resolve(__dirname, "tests/stubs/empty.ts"),
+    },
   },
 });
 ```
+Also create the stub `tests/stubs/empty.ts` with a single line: `export {};`
 
 > Note (Prisma 7): integration tests get their connection from `DATABASE_URL` (loaded above) because `src/lib/db.ts` constructs `PrismaClient` with `datasources.db.url = process.env.DATABASE_URL`. No `npx dotenv -e …` wrapper is needed for `npm test` — just ensure the test DB has migrations applied (`npx dotenv-cli -e .env.test -- npx prisma migrate deploy`).
 
