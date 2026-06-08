@@ -10,18 +10,24 @@ export function TagPicker({ opportunityId, allTags, attachedIds }: { opportunity
   const available = allTags.filter((t) => !attachedSet.has(t.id));
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap gap-2">
-        {attached.length === 0 && <span className="text-sm text-neutral-400">No tags yet</span>}
+      <div className="flex min-h-8 flex-wrap gap-2">
+        {attached.length === 0 && <span className="text-sm text-ggrey">No tags yet</span>}
         {attached.map((t) => <Chip key={t.id} label={t.label} onRemove={() => detachTagAction(opportunityId, t.id)} />)}
       </div>
-      <div className="flex flex-wrap gap-2 border-t border-neutral-100 pt-3">
-        {available.map((t) => (
-          <button key={t.id} onClick={() => attachTagAction(opportunityId, t.id)}
-            className="rounded-full border border-dashed border-neutral-300 px-2.5 py-0.5 text-xs text-neutral-600 hover:border-blue-400 hover:text-blue-600">
-            + {t.label}
-          </button>
-        ))}
-      </div>
+      {available.length > 0 && (
+        <div className="flex flex-wrap gap-2 border-t border-gline-2 pt-4">
+          {available.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => attachTagAction(opportunityId, t.id)}
+              className="g-press inline-flex items-center gap-1 rounded-full border border-dashed border-gline px-3 py-1 text-xs font-medium text-ggrey transition-colors hover:border-gblue hover:bg-gblue-50 hover:text-gblue"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>add</span>
+              {t.label}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

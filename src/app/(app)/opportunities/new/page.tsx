@@ -1,7 +1,9 @@
+import Link from "next/link";
 import { db } from "@/lib/db";
 import { createOpportunityAction } from "@/actions/opportunity-actions";
 import { OpportunityCreateForm } from "@/components/opportunities/OpportunityCreateForm";
 import { Card } from "@/components/ui/Card";
+import { PageHeader } from "@/components/ui/PageHeader";
 
 export default async function NewOpportunityPage() {
   const [accounts, users] = await Promise.all([
@@ -9,8 +11,12 @@ export default async function NewOpportunityPage() {
     db.user.findMany({ orderBy: { name: "asc" } }),
   ]);
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-medium">New opportunity</h1>
+    <div className="mx-auto max-w-2xl space-y-6">
+      <Link href="/opportunities" className="inline-flex items-center gap-1 text-sm text-ggrey transition-colors hover:text-gblue">
+        <span className="material-symbols-outlined" style={{ fontSize: 18 }}>arrow_back</span>
+        Opportunities
+      </Link>
+      <PageHeader title="New opportunity" subtitle="Add a deal to your pipeline" />
       <Card>
         <OpportunityCreateForm
           action={createOpportunityAction}

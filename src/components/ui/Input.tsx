@@ -1,4 +1,17 @@
 import type { InputHTMLAttributes } from "react";
-export function Input(props: InputHTMLAttributes<HTMLInputElement>) {
-  return <input {...props} className={`w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none ${props.className ?? ""}`} />;
+import { cn } from "@/lib/cn";
+
+export function Input({ className, ...props }: InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <input
+      {...props}
+      className={cn(
+        "h-10 w-full rounded-lg border border-gline bg-gsurface px-4 text-sm text-gink",
+        "placeholder:text-ggrey-2 outline-none transition-colors duration-150",
+        "hover:border-ggrey-2 focus:border-gblue focus:ring-1 focus:ring-gblue",
+        "disabled:bg-ghover disabled:text-ggrey-2",
+        className,
+      )}
+    />
+  );
 }

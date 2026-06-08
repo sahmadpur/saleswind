@@ -1,33 +1,89 @@
 import { requireRole } from "@/lib/session";
 import { listUsers } from "@/services/user-service";
 import { createUserAction } from "@/actions/user-actions";
-import { Card } from "@/components/ui/Card";
+import { Card, CardLabel } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { Avatar } from "@/components/ui/Avatar";
+
+const ROLE_STYLE: Record<string, string> = {
+  ADMIN: "bg-gviolet-50 text-gviolet",
+  MANAGER: "bg-gblue-100 text-gblue-dark",
+  AGENT: "bg-ggreen-50 text-ggreen",
+};
+
+const TH = "px-5 py-3 text-xs font-medium uppercase tracking-wide text-ggrey";
 
 export default async function UsersPage() {
   await requireRole("users:manage");
   const users = await listUsers();
   return (
     <div className="space-y-8">
-      <h1 className="text-2xl font-medium">Users</h1>
+      <PageHeader title="Users" subtitle="Manage who can access Saleswind" />
+
       <Card>
-        <h2 className="mb-4 text-sm font-medium text-neutral-500">Add user</h2>
-        <form action={createUserAction.bind(null, {}) as (formData: FormData) => void} className="grid max-w-2xl grid-cols-2 gap-3">
-          <input name="name" placeholder="Name" className="rounded-lg border border-neutral-300 px-3 py-2 text-sm" required />
-          <input name="email" type="email" placeholder="Email" className="rounded-lg border border-neutral-300 px-3 py-2 text-sm" required />
-          <input name="password" type="password" placeholder="Temp password (min 8)" className="rounded-lg border border-neutral-300 px-3 py-2 text-sm" required />
-          <select name="role" className="rounded-lg border border-neutral-300 px-3 py-2 text-sm" defaultValue="AGENT">
-            <option value="AGENT">Agent</option><option value="MANAGER">Manager</option><option value="ADMIN">Admin</option>
-          </select>
-          <Button type="submit">Create user</Button>
+        <CardLabel>Add user</CardLabel>
+        <form
+          action={createUserAction.bind(null, {}) as (formData: FormData) => void}
+          className="grid max-w-3xl gap-4 sm:grid-cols-2"
+        >
+          <label className="block">
+            <span className="mb-1.5 block text-xs font-medium text-ggrey">Name</span>
+            <Input name="name" placeholder="Jane Doe" required />
+          </label>
+          <label className="block">
+            <span className="mb-1.5 block text-xs font-medium text-ggrey">Email</span>
+            <Input name="email" type="email" placeholder="jane@company.com" required />
+          </label>
+          <label className="block">
+            <span className="mb-1.5 block text-xs font-medium text-ggrey">Temporary password</span>
+            <Input name="password" type="password" placeholder="Min 8 characters" required />
+          </label>
+          <label className="block">
+            <span className="mb-1.5 block text-xs font-medium text-ggrey">Role</span>
+            <Select name="role" defaultValue="AGENT">
+              <option value="AGENT">Agent</option>
+              <option value="MANAGER">Manager</option>
+              <option value="ADMIN">Admin</option>
+            </Select>
+          </label>
+          <div className="sm:col-span-2">
+            <Button type="submit">Create user</Button>
+          </div>
         </form>
       </Card>
-      <Card className="p-0">
+
+      <Card className="overflow-hidden p-0">
+        <div className="flex items-center justify-between px-5 py-4">
+          <CardLabel>Team</CardLabel>
+          <span className="rounded-full bg-ghover px-2.5 py-0.5 text-xs font-medium text-ggrey">{users.length}</span>
+        </div>
         <table className="w-full text-sm">
-          <thead className="border-b border-neutral-200 text-left text-neutral-500"><tr><th className="p-4">Name</th><th className="p-4">Email</th><th className="p-4">Role</th></tr></thead>
+          <thead className="border-y border-gline-2 bg-gbg text-left">
+            <tr>
+              <th className={TH}>Name</th>
+              <th className={TH}>Email</th>
+              <th className={TH}>Role</th>
+            </tr>
+          </thead>
           <tbody>
             {users.map((u) => (
-              <tr key={u.id} className="border-b border-neutral-100"><td className="p-4">{u.name}</td><td className="p-4">{u.email}</td><td className="p-4">{u.role}</td></tr>
+              <tr key={u.id} className="border-b border-gline-2 transition-colors last:border-0 hover:bg-gblue-50/60">
+                <td className="px-5 py-3">
+                  <span className="flex items-center gap-3 font-medium text-gink">
+                    <Avatar name={u.name ?? u.email ?? "?"} size={28} />
+                    {u.name}
+                  </span>
+                </td>
+                <td className="px-5 py-3 text-gink-2">{u.email}</td>
+                <td className="px-5 py-3">
+                  <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${ROLE_STYLE[u.role] ?? "bg-ghover text-ggrey"}`}>
+                    {u.role}
+                  </span>
+                </td>
+              </tr>
             ))}
           </tbody>
         </table>
