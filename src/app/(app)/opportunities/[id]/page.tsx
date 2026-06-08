@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
+import { requireUser } from "@/lib/session";
 import { getOpportunity } from "@/services/opportunity-service";
 import { updateOpportunityAction } from "@/actions/opportunity-actions";
 import { canAdvance, canMoveBack } from "@/lib/domain/lifecycle";
@@ -13,6 +14,7 @@ import { Card } from "@/components/ui/Card";
 
 export default async function OpportunityDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const user = await requireUser();
   const o = await getOpportunity(id);
   if (!o) notFound();
 
@@ -54,7 +56,7 @@ export default async function OpportunityDetail({ params }: { params: Promise<{ 
           <TagPicker opportunityId={o.id} allTags={tags.map((t) => ({ id: t.id, label: t.label }))} attachedIds={[...attached]} />
         </Card>
       </div>
-      <Card><CommentThread opportunityId={o.id} comments={o.comments.map((c) => ({ id: c.id, body: c.body, author: c.author.name, createdAt: c.createdAt }))} /></Card>
+      <Card><CommentThread opportunityId={o.id} comments={o.comments.map((c) => ({ id: c.id, body: c.body, author: c.author.name, authorId: c.authorId, createdAt: c.createdAt }))} currentUserId={user.id} isElevated={user.role === "ADMIN" || user.role === "MANAGER"} /></Card>
       <Card><ActivityLogView entries={o.activities} /></Card>
     </div>
   );

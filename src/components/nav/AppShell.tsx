@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Role } from "@prisma/client";
 import { can } from "@/lib/domain/permissions";
+import { signOutAction } from "@/actions/auth-actions";
 
 const NAV = [
   { href: "/opportunities", label: "Opportunities", action: null },
@@ -10,7 +11,7 @@ const NAV = [
   { href: "/users", label: "Users", action: "users:manage" as const },
 ];
 
-export function AppShell({ role, children, bell }: { role: Role; children: React.ReactNode; bell: React.ReactNode }) {
+export function AppShell({ role, userName, children, bell }: { role: Role; userName: string; children: React.ReactNode; bell: React.ReactNode }) {
   const items = NAV.filter((i) => !i.action || can(role, i.action));
   return (
     <div className="flex min-h-screen">
@@ -25,6 +26,10 @@ export function AppShell({ role, children, bell }: { role: Role; children: React
       </aside>
       <div className="flex flex-1 flex-col">
         <header className="flex h-14 items-center justify-end gap-4 border-b border-neutral-200 bg-white px-6">
+          <span className="text-sm text-neutral-600">{userName}</span>
+          <form action={signOutAction}>
+            <button type="submit" className="text-sm text-neutral-500 hover:text-neutral-900">Sign out</button>
+          </form>
           {bell}
         </header>
         <main className="flex-1 p-8">{children}</main>

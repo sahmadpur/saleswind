@@ -2,7 +2,8 @@ import { signIn } from "@/lib/auth";
 import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { redirect } from "next/navigation";
 
-export default function LoginPage() {
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
+  const { error } = await searchParams;
   async function login(formData: FormData) {
     "use server";
     try {
@@ -23,6 +24,7 @@ export default function LoginPage() {
     <main className="flex min-h-screen items-center justify-center bg-neutral-50">
       <form action={login} className="w-full max-w-sm rounded-2xl bg-white p-8 shadow-sm">
         <h1 className="mb-6 text-xl font-medium text-neutral-900">Sign in to Saleswind</h1>
+        {error && <p className="mb-4 text-sm text-red-600">Invalid email or password.</p>}
         <input
           name="email"
           type="email"

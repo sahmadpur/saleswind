@@ -1,11 +1,13 @@
 "use client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { markAllReadAction } from "@/actions/notification-actions";
 
 type Item = { id: string; message: string; read: boolean };
 
 export function NotificationDropdown({ count, items }: { count: number; items: Item[] }) {
   const [open, setOpen] = useState(false);
+  const router = useRouter();
   return (
     <div className="relative">
       <button onClick={() => setOpen((o) => !o)} className="relative text-neutral-600 hover:text-neutral-900">
@@ -16,7 +18,7 @@ export function NotificationDropdown({ count, items }: { count: number; items: I
         <div className="absolute right-0 z-50 mt-2 w-72 rounded-xl bg-white p-2 shadow-lg">
           <div className="flex items-center justify-between px-2 py-1">
             <span className="text-xs font-medium text-neutral-500">Notifications</span>
-            <button onClick={() => markAllReadAction()} className="text-xs text-blue-600 hover:underline">Mark all read</button>
+            <button onClick={async () => { await markAllReadAction(); router.refresh(); }} className="text-xs text-blue-600 hover:underline">Mark all read</button>
           </div>
           {items.length === 0 && <p className="px-2 py-3 text-sm text-neutral-400">Nothing yet</p>}
           {items.map((n) => (
