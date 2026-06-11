@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { ORDER } from "@/lib/domain/lifecycle";
 import { grossProfit } from "@/lib/domain/finance";
-import { money } from "@/lib/format";
+import { money, opportunityRef } from "@/lib/format";
 
 type Row = {
-  id: string; title: string; state: string; isCancelled: boolean;
+  id: string; number: number; title: string; state: string; isCancelled: boolean;
   revenue: unknown; marginPct: unknown; account: { name: string };
 };
 
@@ -46,10 +46,11 @@ export function KanbanBoard({ rows }: { rows: Row[] }) {
                   href={`/opportunities/${o.id}`}
                   className="g-press group block rounded-xl border border-gline-2 bg-gsurface p-3.5 shadow-g1 transition-shadow hover:shadow-g2"
                 >
+                  <div className="text-[11px] font-medium tabular-nums text-ggrey-2">{opportunityRef(o.number)}</div>
                   <div className="text-sm font-medium text-gink group-hover:text-gblue">{o.title}</div>
                   <div className="mt-0.5 text-xs text-ggrey">{o.account.name}</div>
                   <div className="mt-3 flex items-center justify-between border-t border-gline-2 pt-2.5">
-                    <span className="text-xs text-ggrey-2">Gross profit</span>
+                    <span className="text-xs text-ggrey-2">Predicted GP</span>
                     <span className="text-sm font-medium tabular-nums text-gink">
                       {money(grossProfit(Number(o.revenue), Number(o.marginPct)))}
                     </span>

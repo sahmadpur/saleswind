@@ -17,3 +17,7 @@ export async function getAccount(id: string) {
 export async function updateAccount(id: string, input: AccountInput) {
   return db.account.update({ where: { id }, data: { ...input, website: input.website || null, primaryContactEmail: input.primaryContactEmail || null } });
 }
+
+export async function updateAccountNotes(id: string, notes: string) {
+  return db.account.update({ where: { id }, data: { notes: notes || null } });
+}

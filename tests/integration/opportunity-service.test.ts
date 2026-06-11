@@ -17,15 +17,15 @@ afterAll(async () => {
 
 describe("opportunity-service", () => {
   it("creates an opportunity and logs creation", async () => {
-    const o = await createOpportunity({ accountId, title: "5 Printers", ownerId: userId, revenue: 100000, marginPct: 30 }, userId);
+    const o = await createOpportunity({ accountId, title: "5 Printers", accountableId: userId, revenue: 100000, marginPct: 30 }, userId);
     expect(o.title).toBe("5 Printers");
     const logs = await db.activityLog.findMany({ where: { opportunityId: o.id } });
     expect(logs.some((l) => l.actionType === "created")).toBe(true);
   });
 
   it("logs a field change on update and stamps lastModified", async () => {
-    const o = await createOpportunity({ accountId, title: "Old", ownerId: userId, revenue: 1, marginPct: 1 }, userId);
-    await updateOpportunity(o.id, { title: "New", ownerId: userId, revenue: 1, marginPct: 1 }, userId);
+    const o = await createOpportunity({ accountId, title: "Old", accountableId: userId, revenue: 1, marginPct: 1 }, userId);
+    await updateOpportunity(o.id, { title: "New", accountableId: userId, revenue: 1, marginPct: 1 }, userId);
     const logs = await db.activityLog.findMany({ where: { opportunityId: o.id, fieldChanged: "title" } });
     expect(logs[0].oldValue).toBe("Old");
     expect(logs[0].newValue).toBe("New");

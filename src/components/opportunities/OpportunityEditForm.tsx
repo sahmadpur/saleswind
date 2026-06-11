@@ -3,8 +3,10 @@ import { useActionState, useState } from "react";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
+import { FieldError } from "@/components/ui/FieldError";
 import { grossProfit } from "@/lib/domain/finance";
 import { money } from "@/lib/format";
+import type { FormState } from "@/lib/action-state";
 
 type Option = { id: string; label: string };
 
@@ -18,46 +20,55 @@ function Labeled({ label, children }: { label: string; children: React.ReactNode
 }
 
 export function OpportunityEditForm({ action, defaults, statuses, users }: {
-  action: (prev: unknown, fd: FormData) => Promise<{ ok?: boolean; error?: unknown }>;
-  defaults: { title: string; description: string; ownerId: string; statusId: string; revenue: number; marginPct: number; meetingAt: string };
+  action: (prev: unknown, fd: FormData) => Promise<FormState>;
+  defaults: { title: string; description: string; accountableId: string; statusId: string; revenue: number; marginPct: number };
   statuses: Option[]; users: Option[];
 }) {
-  const [state, formAction, pending] = useActionState(action, {});
+  const [state, formAction, pending] = useActionState(action, {} as FormState);
   const [revenue, setRevenue] = useState(defaults.revenue);
   const [margin, setMargin] = useState(defaults.marginPct);
   return (
     <form action={formAction} className="space-y-5">
-      <Labeled label="Title"><Input name="title" defaultValue={defaults.title} required /></Labeled>
-      <Labeled label="Description"><Input name="description" defaultValue={defaults.description} /></Labeled>
+      <Labeled label="Title">
+        <Input name="title" defaultValue={state.values?.title ?? defaults.title} required />
+        <FieldError errors={state.error?.title} />
+      </Labeled>
+      <Labeled label="Description">
+        <Input name="description" defaultValue={state.values?.description ?? defaults.description} />
+      </Labeled>
       <div className="grid gap-4 sm:grid-cols-2">
         <Labeled label="Status">
-          <Select name="statusId" defaultValue={defaults.statusId}>
+          <Select name="statusId" defaultValue={state.values?.statusId ?? defaults.statusId}>
             <option value="">No status</option>
             {statuses.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
           </Select>
         </Labeled>
-        <Labeled label="Owner">
-          <Select name="ownerId" defaultValue={defaults.ownerId}>
+        <Labeled label="Accountable">
+          <Select name="accountableId" defaultValue={state.values?.accountableId ?? defaults.accountableId}>
             {users.map((u) => <option key={u.id} value={u.id}>{u.label}</option>)}
           </Select>
+          <FieldError errors={state.error?.accountableId} />
         </Labeled>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Labeled label="Revenue">
-          <Input name="revenue" type="number" step="0.01" defaultValue={defaults.revenue} onChange={(e) => setRevenue(Number(e.target.value))} />
+        <Labeled label="Predicted revenue">
+          <Input name="revenue" type="number" step="0.01" defaultValue={state.values?.revenue ?? defaults.revenue} onChange={(e) => setRevenue(Number(e.target.value))} />
+          <FieldError errors={state.error?.revenue} />
         </Labeled>
         <Labeled label="Margin %">
-          <Input name="marginPct" type="number" step="0.01" defaultValue={defaults.marginPct} onChange={(e) => setMargin(Number(e.target.value))} />
+          <Input name="marginPct" type="number" step="0.01" defaultValue={state.values?.marginPct ?? defaults.marginPct} onChange={(e) => setMargin(Number(e.target.value))} />
+          <FieldError errors={state.error?.marginPct} />
         </Labeled>
       </div>
       <div className="flex items-center justify-between rounded-xl bg-ggreen-50 px-4 py-2.5">
-        <span className="text-sm text-gink-2">Gross profit</span>
+        <span className="text-sm text-gink-2">Predicted gross profit</span>
         <span className="text-base font-medium tabular-nums text-ggreen">{money(grossProfit(revenue, margin))}</span>
       </div>
-      <Labeled label="Meeting"><Input name="meetingAt" type="datetime-local" defaultValue={defaults.meetingAt} /></Labeled>
       <div className="flex items-center gap-3 pt-1">
         <Button type="submit" disabled={pending}>{pending ? "Saving…" : "Save changes"}</Button>
-        {state?.ok ? (
+        {state.error ? (
+          <p className="text-sm text-gred">{state.error._form?.[0] ?? "Please fix the errors above."}</p>
+        ) : state.ok ? (
           <span className="inline-flex items-center gap-1 text-sm text-ggreen">
             <span className="material-symbols-outlined" style={{ fontSize: 18 }}>check_circle</span>
             Saved

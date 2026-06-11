@@ -16,26 +16,26 @@ afterAll(async () => {
 
 describe("transitionOpportunity", () => {
   it("advances one step and logs it", async () => {
-    const o = await createOpportunity({ accountId, title: "T", ownerId: userId, revenue: 1, marginPct: 1 }, userId);
+    const o = await createOpportunity({ accountId, title: "T", accountableId: userId, revenue: 1, marginPct: 1 }, userId);
     const r = await transitionOpportunity(o.id, "advance", userId);
     expect(r.state).toBe("SALES");
   });
   it("rejects advancing past PROJECT", async () => {
-    const o = await createOpportunity({ accountId, title: "T", ownerId: userId, revenue: 1, marginPct: 1 }, userId);
+    const o = await createOpportunity({ accountId, title: "T", accountableId: userId, revenue: 1, marginPct: 1 }, userId);
     await transitionOpportunity(o.id, "advance", userId);
     await transitionOpportunity(o.id, "advance", userId);
     await transitionOpportunity(o.id, "advance", userId);
     await expect(transitionOpportunity(o.id, "advance", userId)).rejects.toThrow();
   });
   it("requires a reason to move back", async () => {
-    const o = await createOpportunity({ accountId, title: "T", ownerId: userId, revenue: 1, marginPct: 1 }, userId);
+    const o = await createOpportunity({ accountId, title: "T", accountableId: userId, revenue: 1, marginPct: 1 }, userId);
     await transitionOpportunity(o.id, "advance", userId);
     await expect(transitionOpportunity(o.id, "back", userId)).rejects.toThrow("reason");
     const r = await transitionOpportunity(o.id, "back", userId, "wrong stage");
     expect(r.state).toBe("PROSPECT");
   });
   it("cancels with a reason from any state", async () => {
-    const o = await createOpportunity({ accountId, title: "T", ownerId: userId, revenue: 1, marginPct: 1 }, userId);
+    const o = await createOpportunity({ accountId, title: "T", accountableId: userId, revenue: 1, marginPct: 1 }, userId);
     const r = await transitionOpportunity(o.id, "cancel", userId, "lost");
     expect(r.isCancelled).toBe(true);
   });

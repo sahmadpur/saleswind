@@ -30,7 +30,7 @@ model User {
   role          Role     @default(AGENT)
   createdAt     DateTime @default(now())
 
-  ownedOpportunities Opportunity[] @relation("OwnedOpportunities")
+  accountableOpportunities Opportunity[] @relation("AccountableOpportunities")
   comments           Comment[]
   notifications      Notification[]
 }
@@ -74,15 +74,15 @@ model Tag {
 
 model Opportunity {
   id               String   @id @default(cuid())
+  number           Int      @unique @default(autoincrement())
   accountId        String
   title            String
   description      String?
-  ownerId          String
+  accountableId    String
   state            State    @default(PROSPECT)
   statusId         String?
   revenue          Decimal  @default(0) @db.Decimal(14, 2)
   marginPct        Decimal  @default(0) @db.Decimal(5, 2)
-  meetingAt        DateTime?
   isCancelled      Boolean  @default(false)
   lastReason       String?
   createdById      String
@@ -91,7 +91,7 @@ model Opportunity {
   lastModifiedById String
 
   account        Account          @relation(fields: [accountId], references: [id])
-  owner          User             @relation("OwnedOpportunities", fields: [ownerId], references: [id])
+  accountable    User             @relation("AccountableOpportunities", fields: [accountableId], references: [id])
   status         Status?          @relation(fields: [statusId], references: [id])
   tags           OpportunityTag[]
   comments       Comment[]

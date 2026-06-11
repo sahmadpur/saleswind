@@ -6,27 +6,31 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Segmented } from "@/components/ui/Segmented";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { Icon } from "@/components/ui/Icon";
 import { grossProfit } from "@/lib/domain/finance";
 import { money } from "@/lib/format";
+import { parseSort, sortOpportunities } from "@/lib/opportunity-sort";
 
-export default async function OpportunitiesPage({ searchParams }: { searchParams: Promise<{ view?: string }> }) {
-  const { view } = await searchParams;
+export default async function OpportunitiesPage({ searchParams }: { searchParams: Promise<{ view?: string; sort?: string; dir?: string }> }) {
+  const { view, sort: sortParam, dir: dirParam } = await searchParams;
   const rows = await listOpportunities();
   const isKanban = view === "kanban";
+  const { sort, dir } = parseSort(sortParam, dirParam);
+  const sorted = sortOpportunities(rows, sort, dir);
 
   const active = rows.filter((r) => !r.isCancelled);
   const totalRevenue = active.reduce((s, r) => s + Number(r.revenue), 0);
   const totalGP = active.reduce((s, r) => s + grossProfit(Number(r.revenue), Number(r.marginPct)), 0);
 
   const stats = [
-    { label: "Open opportunities", value: String(active.length), icon: "trending_up", tint: "text-gblue", bg: "bg-gblue-100" },
-    { label: "Pipeline revenue", value: money(totalRevenue), icon: "payments", tint: "text-ggreen", bg: "bg-ggreen-50" },
-    { label: "Projected gross profit", value: money(totalGP), icon: "savings", tint: "text-[#a36200]", bg: "bg-gyellow-50" },
+    { label: "Open opportunities", value: String(active.length), icon: "trending_up", tint: "text-gblue" },
+    { label: "Predicted revenue", value: money(totalRevenue), icon: "payments", tint: "text-ggreen" },
+    { label: "Predicted gross profit", value: money(totalGP), icon: "savings", tint: "text-[#a36200]" },
   ];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5">
       <PageHeader
         title="Opportunities"
         subtitle="Track every deal across your sales pipeline"
@@ -48,25 +52,13 @@ export default async function OpportunitiesPage({ searchParams }: { searchParams
         }
       />
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        {stats.map((s) => (
-          <Card key={s.label} className="g-rise flex items-center gap-4 p-5">
-            <span className={`grid h-11 w-11 place-items-center rounded-full ${s.bg} ${s.tint}`}>
-              <Icon name={s.icon} filled />
-            </span>
-            <div className="min-w-0">
-              <div className="truncate text-2xl font-normal text-gink">{s.value}</div>
-              <div className="text-xs text-ggrey">{s.label}</div>
-            </div>
-          </Card>
-        ))}
-      </div>
+      <StatStrip stats={stats} />
 
       {isKanban ? (
         <KanbanBoard rows={rows} />
       ) : (
         <Card className="overflow-hidden p-0">
-          <OpportunityTable rows={rows} />
+          <OpportunityTable rows={sorted} sort={sort} dir={dir} />
         </Card>
       )}
     </div>

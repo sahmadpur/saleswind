@@ -2,6 +2,7 @@ import { requireRole } from "@/lib/session";
 import { pipelineSummary } from "@/services/report-service";
 import { Card, CardLabel } from "@/components/ui/Card";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { Icon } from "@/components/ui/Icon";
 import { money } from "@/lib/format";
 
@@ -21,7 +22,7 @@ export default async function ReportsPage() {
   const maxRevenue = Math.max(1, ...summary.map((s) => s.revenue));
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5">
       <PageHeader
         title="Reports"
         subtitle="Pipeline performance at a glance"
@@ -45,23 +46,13 @@ export default async function ReportsPage() {
         }
       />
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        {[
-          { label: "Pipeline revenue", value: money(totalRevenue), icon: "payments", tint: "text-gblue", bg: "bg-gblue-100" },
-          { label: "Gross profit", value: money(totalGP), icon: "savings", tint: "text-ggreen", bg: "bg-ggreen-50" },
-          { label: "Active deals", value: String(totalCount), icon: "tactic", tint: "text-[#a36200]", bg: "bg-gyellow-50" },
-        ].map((s) => (
-          <Card key={s.label} className="g-rise flex items-center gap-4 p-5">
-            <span className={`grid h-11 w-11 place-items-center rounded-full ${s.bg} ${s.tint}`}>
-              <Icon name={s.icon} filled />
-            </span>
-            <div className="min-w-0">
-              <div className="truncate text-2xl font-normal text-gink">{s.value}</div>
-              <div className="text-xs text-ggrey">{s.label}</div>
-            </div>
-          </Card>
-        ))}
-      </div>
+      <StatStrip
+        stats={[
+          { label: "Predicted revenue", value: money(totalRevenue), icon: "payments", tint: "text-gblue" },
+          { label: "Predicted gross profit", value: money(totalGP), icon: "savings", tint: "text-ggreen" },
+          { label: "Active deals", value: String(totalCount), icon: "tactic", tint: "text-[#a36200]" },
+        ]}
+      />
 
       <Card>
         <CardLabel>Pipeline by state</CardLabel>

@@ -31,8 +31,6 @@ const TAGS: Record<State, string[]> = {
   PROJECT: ["Delayed by Client", "Delayed Internally", "Budget Frozen", "Waiting for Future Opportunity"],
 };
 
-const DAY = 86_400_000;
-
 async function main() {
   // Admin bootstrap credentials are env-configurable so deployments can set a
   // real password without editing this file. Falls back to the dev defaults.
@@ -138,29 +136,28 @@ async function main() {
     status: string;
     revenue: number;
     marginPct: number;
-    meetingInDays?: number;
     isCancelled?: boolean;
     lastReason?: string;
     tags: string[];
   };
   const oppSpecs: OppSpec[] = [
     // PROSPECT
-    { account: 0, owner: 2, title: "Northwind — warehouse rollout", description: "Evaluating Saleswind for their distribution arm.", state: "PROSPECT", status: "In Progress", revenue: 48000, marginPct: 35, meetingInDays: 4, tags: ["Researching", "High Chance"] },
+    { account: 0, owner: 2, title: "Northwind — warehouse rollout", description: "Evaluating Saleswind for their distribution arm.", state: "PROSPECT", status: "In Progress", revenue: 48000, marginPct: 35, tags: ["Researching", "High Chance"] },
     { account: 2, owner: 3, title: "Brightline — content team pilot", description: "Initial outreach to the editorial group.", state: "PROSPECT", status: "Not Started", revenue: 22000, marginPct: 40, tags: ["Mail sent"] },
-    { account: 6, owner: 4, title: "Vertex — developer tooling", description: "Inbound lead from the engineering org.", state: "PROSPECT", status: "In Progress", revenue: 75000, marginPct: 45, meetingInDays: 9, tags: ["Initial Contract", "High Chance"] },
+    { account: 6, owner: 4, title: "Vertex — developer tooling", description: "Inbound lead from the engineering org.", state: "PROSPECT", status: "In Progress", revenue: 75000, marginPct: 45, tags: ["Initial Contract", "High Chance"] },
     { account: 10, owner: 1, title: "Polaris — campus license", description: "Exploring a campus-wide deployment.", state: "PROSPECT", status: "Cancelled", revenue: 30000, marginPct: 30, isCancelled: true, lastReason: "Budget cycle closed for the year.", tags: ["Low Chance"] },
     // SALES
-    { account: 1, owner: 2, title: "Helios — production line analytics", description: "Demo delivered to operations leadership.", state: "SALES", status: "In Progress", revenue: 120000, marginPct: 38, meetingInDays: 3, tags: ["Demo", "Mostly Positive"] },
-    { account: 4, owner: 3, title: "Quanta — compliance reporting", description: "Working through procurement requirements.", state: "SALES", status: "Pending", revenue: 95000, marginPct: 42, meetingInDays: 6, tags: ["Waiting for response", "High Chances"] },
-    { account: 8, owner: 4, title: "Orchard — store network rollout", description: "Multi-region expansion under discussion.", state: "SALES", status: "In Progress", revenue: 64000, marginPct: 33, meetingInDays: 1, tags: ["Presentation Sent", "Qualification"] },
+    { account: 1, owner: 2, title: "Helios — production line analytics", description: "Demo delivered to operations leadership.", state: "SALES", status: "In Progress", revenue: 120000, marginPct: 38, tags: ["Demo", "Mostly Positive"] },
+    { account: 4, owner: 3, title: "Quanta — compliance reporting", description: "Working through procurement requirements.", state: "SALES", status: "Pending", revenue: 95000, marginPct: 42, tags: ["Waiting for response", "High Chances"] },
+    { account: 8, owner: 4, title: "Orchard — store network rollout", description: "Multi-region expansion under discussion.", state: "SALES", status: "In Progress", revenue: 64000, marginPct: 33, tags: ["Presentation Sent", "Qualification"] },
     { account: 5, owner: 1, title: "Atlas — fleet tracking", description: "Lost momentum after reorg.", state: "SALES", status: "Lost", revenue: 40000, marginPct: 30, isCancelled: true, lastReason: "Chose an in-house build.", tags: ["Unresponsive"] },
     // CONTRACT
-    { account: 3, owner: 2, title: "Cedar & Stone — annual platform", description: "Contract in legal review.", state: "CONTRACT", status: "In Progress", revenue: 88000, marginPct: 36, meetingInDays: 5, tags: ["Contract Signed", "Implementation Planned"] },
+    { account: 3, owner: 2, title: "Cedar & Stone — annual platform", description: "Contract in legal review.", state: "CONTRACT", status: "In Progress", revenue: 88000, marginPct: 36, tags: ["Contract Signed", "Implementation Planned"] },
     { account: 7, owner: 3, title: "Maple — enterprise agreement", description: "Closed won, onboarding scheduled.", state: "CONTRACT", status: "In Progress", revenue: 156000, marginPct: 44, tags: ["Closed Won", "Onboarding Started"] },
-    { account: 9, owner: 4, title: "BlueGrid — pilot to production", description: "Delayed pending security sign-off.", state: "CONTRACT", status: "Delayed", revenue: 110000, marginPct: 41, meetingInDays: 12, tags: ["Requirements Changed"] },
+    { account: 9, owner: 4, title: "BlueGrid — pilot to production", description: "Delayed pending security sign-off.", state: "CONTRACT", status: "Delayed", revenue: 110000, marginPct: 41, tags: ["Requirements Changed"] },
     // PROJECT
     { account: 1, owner: 2, title: "Helios — phase 2 deployment", description: "Implementation underway across two plants.", state: "PROJECT", status: "In Progress", revenue: 120000, marginPct: 38, tags: ["Delayed Internally"] },
-    { account: 11, owner: 3, title: "Tidewater — rollout", description: "Project kickoff completed.", state: "PROJECT", status: "In Progress", revenue: 72000, marginPct: 35, meetingInDays: 8, tags: ["Waiting for Future Opportunity"] },
+    { account: 11, owner: 3, title: "Tidewater — rollout", description: "Project kickoff completed.", state: "PROJECT", status: "In Progress", revenue: 72000, marginPct: 35, tags: ["Waiting for Future Opportunity"] },
     { account: 7, owner: 4, title: "Maple — onboarding project", description: "Onboarding the finance team.", state: "PROJECT", status: "In Progress", revenue: 156000, marginPct: 44, tags: ["Budget Frozen"] },
   ];
 
@@ -172,12 +169,11 @@ async function main() {
         accountId: accounts[o.account].id,
         title: o.title,
         description: o.description,
-        ownerId: owner.id,
+        accountableId: owner.id,
         state: o.state,
         statusId: statusId(o.state, o.status),
         revenue: o.revenue,
         marginPct: o.marginPct,
-        meetingAt: o.meetingInDays != null ? new Date(Date.now() + o.meetingInDays * DAY) : null,
         isCancelled: o.isCancelled ?? false,
         lastReason: o.lastReason ?? null,
         createdById: owner.id,

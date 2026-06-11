@@ -7,7 +7,7 @@ export async function addComment(opportunityId: string, body: string, authorId: 
   return db.$transaction(async (tx) => {
     const comment = await tx.comment.create({ data: { opportunityId, body, authorId } });
     const o = await tx.opportunity.findUniqueOrThrow({ where: { id: opportunityId } });
-    if (o.ownerId !== authorId) await notify(tx, o.ownerId, opportunityId, "comment", `New comment on "${o.title}"`);
+    if (o.accountableId !== authorId) await notify(tx, o.accountableId, opportunityId, "comment", `New comment on "${o.title}"`);
     return comment;
   });
 }

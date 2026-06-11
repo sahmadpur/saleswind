@@ -21,7 +21,7 @@ afterAll(async () => {
 
 describe("comment-service", () => {
   it("adds a comment then soft-deletes it (excluded from list, row remains)", async () => {
-    const o = await createOpportunity({ accountId, title: "T", ownerId: userId, revenue: 1, marginPct: 1 }, userId);
+    const o = await createOpportunity({ accountId, title: "T", accountableId: userId, revenue: 1, marginPct: 1 }, userId);
     const c = await addComment(o.id, "Hello", userId);
     expect((await listComments(o.id)).length).toBe(1);
     await deleteComment(c.id, userId, "AGENT");
@@ -30,14 +30,14 @@ describe("comment-service", () => {
   });
 
   it("rejects deletion by a different non-elevated user", async () => {
-    const o = await createOpportunity({ accountId, title: "T2", ownerId: userId, revenue: 1, marginPct: 1 }, userId);
+    const o = await createOpportunity({ accountId, title: "T2", accountableId: userId, revenue: 1, marginPct: 1 }, userId);
     const c = await addComment(o.id, "Hello", userId);
     await expect(deleteComment(c.id, otherUserId, "AGENT")).rejects.toThrow("Forbidden");
     expect((await listComments(o.id)).length).toBe(1);
   });
 
   it("allows an ADMIN to delete someone else's comment", async () => {
-    const o = await createOpportunity({ accountId, title: "T3", ownerId: userId, revenue: 1, marginPct: 1 }, userId);
+    const o = await createOpportunity({ accountId, title: "T3", accountableId: userId, revenue: 1, marginPct: 1 }, userId);
     const c = await addComment(o.id, "Hello", userId);
     await deleteComment(c.id, adminUserId, "ADMIN");
     expect((await listComments(o.id)).length).toBe(0);

@@ -17,7 +17,7 @@ test("core flow: login → create account → create opportunity → advance →
   await page.goto("/opportunities/new");
   await page.selectOption('select[name="accountId"]', { label: "E2E Account" });
   await page.fill('input[name="title"]', "E2E Opportunity");
-  await page.selectOption('select[name="ownerId"]', { index: 1 });
+  await page.selectOption('select[name="accountableId"]', { index: 1 });
   await page.fill('input[name="revenue"]', "100000");
   await page.fill('input[name="marginPct"]', "30");
   await page.click('button:has-text("Create opportunity")');

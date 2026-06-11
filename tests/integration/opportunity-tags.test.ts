@@ -18,7 +18,7 @@ afterAll(async () => {
 
 describe("tags", () => {
   it("attaches and detaches a tag", async () => {
-    const o = await createOpportunity({ accountId, title: "T", ownerId: userId, revenue: 1, marginPct: 1 }, userId);
+    const o = await createOpportunity({ accountId, title: "T", accountableId: userId, revenue: 1, marginPct: 1 }, userId);
     await attachTag(o.id, tagId, userId);
     expect(await db.opportunityTag.count({ where: { opportunityId: o.id } })).toBe(1);
     await detachTag(o.id, tagId, userId);
