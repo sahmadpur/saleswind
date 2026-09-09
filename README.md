@@ -10,63 +10,29 @@ credentials auth, Tailwind CSS, Vitest, and Playwright.
 
 ## Local development
 
-### 1. Start PostgreSQL (Docker)
-
-The project expects Postgres 17 on `localhost:5432` with two databases, `saleswind`
-(dev) and `saleswind_test` (tests). To spin up a matching container:
-
-```bash
-docker run -d --name saleswind-pg \
-  -e POSTGRES_USER=postgres \
-  -e POSTGRES_PASSWORD=postgres \
-  -e POSTGRES_DB=saleswind \
-  -p 5432:5432 \
-  postgres:17
-
-# create the test database
-docker exec -it saleswind-pg createdb -U postgres saleswind_test
-```
-
-### 2. Environment files
-
-Create `.env` (dev) and `.env.test` (tests). These are gitignored — never commit them.
-
-`.env`:
-
-```
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/saleswind?schema=public"
-AUTH_SECRET="<generated secret>"
-```
-
-`.env.test`:
-
-```
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/saleswind_test?schema=public"
-```
-
-Generate `AUTH_SECRET` with Node's crypto (do **not** use `npx auth secret` — in this
-environment that command resolves to the wrong package):
+Same single Docker stack as production (`docker-compose.yml`), plus
+`docker-compose.dev.yml`, enabled by `COMPOSE_FILE` in `.env`. It publishes
+`app` on `:3000` and `db` on `:5432` and serves auth over plain http.
 
 ```bash
-node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
-```
-
-### 3. Install, migrate, seed, run
-
-```bash
-npm install
-npx prisma migrate dev      # create/apply migrations to the dev DB
-npx prisma db seed          # seed admin user + per-state status/tag vocabularies
-npm run dev                 # http://localhost:3000
+cp .env.example .env    # first time: set passwords / AUTH_SECRET, uncomment COMPOSE_FILE and the localhost DATABASE_URL
+docker compose up -d db
+npx prisma migrate deploy && npx prisma db seed   # first time only
+npm run dev             # http://localhost:3000, hot reload
 ```
 
 Sign in with the seeded admin (see [Seeded admin](#seeded-admin) below).
 
+To run the built app container instead (no hot reload, same as prod):
+`docker compose up -d --build`.
+
 ## Tests
 
 ```bash
-# Unit + integration tests (Vitest). The integration suite runs against saleswind_test.
-# Make sure that DB has migrations applied first:
+# Unit + integration tests (Vitest) run against saleswind_test on the stack's db.
+# First time: create it and apply migrations. .env.test:
+#   DATABASE_URL="postgresql://<user>:<password>@localhost:5432/saleswind_test?schema=public"
+docker compose exec db createdb -U saleswind saleswind_test
 npx dotenv-cli -e .env.test -- npx prisma migrate deploy
 npm test
 

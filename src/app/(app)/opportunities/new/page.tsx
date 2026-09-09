@@ -16,7 +16,7 @@ export default async function NewOpportunityPage() {
         <span className="material-symbols-outlined" style={{ fontSize: 18 }}>arrow_back</span>
         Opportunities
       </Link>
-      <PageHeader title="New opportunity" subtitle="Add a deal to your pipeline" />
+      <PageHeader title="New opportunity" />
       <Card>
         <OpportunityCreateForm
           action={createOpportunityAction}

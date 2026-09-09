@@ -2,7 +2,7 @@ import { cn } from "@/lib/cn";
 
 export function Chip({ label, onRemove, className }: { label: string; onRemove?: () => void; className?: string }) {
   return (
-    <span className={cn("inline-flex items-center gap-1.5 rounded-lg border border-gline bg-gsurface py-1 pl-3 pr-2 text-xs font-medium text-gink-2 transition-colors hover:bg-ghover", className)}>
+    <span className={cn("inline-flex items-center gap-1.5 rounded-md border border-gline bg-gsurface py-0.5 pl-2 pr-1.5 text-xs font-medium text-gink-2 transition-colors hover:bg-ghover", className)}>
       <span className="truncate" title={label}>{label}</span>
       {onRemove && (
         <button

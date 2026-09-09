@@ -23,7 +23,7 @@ export function NotificationDropdown({ count, items }: { count: number; items: I
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen((o) => !o)}
-        className="relative grid h-10 w-10 place-items-center rounded-full text-ggrey transition-colors hover:bg-ghover hover:text-gink g-focus"
+        className="relative grid h-9 w-9 place-items-center rounded-full text-ggrey transition-colors hover:bg-ghover hover:text-gink g-focus"
         aria-label="Notifications"
       >
         <span className="material-symbols-outlined" style={{ fontSize: 24 }}>notifications</span>
@@ -34,7 +34,7 @@ export function NotificationDropdown({ count, items }: { count: number; items: I
         )}
       </button>
       {open && (
-        <div className="g-pop absolute right-0 z-50 mt-2 w-80 overflow-hidden rounded-3xl border border-gline-2 bg-gsurface shadow-g3">
+        <div className="g-pop absolute right-0 z-50 mt-2 w-80 overflow-hidden rounded-lg border border-gline-2 bg-gsurface shadow-g3">
           <div className="flex items-center justify-between px-5 py-3.5">
             <span className="text-base font-medium text-gink">Notifications</span>
             <button

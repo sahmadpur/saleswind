@@ -80,19 +80,11 @@ export default async function AccountDetail({ params }: { params: Promise<{ id: 
                 </td>
                 <td className="px-6 py-2.5"><Pill state={o.state} /></td>
                 <td className="px-6 py-2.5 text-gink-2">{o.status?.label ?? "—"}</td>
-                <td className="px-6 py-2.5 text-right">
-                  <Link
-                    href={`/opportunities/${o.id}`}
-                    className="inline-flex h-7 items-center rounded-full border border-gline px-3 text-xs font-medium text-gblue transition-colors hover:bg-gblue-50"
-                  >
-                    Open
-                  </Link>
-                </td>
               </RowLink>
             ))}
             {account.opportunities.length === 0 && (
               <tr>
-                <td colSpan={4} className="px-6 py-10 text-center text-sm text-ggrey">No opportunities for this account yet.</td>
+                <td colSpan={3} className="px-6 py-10 text-center text-sm text-ggrey">No opportunities for this account yet.</td>
               </tr>
             )}
           </tbody>

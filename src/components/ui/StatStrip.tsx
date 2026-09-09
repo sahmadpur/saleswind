@@ -10,7 +10,7 @@ export function StatStrip({ stats }: { stats: Stat[] }) {
       {stats.map((s) => (
         <div key={s.label} className="flex min-w-0 items-center gap-2 px-4">
           <Icon name={s.icon} filled className={s.tint} style={{ fontSize: 18 }} />
-          <span className="text-base font-medium tabular-nums text-gink">{s.value}</span>
+          <span className="text-base font-semibold tabular-nums text-gink">{s.value}</span>
           <span className="text-xs text-ggrey">{s.label}</span>
         </div>
       ))}

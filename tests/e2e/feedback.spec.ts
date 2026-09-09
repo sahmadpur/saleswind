@@ -12,7 +12,7 @@ test("pipeline feedback batch: month groups, sorting, row click, menu toggle, ac
   await expect(page.locator("th", { hasText: "Accountable" })).toBeVisible();
 
   // Sorting via column header: URL params set, month sections collapse into a flat table
-  await page.click('th a:has-text("Predicted revenue")');
+  await page.click('th a:has-text("PR")');
   await expect(page).toHaveURL(/sort=revenue/);
   await expect(page).toHaveURL(/dir=desc/);
   await expect(page.getByText(/predicted revenue ·/)).toHaveCount(0);

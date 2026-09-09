@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { Roboto } from "next/font/google";
+import { IBM_Plex_Sans } from "next/font/google";
 import "./globals.css";
 
-const roboto = Roboto({
+const plex = IBM_Plex_Sans({
   subsets: ["latin"],
-  weight: ["400", "500", "700"],
-  variable: "--font-roboto",
+  weight: ["400", "500", "600"],
+  variable: "--font-plex",
 });
 
 export const metadata: Metadata = {
@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={roboto.variable}>
+    <html lang="en" className={plex.variable}>
       <head>
         {/* Material Symbols is an icon font: display=block avoids flashing raw ligature text. */}
         {/* eslint-disable-next-line @next/next/no-page-custom-font, @next/next/google-font-display */}

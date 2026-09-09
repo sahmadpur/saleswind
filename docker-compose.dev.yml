@@ -1,0 +1,18 @@
+# Local dev overlay. Enable via COMPOSE_FILE=docker-compose.yml:docker-compose.dev.yml
+# in .env (never on the server). No Traefik locally: publish the app + db ports
+# directly and serve auth over plain http.
+services:
+  app:
+    ports:
+      - "3000:3000"
+    environment:
+      AUTH_URL: http://localhost:3000
+      # .env's DATABASE_URL points at localhost for `npm run dev` on the host;
+      # inside the stack the db is reached by container name.
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@saleswind-db:5432/${POSTGRES_DB}
+  db:
+    ports:
+      - "5432:5432"   # for vitest/prisma from the host (.env.test)
+networks:
+  proxy:
+    external: false

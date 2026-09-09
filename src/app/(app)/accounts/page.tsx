@@ -8,13 +8,13 @@ import { Avatar } from "@/components/ui/Avatar";
 import { RowLink } from "@/components/ui/RowLink";
 import { accountRef } from "@/lib/format";
 
-const TH = "px-4 py-2 text-xs font-medium uppercase tracking-wide text-ggrey";
+const TH = "px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-gink";
 
 export default async function AccountsPage() {
   const accounts = await listAccounts();
   return (
     <div className="space-y-5">
-      <PageHeader title="Accounts" subtitle="Companies you do business with" />
+      <PageHeader title="Accounts" />
 
       <div className="grid gap-6 lg:grid-cols-[22rem_1fr] lg:items-start">
         <Card>
@@ -30,18 +30,17 @@ export default async function AccountsPage() {
             </span>
           </div>
           <table className="w-full text-sm">
-            <thead className="border-y border-gline-2 bg-gbg text-left">
+            <thead className="border-y-2 border-gline bg-gbg text-left">
               <tr>
-                <th className={TH}>Ref</th>
+                <th className={TH}>ID</th>
                 <th className={TH}>Name</th>
                 <th className={TH}>Industry</th>
                 <th className={`${TH} text-right`}>Opportunities</th>
-                <th className={TH}><span className="sr-only">Open</span></th>
               </tr>
             </thead>
             <tbody>
               {accounts.map((a) => (
-                <RowLink key={a.id} href={`/accounts/${a.id}`} className="border-b border-gline-2 transition-colors last:border-0 hover:bg-gblue-50/60">
+                <RowLink key={a.id} href={`/accounts/${a.id}`} className="border-b border-gline-2 transition-colors last:border-0 hover:bg-ghover/70">
                   <td className="px-4 py-2 font-medium tabular-nums text-ggrey-2">{accountRef(a.number)}</td>
                   <td className="px-4 py-2">
                     <Link href={`/accounts/${a.id}`} className="flex items-center gap-3 font-medium text-gink hover:text-gblue">
@@ -51,19 +50,11 @@ export default async function AccountsPage() {
                   </td>
                   <td className="px-4 py-2 text-gink-2">{a.industry ?? "—"}</td>
                   <td className="px-4 py-2 text-right tabular-nums text-gink-2">{a._count.opportunities}</td>
-                  <td className="px-4 py-2 text-right">
-                    <Link
-                      href={`/accounts/${a.id}`}
-                      className="inline-flex h-7 items-center rounded-full border border-gline px-3 text-xs font-medium text-gblue transition-colors hover:bg-gblue-50"
-                    >
-                      Open
-                    </Link>
-                  </td>
                 </RowLink>
               ))}
               {accounts.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-5 py-12 text-center text-sm text-ggrey">
+                  <td colSpan={4} className="px-5 py-12 text-center text-sm text-ggrey">
                     No accounts yet — add your first one on the left.
                   </td>
                 </tr>

@@ -21,7 +21,7 @@ export function CommentThread({ opportunityId, comments, currentUserId, isElevat
         {comments.map((c) => (
           <div key={c.id} className="group flex items-start gap-3">
             <Avatar name={c.author} size={32} />
-            <div className="min-w-0 flex-1 rounded-2xl rounded-tl-sm bg-gbg px-4 py-2.5">
+            <div className="min-w-0 flex-1 rounded-lg rounded-tl-sm bg-gbg px-4 py-2.5">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-sm font-medium text-gink">{c.author}</span>
                 <div className="flex items-center gap-2">
@@ -42,7 +42,7 @@ export function CommentThread({ opportunityId, comments, currentUserId, isElevat
           </div>
         ))}
         {comments.length === 0 && (
-          <p className="rounded-xl bg-gbg px-4 py-6 text-center text-sm text-ggrey">No comments yet — start the conversation.</p>
+          <p className="rounded-md bg-gbg px-4 py-6 text-center text-sm text-ggrey">No comments yet — start the conversation.</p>
         )}
       </div>
 
@@ -50,7 +50,7 @@ export function CommentThread({ opportunityId, comments, currentUserId, isElevat
         <input
           name="body"
           placeholder="Add a comment…"
-          className="h-10 flex-1 rounded-full border border-gline bg-gsurface px-4 text-sm outline-none transition-colors hover:border-ggrey-2 focus:border-gblue focus:ring-1 focus:ring-gblue"
+          className="h-10 flex-1 rounded-md border border-gline bg-gsurface px-3 text-sm outline-none transition-colors hover:border-ggrey-2 focus:border-gblue focus:ring-2 focus:ring-gblue/25"
         />
         <Button type="submit">Post</Button>
       </form>

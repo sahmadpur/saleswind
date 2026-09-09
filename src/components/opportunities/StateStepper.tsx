@@ -16,8 +16,8 @@ export function StateStepper({ state, cancelled }: { state: string; cancelled: b
             <div className="flex items-center gap-2.5">
               <div
                 className={cn(
-                  "grid h-8 w-8 place-items-center rounded-full text-xs font-medium transition-colors",
-                  current && "bg-gblue text-white shadow-g1",
+                  "grid h-7 w-7 place-items-center rounded-full text-xs font-semibold transition-colors",
+                  current && "bg-gink text-white",
                   done && "bg-gblue-100 text-gblue-dark",
                   !active && "bg-ghover text-ggrey-2",
                 )}
@@ -28,7 +28,7 @@ export function StateStepper({ state, cancelled }: { state: string; cancelled: b
                   i + 1
                 )}
               </div>
-              <span className={cn("text-sm", current ? "font-medium text-gink" : "text-ggrey")}>{LABEL[s]}</span>
+              <span className={cn("text-sm", current ? "font-semibold text-gink" : "text-ggrey")}>{LABEL[s]}</span>
             </div>
             {i < ORDER.length - 1 && (
               <div className={cn("mx-3 h-px w-8 sm:w-14", i < currentIdx && !cancelled ? "bg-gblue-200" : "bg-gline")} />

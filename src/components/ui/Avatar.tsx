@@ -2,14 +2,14 @@ import { cn } from "@/lib/cn";
 
 // Google-ish deterministic avatar tints (no Math.random — stable per name).
 const TINTS = [
-  "bg-[#1a73e8]",
-  "bg-[#d93025]",
-  "bg-[#1e8e3e]",
-  "bg-[#e37400]",
-  "bg-[#8430ce]",
-  "bg-[#129eaf]",
-  "bg-[#c5221f]",
-  "bg-[#9334e6]",
+  "bg-[#0f766e]",
+  "bg-[#1d4ed8]",
+  "bg-[#6d28d9]",
+  "bg-[#b45309]",
+  "bg-[#15803d]",
+  "bg-[#b91c1c]",
+  "bg-[#0e7490]",
+  "bg-[#4338ca]",
 ];
 
 function tintFor(seed: string) {

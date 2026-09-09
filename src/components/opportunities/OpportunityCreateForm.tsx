@@ -50,18 +50,18 @@ export function OpportunityCreateForm({ action, accounts, users }: {
         <FieldError errors={state.error?.accountableId} />
       </Labeled>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Labeled label="Predicted revenue">
+        <Labeled label="PR">
           <Input name="revenue" type="number" step="0.01" placeholder="0.00" required defaultValue={state.values?.revenue} onChange={(e) => setRevenue(Number(e.target.value))} />
           <FieldError errors={state.error?.revenue} />
         </Labeled>
-        <Labeled label="Margin %">
+        <Labeled label="MR %">
           <Input name="marginPct" type="number" step="0.01" placeholder="0" required defaultValue={state.values?.marginPct} onChange={(e) => setMargin(Number(e.target.value))} />
           <FieldError errors={state.error?.marginPct} />
         </Labeled>
       </div>
-      <div className="flex items-center justify-between rounded-xl bg-ggreen-50 px-4 py-2.5">
-        <span className="text-sm text-gink-2">Predicted gross profit</span>
-        <span className="text-base font-medium tabular-nums text-ggreen">{money(grossProfit(revenue, margin))}</span>
+      <div className="flex items-center justify-between rounded-md bg-ggreen-50 px-4 py-2.5">
+        <span className="text-sm text-gink-2">PGP</span>
+        <span className="text-base font-semibold tabular-nums text-ggreen">{money(grossProfit(revenue, margin))}</span>
       </div>
       <div className="flex items-center gap-3 pt-1">
         <Button type="submit" disabled={pending}>{pending ? "Creating…" : "Create opportunity"}</Button>

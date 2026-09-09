@@ -1,39 +1,43 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: var(--font-roboto), "Roboto", "Helvetica Neue", system-ui, sans-serif;
+  --font-sans: var(--font-plex), "IBM Plex Sans", "Helvetica Neue", system-ui, sans-serif;
 
-  /* Google brand + Material surface palette */
-  --color-gblue: #1a73e8;
-  --color-gblue-hover: #1b66c9;
-  --color-gblue-dark: #1557b0;
-  --color-gblue-50: #f0f6ff;
-  --color-gblue-100: #e8f0fe;
-  --color-gblue-200: #d3e3fd;
-  --color-gred: #d93025;
-  --color-gred-hover: #c5221f;
-  --color-gred-50: #fce8e6;
-  --color-ggreen: #1e8e3e;
-  --color-ggreen-50: #e6f4ea;
-  --color-gyellow: #f29900;
-  --color-gyellow-50: #fef7e0;
-  --color-gviolet: #8430ce;
-  --color-gviolet-50: #f3e8fd;
+  /* Palette. Token names are historical (g = the original Google theme); values are Saleswind's own.
+     gblue = the teal accent, gyellow/gblue/gviolet/ggreen/gred = pipeline state colours. */
+  --color-gblue: #0f766e;
+  --color-gblue-hover: #115e59;
+  --color-gblue-dark: #134e4a;
+  --color-gblue-50: #eef7f5;
+  --color-gblue-100: #dcefeb;
+  --color-gblue-200: #b6dfd7;
+  --color-gred: #b91c1c;
+  --color-gred-hover: #991b1b;
+  --color-gred-50: #fdecec;
+  --color-ggreen: #15803d;
+  --color-ggreen-50: #e4f5ea;
+  --color-gyellow: #d97706;
+  --color-gyellow-dark: #b45309;
+  --color-gyellow-50: #fef3e2;
+  --color-gviolet: #6d28d9;
+  --color-gviolet-50: #efe9fd;
+  --color-gsales: #1d4ed8;
+  --color-gsales-50: #e8eefd;
 
-  --color-gink: #202124;     /* primary text — Google Grey 900 */
-  --color-gink-2: #3c4043;   /* Google Grey 800 */
-  --color-ggrey: #5f6368;    /* secondary text — Google Grey 700 */
-  --color-ggrey-2: #80868b;  /* tertiary text — Google Grey 600 */
-  --color-gline: #dadce0;    /* hairline border — Google Grey 300 */
-  --color-gline-2: #e8eaed;  /* subtle divider — Google Grey 200 */
+  --color-gink: #182033;     /* primary text, sidebar */
+  --color-gink-2: #2f3950;
+  --color-ggrey: #5b6478;    /* secondary text */
+  --color-ggrey-2: #8b93a5;  /* tertiary text */
+  --color-gline: #d5dae3;    /* hairline border */
+  --color-gline-2: #e9ecf1;  /* subtle divider */
   --color-gsurface: #ffffff;
-  --color-gbg: #f8f9fa;      /* app background — Google Grey 50 */
-  --color-ghover: #f1f3f4;   /* hover fill — Google Grey 100 */
+  --color-gbg: #f4f6f9;      /* app background */
+  --color-ghover: #eef1f5;   /* hover fill */
 
-  /* Material elevation */
-  --shadow-g1: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
-  --shadow-g2: 0 1px 3px 0 rgba(60, 64, 67, 0.3), 0 4px 8px 3px rgba(60, 64, 67, 0.15);
-  --shadow-g3: 0 4px 8px 3px rgba(60, 64, 67, 0.15), 0 1px 3px 0 rgba(60, 64, 67, 0.3);
+  /* Elevation — only for floating layers (menus, dialogs) */
+  --shadow-g1: 0 1px 2px rgba(24, 32, 51, 0.08);
+  --shadow-g2: 0 4px 12px rgba(24, 32, 51, 0.12), 0 1px 2px rgba(24, 32, 51, 0.08);
+  --shadow-g3: 0 12px 32px rgba(24, 32, 51, 0.16), 0 2px 4px rgba(24, 32, 51, 0.08);
 
   --ease-google: cubic-bezier(0.2, 0, 0, 1);
 }
@@ -45,7 +49,7 @@ html {
 }
 
 body {
-  letter-spacing: 0.0107142857em;
+  font-feature-settings: "tnum" 1, "calt" 1;
 }
 
 /* Material Symbols — Google's product iconography */

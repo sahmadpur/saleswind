@@ -42,9 +42,9 @@ export default async function OpportunityDetail({ params }: { params: Promise<{ 
       {/* Hero */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="space-y-2">
-          <span className="block text-sm font-medium tabular-nums text-ggrey-2">{opportunityRef(o.number)}</span>
+          <span className="block text-sm tabular-nums text-ggrey">{opportunityRef(o.number)}</span>
           <div className="flex items-center gap-3">
-            <h1 className="text-[1.75rem] font-normal leading-tight tracking-[-0.01em] text-gink">{o.title}</h1>
+            <h1 className="text-2xl font-semibold leading-tight tracking-[-0.015em] text-gink">{o.title}</h1>
             <Pill state={o.isCancelled ? "CANCELLED" : o.state} />
           </div>
           <div className="flex items-center gap-2 text-sm text-ggrey">
@@ -55,14 +55,14 @@ export default async function OpportunityDetail({ params }: { params: Promise<{ 
             {o.accountable.name}
           </div>
         </div>
-        <div className="flex gap-6 rounded-2xl border border-gline-2 bg-gsurface px-6 py-3">
+        <div className="flex gap-6 rounded-lg border border-gline-2 bg-gsurface px-5 py-3">
           <div>
-            <div className="text-xs text-ggrey">Predicted revenue</div>
-            <div className="text-lg font-medium tabular-nums text-gink">{money(Number(o.revenue))}</div>
+            <div className="text-xs text-ggrey">PR</div>
+            <div className="text-lg font-semibold tabular-nums text-gink">{money(Number(o.revenue))}</div>
           </div>
           <div className="border-l border-gline-2 pl-6">
-            <div className="text-xs text-ggrey">Predicted gross profit</div>
-            <div className="text-lg font-medium tabular-nums text-ggreen">{money(gp)}</div>
+            <div className="text-xs text-ggrey">PGP</div>
+            <div className="text-lg font-semibold tabular-nums text-ggreen">{money(gp)}</div>
           </div>
         </div>
       </div>

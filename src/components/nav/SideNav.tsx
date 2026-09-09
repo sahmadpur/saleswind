@@ -8,11 +8,12 @@ type Item = { href: string; label: string; icon: string };
 export type NavGroup = { label: string; items: Item[] };
 
 const ITEM =
-  "group flex h-9 w-full items-center gap-3 rounded-lg px-3 text-sm transition-colors duration-150";
+  "group flex h-9 w-full items-center gap-3 rounded-md px-3 text-sm transition-colors duration-150";
+const IDLE = "font-normal text-white/70 hover:bg-white/8 hover:text-white";
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div className="px-3 pb-1.5 pt-4 text-[11px] font-medium uppercase tracking-[0.08em] text-ggrey-2">
+    <div className="px-3 pb-1.5 pt-5 text-[11px] font-medium text-white/40">
       {children}
     </div>
   );
@@ -27,9 +28,7 @@ function NavLink({ item }: { item: Item }) {
       aria-current={active ? "page" : undefined}
       className={cn(
         ITEM,
-        active
-          ? "bg-gblue-100 font-medium text-gblue-dark"
-          : "font-normal text-gink-2 hover:bg-ghover",
+        active ? "bg-white/12 font-medium text-white" : IDLE,
       )}
     >
       <span className={cn("material-symbols-outlined", active && "fill")} style={{ fontSize: 20 }}>
@@ -52,12 +51,12 @@ export function SideNav({ groups }: { groups: NavGroup[] }) {
         </div>
       ))}
 
-      <div className="mt-auto border-t border-gline-2 pb-1">
+      <div className="mt-auto border-t border-white/10 pb-1">
         <SectionLabel>Account</SectionLabel>
         <div className="flex flex-col gap-0.5">
           <NavLink item={{ href: "/settings", label: "Settings", icon: "settings" }} />
           <form action={signOutAction}>
-            <button type="submit" className={cn(ITEM, "font-normal text-gink-2 hover:bg-ghover")}>
+            <button type="submit" className={cn(ITEM, IDLE)}>
               <span className="material-symbols-outlined" style={{ fontSize: 20 }}>logout</span>
               Log out
             </button>

@@ -20,7 +20,7 @@ export function TagPicker({ opportunityId, allTags, attachedIds }: { opportunity
             <button
               key={t.id}
               onClick={() => attachTagAction(opportunityId, t.id)}
-              className="g-press inline-flex items-center gap-1 rounded-full border border-dashed border-gline px-3 py-1 text-xs font-medium text-ggrey transition-colors hover:border-gblue hover:bg-gblue-50 hover:text-gblue"
+              className="g-press inline-flex items-center gap-1 rounded-md border border-dashed border-gline px-2.5 py-1 text-xs font-medium text-ggrey transition-colors hover:border-gblue hover:bg-gblue-50 hover:text-gblue"
             >
               <span className="material-symbols-outlined" style={{ fontSize: 14 }}>add</span>
               {t.label}

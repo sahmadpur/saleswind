@@ -23,6 +23,15 @@ export async function changePassword(userId: string, current: string, next: stri
   await db.user.update({ where: { id: userId }, data: { passwordHash } });
 }
 
+export async function deleteUser(id: string) {
+  const [opps, comments] = await Promise.all([
+    db.opportunity.count({ where: { accountableId: id } }),
+    db.comment.count({ where: { authorId: id } }),
+  ]);
+  if (opps > 0 || comments > 0) throw new Error("Cannot delete: user has opportunities or comments");
+  await db.$transaction([db.notification.deleteMany({ where: { userId: id } }), db.user.delete({ where: { id } })]);
+}
+
 export async function listUsers() {
   return db.user.findMany({ orderBy: { createdAt: "desc" }, select: { id: true, name: true, email: true, role: true, createdAt: true } });
 }

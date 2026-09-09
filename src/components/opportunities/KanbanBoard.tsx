@@ -10,7 +10,7 @@ type Row = {
 
 const META: Record<string, { label: string; dot: string; bar: string }> = {
   PROSPECT: { label: "Prospect", dot: "bg-gyellow", bar: "bg-gyellow" },
-  SALES: { label: "Sales", dot: "bg-gblue", bar: "bg-gblue" },
+  SALES: { label: "Sales", dot: "bg-gsales", bar: "bg-gsales" },
   CONTRACT: { label: "Contract", dot: "bg-gviolet", bar: "bg-gviolet" },
   PROJECT: { label: "Project", dot: "bg-ggreen", bar: "bg-ggreen" },
 };
@@ -23,10 +23,10 @@ export function KanbanBoard({ rows }: { rows: Row[] }) {
         const items = active.filter((r) => r.state === state);
         const m = META[state];
         return (
-          <div key={state} className="flex flex-col rounded-xl border border-gline-2 bg-gbg">
-            <div className={`h-1 rounded-t-xl ${m.bar}`} />
+          <div key={state} className="flex flex-col rounded-lg border border-gline-2 bg-gbg">
+            <div className={`h-[3px] rounded-t-lg ${m.bar}`} />
             <div className="flex items-center justify-between px-4 py-3">
-              <span className="flex items-center gap-2 text-sm font-medium text-gink">
+              <span className="flex items-center gap-2 text-sm font-semibold text-gink">
                 <span className={`h-2 w-2 rounded-full ${m.dot}`} />
                 {m.label}
               </span>
@@ -44,14 +44,14 @@ export function KanbanBoard({ rows }: { rows: Row[] }) {
                 <Link
                   key={o.id}
                   href={`/opportunities/${o.id}`}
-                  className="g-press group block rounded-xl border border-gline-2 bg-gsurface p-3.5 shadow-g1 transition-shadow hover:shadow-g2"
+                  className="group block rounded-md border border-gline-2 bg-gsurface p-3 transition-colors hover:border-gline"
                 >
-                  <div className="text-[11px] font-medium tabular-nums text-ggrey-2">{opportunityRef(o.number)}</div>
-                  <div className="text-sm font-medium text-gink group-hover:text-gblue">{o.title}</div>
+                  <div className="text-[11px] tabular-nums text-ggrey">{opportunityRef(o.number)}</div>
+                  <div className="text-sm font-semibold text-gink group-hover:text-gblue">{o.title}</div>
                   <div className="mt-0.5 text-xs text-ggrey">{o.account.name}</div>
                   <div className="mt-3 flex items-center justify-between border-t border-gline-2 pt-2.5">
-                    <span className="text-xs text-ggrey-2">Predicted GP</span>
-                    <span className="text-sm font-medium tabular-nums text-gink">
+                    <span className="text-xs text-ggrey-2">PGP</span>
+                    <span className="text-sm font-semibold tabular-nums text-gink">
                       {money(grossProfit(Number(o.revenue), Number(o.marginPct)))}
                     </span>
                   </div>

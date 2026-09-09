@@ -6,10 +6,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Segmented } from "@/components/ui/Segmented";
-import { StatStrip } from "@/components/ui/StatStrip";
 import { Icon } from "@/components/ui/Icon";
-import { grossProfit } from "@/lib/domain/finance";
-import { money } from "@/lib/format";
 import { parseSort, sortOpportunities } from "@/lib/opportunity-sort";
 
 export default async function OpportunitiesPage({ searchParams }: { searchParams: Promise<{ view?: string; sort?: string; dir?: string }> }) {
@@ -19,21 +16,10 @@ export default async function OpportunitiesPage({ searchParams }: { searchParams
   const { sort, dir } = parseSort(sortParam, dirParam);
   const sorted = sortOpportunities(rows, sort, dir);
 
-  const active = rows.filter((r) => !r.isCancelled);
-  const totalRevenue = active.reduce((s, r) => s + Number(r.revenue), 0);
-  const totalGP = active.reduce((s, r) => s + grossProfit(Number(r.revenue), Number(r.marginPct)), 0);
-
-  const stats = [
-    { label: "Open opportunities", value: String(active.length), icon: "trending_up", tint: "text-gblue" },
-    { label: "Predicted revenue", value: money(totalRevenue), icon: "payments", tint: "text-ggreen" },
-    { label: "Predicted gross profit", value: money(totalGP), icon: "savings", tint: "text-[#a36200]" },
-  ];
-
   return (
     <div className="space-y-5">
       <PageHeader
         title="Opportunities"
-        subtitle="Track every deal across your sales pipeline"
         actions={
           <>
             <Segmented
@@ -51,8 +37,6 @@ export default async function OpportunitiesPage({ searchParams }: { searchParams
           </>
         }
       />
-
-      <StatStrip stats={stats} />
 
       {isKanban ? (
         <KanbanBoard rows={rows} />

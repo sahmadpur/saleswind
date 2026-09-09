@@ -29,7 +29,7 @@ export default async function DictionaryPage() {
   const { statuses, tags, definitions } = await listVocabularies();
   return (
     <div className="space-y-8">
-      <PageHeader title="Dictionary" subtitle="Manage the vocabulary used across the pipeline" />
+      <PageHeader title="Dictionary" />
 
       <Card>
         <CardLabel>Statuses</CardLabel>
@@ -42,7 +42,7 @@ export default async function DictionaryPage() {
                   <form key={x.id} action={toggleStatusAction.bind(null, x.id)}>
                     <button
                       type="submit"
-                      className={`g-press inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                      className={`g-press inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
                         x.isActive
                           ? "bg-gblue-100 text-gblue-dark hover:bg-gblue-200"
                           : "bg-ghover text-ggrey-2 line-through hover:bg-gline-2"
@@ -58,7 +58,7 @@ export default async function DictionaryPage() {
                   <input
                     name="label"
                     placeholder="New status"
-                    className="h-8 w-32 rounded-full border border-gline bg-gsurface px-3 text-xs outline-none transition-colors hover:border-ggrey-2 focus:border-gblue focus:ring-1 focus:ring-gblue"
+                    className="h-8 w-32 rounded-md border border-gline bg-gsurface px-2.5 text-xs outline-none transition-colors hover:border-ggrey-2 focus:border-gblue focus:ring-2 focus:ring-gblue/25"
                   />
                   <Button type="submit" variant="ghost" className="h-8 px-3">Add</Button>
                 </form>
@@ -79,7 +79,7 @@ export default async function DictionaryPage() {
                   <form key={x.id} action={toggleTagAction.bind(null, x.id)}>
                     <button
                       type="submit"
-                      className={`g-press inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                      className={`g-press inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${
                         x.isActive
                           ? "border-gline bg-gsurface text-gink-2 hover:bg-ghover"
                           : "border-transparent bg-ghover text-ggrey-2 line-through"
@@ -94,7 +94,7 @@ export default async function DictionaryPage() {
                   <input
                     name="label"
                     placeholder="New tag"
-                    className="h-8 w-32 rounded-full border border-gline bg-gsurface px-3 text-xs outline-none transition-colors hover:border-ggrey-2 focus:border-gblue focus:ring-1 focus:ring-gblue"
+                    className="h-8 w-32 rounded-md border border-gline bg-gsurface px-2.5 text-xs outline-none transition-colors hover:border-ggrey-2 focus:border-gblue focus:ring-2 focus:ring-gblue/25"
                   />
                   <Button type="submit" variant="ghost" className="h-8 px-3">Add</Button>
                 </form>

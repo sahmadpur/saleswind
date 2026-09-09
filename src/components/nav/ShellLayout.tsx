@@ -4,16 +4,13 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/cn";
 import { SideNav, type NavGroup } from "@/components/nav/SideNav";
 
-function Brand() {
+function Brand({ dark = true }: { dark?: boolean }) {
   return (
     <div className="flex h-16 shrink-0 items-center gap-2.5 px-5">
-      <span
-        className="grid h-8 w-8 place-items-center rounded-lg bg-gblue text-white shadow-g1"
-        aria-hidden
-      >
-        <span className="material-symbols-outlined fill" style={{ fontSize: 20 }}>air</span>
+      <span className="grid h-7 w-7 place-items-center rounded-md bg-gblue text-white" aria-hidden>
+        <span className="material-symbols-outlined fill" style={{ fontSize: 18 }}>air</span>
       </span>
-      <span className="text-[1.375rem] font-normal tracking-tight text-ggrey">
+      <span className={cn("text-[1.0625rem] font-semibold tracking-[-0.01em]", dark ? "text-white" : "text-gink")}>
         Saleswind
       </span>
     </div>
@@ -46,7 +43,7 @@ export function ShellLayout({ groups, bell, accountMenu, children }: {
     <div className="flex min-h-screen">
       {/* Sidebar — full height, brand on top, grouped nav, account pinned at the bottom */}
       {open && (
-        <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-gline-2 bg-gsurface md:flex">
+        <aside className="sticky top-0 hidden h-screen w-[15rem] shrink-0 flex-col bg-gink md:flex">
           <Brand />
           <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-3">
             <SideNav groups={groups} />
@@ -58,7 +55,7 @@ export function ShellLayout({ groups, bell, accountMenu, children }: {
       {mobileOpen && (
         <div className="md:hidden">
           <div className="fixed inset-0 z-30 bg-black/30" onClick={() => setMobileOpen(false)} aria-hidden />
-          <aside className="fixed inset-y-0 left-0 z-40 flex w-72 flex-col bg-gsurface shadow-g2">
+          <aside className="fixed inset-y-0 left-0 z-40 flex w-72 flex-col bg-gink shadow-g3">
             <Brand />
             <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-3">
               <SideNav groups={groups} />
@@ -69,28 +66,20 @@ export function ShellLayout({ groups, bell, accountMenu, children }: {
 
       {/* Content column */}
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-gline-2 bg-gsurface px-4">
+        <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-gline-2 bg-gbg/85 px-3 backdrop-blur">
           <div className="flex items-center gap-3">
             <button
               type="button"
               aria-label="Toggle navigation"
               aria-expanded={open || mobileOpen}
               onClick={toggle}
-              className="grid h-10 w-10 place-items-center rounded-full text-ggrey transition-colors hover:bg-ghover"
+              className="grid h-9 w-9 place-items-center rounded-md text-ggrey transition-colors hover:bg-ghover hover:text-gink g-focus"
             >
               <span className="material-symbols-outlined" style={{ fontSize: 24 }}>menu</span>
             </button>
             {/* Brand lives in the sidebar; resurface it here when the sidebar is hidden */}
-            <div className={cn("flex items-center gap-2.5", open && "md:hidden")}>
-              <span
-                className="grid h-8 w-8 place-items-center rounded-lg bg-gblue text-white shadow-g1"
-                aria-hidden
-              >
-                <span className="material-symbols-outlined fill" style={{ fontSize: 20 }}>air</span>
-              </span>
-              <span className="text-[1.375rem] font-normal tracking-tight text-ggrey">
-                Saleswind
-              </span>
+            <div className={cn("-ml-5", open && "md:hidden")}>
+              <Brand dark={false} />
             </div>
           </div>
           <div className="flex items-center gap-1">
@@ -100,7 +89,7 @@ export function ShellLayout({ groups, bell, accountMenu, children }: {
           </div>
         </header>
 
-        <main className="min-w-0 flex-1 px-5 py-8 lg:px-7">
+        <main className="min-w-0 flex-1 px-5 py-7 lg:px-8">
           <div className="mx-auto max-w-[1400px]">{children}</div>
         </main>
       </div>

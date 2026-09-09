@@ -12,7 +12,7 @@ export async function GET(req: Request) {
   const opps = await opportunitiesForExport();
 
   if (format === "csv") {
-    const headers = ["Ref", "Title", "Account", "State", "Status", "Accountable", "Predicted Revenue", "Margin %", "Predicted Gross Profit", "Cancelled"];
+    const headers = ["ID", "Title", "Account", "State", "Status", "Accountable", "Predicted Revenue", "Margin %", "Predicted Gross Profit", "Cancelled"];
     const rows = opps.map((o) => [
       opportunityRef(o.number), o.title, o.account.name, o.state, o.status?.label ?? "", o.accountable.name,
       Number(o.revenue), Number(o.marginPct), grossProfit(Number(o.revenue), Number(o.marginPct)), o.isCancelled ? "Yes" : "No",

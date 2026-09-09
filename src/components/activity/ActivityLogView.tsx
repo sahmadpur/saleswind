@@ -6,7 +6,7 @@ const ICON: Record<string, { name: string; tint: string; bg: string }> = {
   created: { name: "add_circle", tint: "text-ggreen", bg: "bg-ggreen-50" },
   updated: { name: "edit", tint: "text-gblue", bg: "bg-gblue-100" },
   advance: { name: "arrow_forward", tint: "text-gblue", bg: "bg-gblue-100" },
-  back: { name: "arrow_back", tint: "text-[#a36200]", bg: "bg-gyellow-50" },
+  back: { name: "arrow_back", tint: "text-gyellow-dark", bg: "bg-gyellow-50" },
   cancel: { name: "cancel", tint: "text-gred", bg: "bg-gred-50" },
   "tag-added": { name: "label", tint: "text-gviolet", bg: "bg-gviolet-50" },
   "tag-removed": { name: "label_off", tint: "text-ggrey", bg: "bg-ghover" },
