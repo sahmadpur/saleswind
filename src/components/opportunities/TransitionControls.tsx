@@ -37,7 +37,7 @@ export function TransitionControls({ id, canAdvance, canBack, cancelled }: {
         </Button>
       )}
       {canBack && (
-        <Button variant="outline" disabled={busy} onClick={() => run("back", true)}>
+        <Button variant="outline" disabled={busy} onClick={() => run("back", false)}>
           <Icon name="arrow_back" />
           Move back
         </Button>

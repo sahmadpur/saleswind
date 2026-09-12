@@ -1,28 +1,31 @@
 import { grossProfit } from "@/lib/domain/finance";
-import { monthLabel } from "@/lib/format";
+import { ORDER } from "@/lib/domain/lifecycle";
 
-export type SortKey = "ref" | "title" | "account" | "revenue" | "margin" | "gp" | "accountable" | "created" | "modified";
+export type SortKey = "ref" | "title" | "account" | "state" | "status" | "revenue" | "margin" | "gp" | "accountable" | "modified";
 export type SortDir = "asc" | "desc";
 
-const SORT_KEYS: SortKey[] = ["ref", "title", "account", "revenue", "margin", "gp", "accountable", "created", "modified"];
+const SORT_KEYS: SortKey[] = ["ref", "title", "account", "state", "status", "revenue", "margin", "gp", "accountable", "modified"];
 
 export const DEFAULT_DIR: Record<SortKey, SortDir> = {
-  ref: "desc", title: "asc", account: "asc", accountable: "asc",
-  revenue: "desc", margin: "desc", gp: "desc", created: "desc", modified: "desc",
+  ref: "desc", title: "asc", account: "asc", state: "asc", status: "asc", accountable: "asc",
+  revenue: "desc", margin: "desc", gp: "desc", modified: "desc",
 };
 
 export function parseSort(sort?: string, dir?: string): { sort: SortKey; dir: SortDir } {
-  const s = (SORT_KEYS as string[]).includes(sort ?? "") ? (sort as SortKey) : "created";
+  const s = (SORT_KEYS as string[]).includes(sort ?? "") ? (sort as SortKey) : "modified";
   const d = dir === "asc" || dir === "desc" ? dir : DEFAULT_DIR[s];
   return { sort: s, dir: d };
 }
 
 type SortableRow = {
-  number: number; title: string; isCancelled: boolean;
+  number: number; title: string; state: string; isCancelled: boolean;
   revenue: unknown; marginPct: unknown;
-  account: { name: string }; accountable: { name: string };
-  createdAt: Date; lastModifiedAt: Date;
+  account: { name: string }; accountable: { name: string }; status: { label: string } | null;
+  lastModifiedAt: Date;
 };
+
+/** Effective pipeline state as shown in the UI: cancelled overrides the stored state. */
+export const displayState = (r: { state: string; isCancelled: boolean }) => (r.isCancelled ? "CANCELLED" : r.state);
 
 export function sortOpportunities<T extends SortableRow>(rows: T[], sort: SortKey, dir: SortDir): T[] {
   const val = (r: T): string | number => {
@@ -30,11 +33,12 @@ export function sortOpportunities<T extends SortableRow>(rows: T[], sort: SortKe
       case "ref": return r.number;
       case "title": return r.title.toLowerCase();
       case "account": return r.account.name.toLowerCase();
+      case "state": return r.isCancelled ? ORDER.length : ORDER.indexOf(r.state as (typeof ORDER)[number]);
+      case "status": return (r.status?.label ?? "").toLowerCase();
       case "accountable": return r.accountable.name.toLowerCase();
       case "revenue": return Number(r.revenue);
       case "margin": return Number(r.marginPct);
       case "gp": return grossProfit(Number(r.revenue), Number(r.marginPct));
-      case "created": return r.createdAt.getTime();
       case "modified": return r.lastModifiedAt.getTime();
     }
   };
@@ -45,24 +49,21 @@ export function sortOpportunities<T extends SortableRow>(rows: T[], sort: SortKe
   });
 }
 
-export type MonthGroup<T> = { key: string; label: string; rows: T[]; count: number; revenue: number; gp: number };
+export const FILTER_KEYS = ["state", "status", "accountable", "account"] as const;
+export type Filters = Partial<Record<(typeof FILTER_KEYS)[number], string>>;
 
-/** Group created-sorted rows into month sections. Money totals exclude cancelled rows (matching the page stats). */
-export function groupByMonth<T extends SortableRow>(rows: T[]): MonthGroup<T>[] {
-  const groups: MonthGroup<T>[] = [];
-  let current: MonthGroup<T> | null = null;
-  for (const r of rows) {
-    const key = `${r.createdAt.getFullYear()}-${r.createdAt.getMonth()}`;
-    if (!current || current.key !== key) {
-      current = { key, label: monthLabel(r.createdAt), rows: [], count: 0, revenue: 0, gp: 0 };
-      groups.push(current);
-    }
-    current.rows.push(r);
-    current.count += 1;
-    if (!r.isCancelled) {
-      current.revenue += Number(r.revenue);
-      current.gp += grossProfit(Number(r.revenue), Number(r.marginPct));
-    }
-  }
-  return groups;
+export function parseFilters(q: Record<string, string | undefined>): Filters {
+  const f: Filters = {};
+  for (const k of FILTER_KEYS) if (q[k]) f[k] = q[k];
+  return f;
+}
+
+export function filterOpportunities<T extends SortableRow>(rows: T[], f: Filters): T[] {
+  return rows.filter(
+    (r) =>
+      (!f.state || displayState(r) === f.state) &&
+      (!f.status || r.status?.label === f.status) &&
+      (!f.accountable || r.accountable.name === f.accountable) &&
+      (!f.account || r.account.name === f.account),
+  );
 }

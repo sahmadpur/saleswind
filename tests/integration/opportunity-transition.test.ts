@@ -27,11 +27,10 @@ describe("transitionOpportunity", () => {
     await transitionOpportunity(o.id, "advance", userId);
     await expect(transitionOpportunity(o.id, "advance", userId)).rejects.toThrow();
   });
-  it("requires a reason to move back", async () => {
+  it("moves back without a reason", async () => {
     const o = await createOpportunity({ accountId, title: "T", accountableId: userId, revenue: 1, marginPct: 1 }, userId);
     await transitionOpportunity(o.id, "advance", userId);
-    await expect(transitionOpportunity(o.id, "back", userId)).rejects.toThrow("reason");
-    const r = await transitionOpportunity(o.id, "back", userId, "wrong stage");
+    const r = await transitionOpportunity(o.id, "back", userId);
     expect(r.state).toBe("PROSPECT");
   });
   it("cancels with a reason from any state", async () => {

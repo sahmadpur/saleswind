@@ -13,10 +13,6 @@ export function shortDate(d: Date): string {
   return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "2-digit" }).format(d);
 }
 
-export function monthLabel(d: Date): string {
-  return new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(d);
-}
-
 export function relativeTime(d: Date): string {
   const diff = Date.now() - d.getTime();
   const mins = Math.round(diff / 60000);

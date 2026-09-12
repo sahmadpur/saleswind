@@ -1,21 +1,31 @@
 import { test, expect } from "@playwright/test";
 
-test("pipeline feedback batch: month groups, sorting, row click, menu toggle, account notes", async ({ page }) => {
+test("pipeline feedback batch: sorting, filters, row click, menu toggle, account notes", async ({ page }) => {
   await page.goto("/login");
   await page.fill('input[name="email"]', "admin@saleswind.local");
   await page.fill('input[name="password"]', "admin1234");
   await page.click('button[type="submit"]');
   await expect(page).toHaveURL(/opportunities/);
 
-  // Default table groups by created month, with per-month predicted totals
-  await expect(page.getByText(/predicted revenue ·/).first()).toBeVisible();
+  // Flat table: no Created column, no month group rows
   await expect(page.locator("th", { hasText: "Accountable" })).toBeVisible();
+  await expect(page.locator("th", { hasText: "Created" })).toHaveCount(0);
+  await expect(page.getByText(/predicted revenue ·/)).toHaveCount(0);
 
-  // Sorting via column header: URL params set, month sections collapse into a flat table
+  // Sorting via column header: URL params set
   await page.click('th a:has-text("PR")');
   await expect(page).toHaveURL(/sort=revenue/);
   await expect(page).toHaveURL(/dir=desc/);
-  await expect(page.getByText(/predicted revenue ·/)).toHaveCount(0);
+
+  // Filtering by state: URL param set, every row shows that state, sort survives, Clear resets
+  await page.getByLabel("State").selectOption("SALES");
+  await expect(page).toHaveURL(/state=SALES/);
+  await expect(page).toHaveURL(/sort=revenue/);
+  const pills = page.locator("tbody tr td:nth-child(4)");
+  await expect(pills.first()).toBeVisible();
+  for (const t of await pills.allInnerTexts()) expect(t.trim()).toBe("Sales");
+  await page.click('button:has-text("Clear")');
+  await expect(page).not.toHaveURL(/state=/);
 
   // Clicking anywhere on a row (not just the title link) opens the detail page
   await page.locator("tbody tr").first().locator("td").nth(2).click();

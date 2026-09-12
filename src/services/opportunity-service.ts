@@ -89,7 +89,6 @@ export async function transitionOpportunity(id: string, kind: TransitionKind, us
       if (!canAdvance(o.state)) throw new Error("Cannot advance past the final state");
       newState = nextState(o.state)!;
     } else if (kind === "back") {
-      if (!reason) throw new Error("A reason is required to move back");
       if (!canMoveBack(o.state)) throw new Error("Cannot move back from the first state");
       newState = prevState(o.state)!;
     } else {
