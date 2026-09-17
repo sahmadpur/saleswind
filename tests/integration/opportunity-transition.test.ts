@@ -18,7 +18,7 @@ describe("transitionOpportunity", () => {
   it("advances one step and logs it", async () => {
     const o = await createOpportunity({ accountId, title: "T", accountableId: userId, revenue: 1, marginPct: 1 }, userId);
     const r = await transitionOpportunity(o.id, "advance", userId);
-    expect(r.state).toBe("SALES");
+    expect(r.stage).toBe("SALES");
   });
   it("rejects advancing past PROJECT", async () => {
     const o = await createOpportunity({ accountId, title: "T", accountableId: userId, revenue: 1, marginPct: 1 }, userId);
@@ -31,9 +31,9 @@ describe("transitionOpportunity", () => {
     const o = await createOpportunity({ accountId, title: "T", accountableId: userId, revenue: 1, marginPct: 1 }, userId);
     await transitionOpportunity(o.id, "advance", userId);
     const r = await transitionOpportunity(o.id, "back", userId);
-    expect(r.state).toBe("PROSPECT");
+    expect(r.stage).toBe("PROSPECT");
   });
-  it("cancels with a reason from any state", async () => {
+  it("cancels with a reason from any stage", async () => {
     const o = await createOpportunity({ accountId, title: "T", accountableId: userId, revenue: 1, marginPct: 1 }, userId);
     const r = await transitionOpportunity(o.id, "cancel", userId, "lost");
     expect(r.isCancelled).toBe(true);

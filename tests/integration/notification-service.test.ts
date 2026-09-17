@@ -8,7 +8,7 @@ beforeAll(async () => {
   const u = await db.user.create({ data: { name: "T", email: `n${Date.now()}@x.com`, passwordHash: "x", role: "AGENT" } });
   userId = u.id;
   await db.notification.createMany({ data: [
-    { userId, type: "state", message: "a" },
+    { userId, type: "stage", message: "a" },
     { userId, type: "comment", message: "b" },
   ] });
 });

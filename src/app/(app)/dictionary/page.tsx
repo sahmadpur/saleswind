@@ -6,20 +6,20 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { PageHeader } from "@/components/ui/PageHeader";
 
-const STATES = ["PROSPECT", "SALES", "CONTRACT", "PROJECT"] as const;
+const STAGES = ["PROSPECT", "SALES", "CONTRACT", "PROJECT"] as const;
 
-const STATE_DOT: Record<string, string> = {
+const STAGE_DOT: Record<string, string> = {
   PROSPECT: "bg-gyellow",
   SALES: "bg-gblue",
   CONTRACT: "bg-gviolet",
   PROJECT: "bg-ggreen",
 };
 
-function StateLabel({ state }: { state: string }) {
+function StageLabel({ stage }: { stage: string }) {
   return (
     <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-ggrey">
-      <span className={`h-1.5 w-1.5 rounded-full ${STATE_DOT[state]}`} />
-      {state}
+      <span className={`h-1.5 w-1.5 rounded-full ${STAGE_DOT[stage]}`} />
+      {stage}
     </div>
   );
 }
@@ -34,11 +34,11 @@ export default async function DictionaryPage() {
       <Card>
         <CardLabel>Statuses</CardLabel>
         <div className="grid gap-6 sm:grid-cols-2">
-          {STATES.map((s) => (
+          {STAGES.map((s) => (
             <div key={s}>
-              <StateLabel state={s} />
+              <StageLabel stage={s} />
               <div className="flex flex-wrap items-center gap-2">
-                {statuses.filter((x) => x.state === s).map((x) => (
+                {statuses.filter((x) => x.stage === s).map((x) => (
                   <form key={x.id} action={toggleStatusAction.bind(null, x.id)}>
                     <button
                       type="submit"
@@ -54,7 +54,7 @@ export default async function DictionaryPage() {
                   </form>
                 ))}
                 <form action={addStatusAction} className="flex items-center gap-1.5">
-                  <input type="hidden" name="state" value={s} />
+                  <input type="hidden" name="stage" value={s} />
                   <input
                     name="label"
                     placeholder="New status"
@@ -71,11 +71,11 @@ export default async function DictionaryPage() {
       <Card>
         <CardLabel>Tags</CardLabel>
         <div className="grid gap-6 sm:grid-cols-2">
-          {STATES.map((s) => (
+          {STAGES.map((s) => (
             <div key={s}>
-              <StateLabel state={s} />
+              <StageLabel stage={s} />
               <div className="flex flex-wrap items-center gap-2">
-                {tags.filter((x) => x.state === s).map((x) => (
+                {tags.filter((x) => x.stage === s).map((x) => (
                   <form key={x.id} action={toggleTagAction.bind(null, x.id)}>
                     <button
                       type="submit"
@@ -90,7 +90,7 @@ export default async function DictionaryPage() {
                   </form>
                 ))}
                 <form action={addTagAction} className="flex items-center gap-1.5">
-                  <input type="hidden" name="state" value={s} />
+                  <input type="hidden" name="stage" value={s} />
                   <input
                     name="label"
                     placeholder="New tag"

@@ -1,21 +1,21 @@
-import type { State } from "@prisma/client";
+import type { Stage } from "@prisma/client";
 
-export const ORDER: readonly State[] = ["PROSPECT", "SALES", "CONTRACT", "PROJECT"];
+export const ORDER: readonly Stage[] = ["PROSPECT", "SALES", "CONTRACT", "PROJECT"];
 
-export function nextState(s: State): State | null {
+export function nextStage(s: Stage): Stage | null {
   const i = ORDER.indexOf(s);
   return i >= 0 && i < ORDER.length - 1 ? ORDER[i + 1] : null;
 }
 
-export function prevState(s: State): State | null {
+export function prevStage(s: Stage): Stage | null {
   const i = ORDER.indexOf(s);
   return i > 0 ? ORDER[i - 1] : null;
 }
 
-export function canAdvance(s: State): boolean {
-  return nextState(s) !== null;
+export function canAdvance(s: Stage): boolean {
+  return nextStage(s) !== null;
 }
 
-export function canMoveBack(s: State): boolean {
-  return prevState(s) !== null;
+export function canMoveBack(s: Stage): boolean {
+  return prevStage(s) !== null;
 }

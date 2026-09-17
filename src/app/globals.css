@@ -4,7 +4,7 @@
   --font-sans: var(--font-plex), "IBM Plex Sans", "Helvetica Neue", system-ui, sans-serif;
 
   /* Palette. Token names are historical (g = the original Google theme); values are Saleswind's own.
-     gblue = the teal accent, gyellow/gblue/gviolet/ggreen/gred = pipeline state colours. */
+     gblue = the teal accent, gyellow/gblue/gviolet/ggreen/gred = pipeline stage colours. */
   --color-gblue: #0f766e;
   --color-gblue-hover: #115e59;
   --color-gblue-dark: #134e4a;

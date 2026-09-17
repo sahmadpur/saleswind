@@ -16,9 +16,9 @@ afterAll(async () => {
 });
 
 describe("report-service", () => {
-  it("summarizes pipeline by state with revenue and gross profit", async () => {
+  it("summarizes pipeline by stage with revenue and gross profit", async () => {
     const summary = await pipelineSummary();
-    const prospect = summary.find((s) => s.state === "PROSPECT");
+    const prospect = summary.find((s) => s.stage === "PROSPECT");
     expect(prospect?.count).toBeGreaterThanOrEqual(1);
     expect(prospect?.revenue).toBeGreaterThanOrEqual(100000);
     expect(prospect?.grossProfit).toBeGreaterThanOrEqual(30000);

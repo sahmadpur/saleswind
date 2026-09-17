@@ -1,23 +1,23 @@
 import { describe, it, expect } from "vitest";
-import { ORDER, nextState, prevState, canAdvance, canMoveBack } from "@/lib/domain/lifecycle";
+import { ORDER, nextStage, prevStage, canAdvance, canMoveBack } from "@/lib/domain/lifecycle";
 
 describe("lifecycle", () => {
-  it("defines the state order", () => {
+  it("defines the stage order", () => {
     expect(ORDER).toEqual(["PROSPECT", "SALES", "CONTRACT", "PROJECT"]);
   });
   it("advances one step", () => {
-    expect(nextState("PROSPECT")).toBe("SALES");
-    expect(nextState("PROJECT")).toBeNull();
+    expect(nextStage("PROSPECT")).toBe("SALES");
+    expect(nextStage("PROJECT")).toBeNull();
   });
   it("moves back one step", () => {
-    expect(prevState("SALES")).toBe("PROSPECT");
-    expect(prevState("PROSPECT")).toBeNull();
+    expect(prevStage("SALES")).toBe("PROSPECT");
+    expect(prevStage("PROSPECT")).toBeNull();
   });
-  it("cannot advance past the last state", () => {
+  it("cannot advance past the last stage", () => {
     expect(canAdvance("PROJECT")).toBe(false);
     expect(canAdvance("SALES")).toBe(true);
   });
-  it("cannot move back from the first state", () => {
+  it("cannot move back from the first stage", () => {
     expect(canMoveBack("PROSPECT")).toBe(false);
     expect(canMoveBack("CONTRACT")).toBe(true);
   });

@@ -15,7 +15,7 @@ enum Role {
   AGENT
 }
 
-enum State {
+enum Stage {
   PROSPECT
   SALES
   CONTRACT
@@ -54,22 +54,22 @@ model Account {
 
 model Status {
   id       String  @id @default(cuid())
-  state    State
+  stage    Stage
   label    String
   isActive Boolean @default(true)
 
   opportunities Opportunity[]
-  @@unique([state, label])
+  @@unique([stage, label])
 }
 
 model Tag {
   id       String  @id @default(cuid())
-  state    State
+  stage    Stage
   label    String
   isActive Boolean @default(true)
 
   opportunityTags OpportunityTag[]
-  @@unique([state, label])
+  @@unique([stage, label])
 }
 
 model Opportunity {
@@ -79,7 +79,7 @@ model Opportunity {
   title            String
   description      String?
   accountableId    String
-  state            State    @default(PROSPECT)
+  stage            Stage    @default(PROSPECT)
   statusId         String?
   revenue          Decimal  @default(0) @db.Decimal(14, 2)
   marginPct        Decimal  @default(0) @db.Decimal(5, 2)

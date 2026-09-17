@@ -12,9 +12,9 @@ export async function GET(req: Request) {
   const opps = await opportunitiesForExport();
 
   if (format === "csv") {
-    const headers = ["ID", "Title", "Account", "State", "Status", "Accountable", "Predicted Revenue", "Margin %", "Predicted Gross Profit", "Cancelled"];
+    const headers = ["ID", "Title", "Account", "Stage", "Status", "Accountable", "Predicted Revenue", "Margin %", "Predicted Gross Profit", "Cancelled"];
     const rows = opps.map((o) => [
-      opportunityRef(o.number), o.title, o.account.name, o.state, o.status?.label ?? "", o.accountable.name,
+      opportunityRef(o.number), o.title, o.account.name, o.stage, o.status?.label ?? "", o.accountable.name,
       Number(o.revenue), Number(o.marginPct), grossProfit(Number(o.revenue), Number(o.marginPct)), o.isCancelled ? "Yes" : "No",
     ]);
     return new NextResponse(toCsv(headers, rows), {
@@ -30,10 +30,10 @@ export async function GET(req: Request) {
   const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
   page.drawText("Saleswind - Pipeline Report", { x: 50, y: 790, size: 18, font: bold });
   let y = 740;
-  page.drawText("State        Count     Pred. Revenue  Pred. Gross Profit", { x: 50, y, size: 12, font: bold });
+  page.drawText("Stage        Count     Pred. Revenue  Pred. Gross Profit", { x: 50, y, size: 12, font: bold });
   y -= 24;
   for (const s of summary) {
-    page.drawText(`${s.state.padEnd(12)} ${String(s.count).padEnd(8)} ${s.revenue.toFixed(2).padEnd(14)} ${s.grossProfit.toFixed(2)}`, { x: 50, y, size: 11, font });
+    page.drawText(`${s.stage.padEnd(12)} ${String(s.count).padEnd(8)} ${s.revenue.toFixed(2).padEnd(14)} ${s.grossProfit.toFixed(2)}`, { x: 50, y, size: 11, font });
     y -= 20;
   }
   const bytes = await pdf.save();

@@ -54,12 +54,12 @@ export default async function ReportsPage() {
       />
 
       <Card>
-        <CardLabel>Pipeline by state</CardLabel>
+        <CardLabel>Pipeline by stage</CardLabel>
         <div className="space-y-5">
           {summary.map((s) => {
-            const m = META[s.state] ?? { label: s.state, bar: "bg-ggrey-2", dot: "bg-ggrey-2" };
+            const m = META[s.stage] ?? { label: s.stage, bar: "bg-ggrey-2", dot: "bg-ggrey-2" };
             return (
-              <div key={s.state} className="flex items-center gap-4">
+              <div key={s.stage} className="flex items-center gap-4">
                 <div className="flex w-28 items-center gap-2 text-sm text-gink">
                   <span className={`h-2 w-2 rounded-full ${m.dot}`} />
                   {m.label}

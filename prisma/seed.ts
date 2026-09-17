@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { PrismaClient, State } from "@prisma/client";
+import { PrismaClient, Stage } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import bcrypt from "bcryptjs";
 
@@ -17,14 +17,14 @@ function pgConfig() {
 const adapter = new PrismaPg(pgConfig());
 const db = new PrismaClient({ adapter });
 
-const STATUSES: Record<State, string[]> = {
+const STATUSES: Record<Stage, string[]> = {
   PROSPECT: ["Not Started", "Cancelled", "In Progress"],
   SALES: ["In Progress", "Cancelled", "Lost", "Pending"],
   CONTRACT: ["In Progress", "Cancelled", "Delayed", "Pending"],
   PROJECT: ["In Progress", "Cancelled"],
 };
 
-const TAGS: Record<State, string[]> = {
+const TAGS: Record<Stage, string[]> = {
   PROSPECT: ["Researching", "Initial Contract", "Mail sent", "Working with other partner", "Hard to get in", "Contact attempted", "Lead is not defined", "High Chance", "Low Chance"],
   SALES: ["Contact Attempted", "Presentation Sent", "Meeting Completed", "Qualification", "Unresponsive", "Waiting for response", "Mostly Negative", "Mostly Positive", "High Chances", "Demo", "Lead is defined"],
   CONTRACT: ["Contract Signed", "Implementation Planned", "Onboarding Started", "Closed Won", "Lost to Competitor", "Budget Unavailable", "No Decision", "Client Cancelled", "Requirements Changed", "Closed Lost", "Won", "Lost"],
@@ -62,12 +62,12 @@ async function main() {
   // owners[0]=admin, [1]=manager, [2..]=agents — rotated across opportunities.
   const owners = [admin, ...members];
 
-  for (const state of Object.values(State)) {
-    for (const label of STATUSES[state]) {
-      await db.status.upsert({ where: { state_label: { state, label } }, update: {}, create: { state, label } });
+  for (const stage of Object.values(Stage)) {
+    for (const label of STATUSES[stage]) {
+      await db.status.upsert({ where: { stage_label: { stage, label } }, update: {}, create: { stage, label } });
     }
-    for (const label of TAGS[state]) {
-      await db.tag.upsert({ where: { state_label: { state, label } }, update: {}, create: { state, label } });
+    for (const label of TAGS[stage]) {
+      await db.tag.upsert({ where: { stage_label: { stage, label } }, update: {}, create: { stage, label } });
     }
   }
 
@@ -90,10 +90,10 @@ async function main() {
 
   const statuses = await db.status.findMany();
   const tags = await db.tag.findMany();
-  const statusId = (state: State, label: string) =>
-    statuses.find((s) => s.state === state && s.label === label)?.id ?? null;
-  const tagId = (state: State, label: string) =>
-    tags.find((t) => t.state === state && t.label === label)?.id ?? null;
+  const statusId = (stage: Stage, label: string) =>
+    statuses.find((s) => s.stage === stage && s.label === label)?.id ?? null;
+  const tagId = (stage: Stage, label: string) =>
+    tags.find((t) => t.stage === stage && t.label === label)?.id ?? null;
 
   const accountSpecs = [
     { name: "Northwind Traders", industry: "Wholesale", website: "https://northwind.example", contact: "Pia Brandt", phone: "+49 30 1234 5670" },
@@ -132,7 +132,7 @@ async function main() {
     owner: number;
     title: string;
     description: string;
-    state: State;
+    stage: Stage;
     status: string;
     revenue: number;
     marginPct: number;
@@ -142,23 +142,23 @@ async function main() {
   };
   const oppSpecs: OppSpec[] = [
     // PROSPECT
-    { account: 0, owner: 2, title: "Northwind — warehouse rollout", description: "Evaluating Saleswind for their distribution arm.", state: "PROSPECT", status: "In Progress", revenue: 48000, marginPct: 35, tags: ["Researching", "High Chance"] },
-    { account: 2, owner: 3, title: "Brightline — content team pilot", description: "Initial outreach to the editorial group.", state: "PROSPECT", status: "Not Started", revenue: 22000, marginPct: 40, tags: ["Mail sent"] },
-    { account: 6, owner: 4, title: "Vertex — developer tooling", description: "Inbound lead from the engineering org.", state: "PROSPECT", status: "In Progress", revenue: 75000, marginPct: 45, tags: ["Initial Contract", "High Chance"] },
-    { account: 10, owner: 1, title: "Polaris — campus license", description: "Exploring a campus-wide deployment.", state: "PROSPECT", status: "Cancelled", revenue: 30000, marginPct: 30, isCancelled: true, lastReason: "Budget cycle closed for the year.", tags: ["Low Chance"] },
+    { account: 0, owner: 2, title: "Northwind — warehouse rollout", description: "Evaluating Saleswind for their distribution arm.", stage: "PROSPECT", status: "In Progress", revenue: 48000, marginPct: 35, tags: ["Researching", "High Chance"] },
+    { account: 2, owner: 3, title: "Brightline — content team pilot", description: "Initial outreach to the editorial group.", stage: "PROSPECT", status: "Not Started", revenue: 22000, marginPct: 40, tags: ["Mail sent"] },
+    { account: 6, owner: 4, title: "Vertex — developer tooling", description: "Inbound lead from the engineering org.", stage: "PROSPECT", status: "In Progress", revenue: 75000, marginPct: 45, tags: ["Initial Contract", "High Chance"] },
+    { account: 10, owner: 1, title: "Polaris — campus license", description: "Exploring a campus-wide deployment.", stage: "PROSPECT", status: "Cancelled", revenue: 30000, marginPct: 30, isCancelled: true, lastReason: "Budget cycle closed for the year.", tags: ["Low Chance"] },
     // SALES
-    { account: 1, owner: 2, title: "Helios — production line analytics", description: "Demo delivered to operations leadership.", state: "SALES", status: "In Progress", revenue: 120000, marginPct: 38, tags: ["Demo", "Mostly Positive"] },
-    { account: 4, owner: 3, title: "Quanta — compliance reporting", description: "Working through procurement requirements.", state: "SALES", status: "Pending", revenue: 95000, marginPct: 42, tags: ["Waiting for response", "High Chances"] },
-    { account: 8, owner: 4, title: "Orchard — store network rollout", description: "Multi-region expansion under discussion.", state: "SALES", status: "In Progress", revenue: 64000, marginPct: 33, tags: ["Presentation Sent", "Qualification"] },
-    { account: 5, owner: 1, title: "Atlas — fleet tracking", description: "Lost momentum after reorg.", state: "SALES", status: "Lost", revenue: 40000, marginPct: 30, isCancelled: true, lastReason: "Chose an in-house build.", tags: ["Unresponsive"] },
+    { account: 1, owner: 2, title: "Helios — production line analytics", description: "Demo delivered to operations leadership.", stage: "SALES", status: "In Progress", revenue: 120000, marginPct: 38, tags: ["Demo", "Mostly Positive"] },
+    { account: 4, owner: 3, title: "Quanta — compliance reporting", description: "Working through procurement requirements.", stage: "SALES", status: "Pending", revenue: 95000, marginPct: 42, tags: ["Waiting for response", "High Chances"] },
+    { account: 8, owner: 4, title: "Orchard — store network rollout", description: "Multi-region expansion under discussion.", stage: "SALES", status: "In Progress", revenue: 64000, marginPct: 33, tags: ["Presentation Sent", "Qualification"] },
+    { account: 5, owner: 1, title: "Atlas — fleet tracking", description: "Lost momentum after reorg.", stage: "SALES", status: "Lost", revenue: 40000, marginPct: 30, isCancelled: true, lastReason: "Chose an in-house build.", tags: ["Unresponsive"] },
     // CONTRACT
-    { account: 3, owner: 2, title: "Cedar & Stone — annual platform", description: "Contract in legal review.", state: "CONTRACT", status: "In Progress", revenue: 88000, marginPct: 36, tags: ["Contract Signed", "Implementation Planned"] },
-    { account: 7, owner: 3, title: "Maple — enterprise agreement", description: "Closed won, onboarding scheduled.", state: "CONTRACT", status: "In Progress", revenue: 156000, marginPct: 44, tags: ["Closed Won", "Onboarding Started"] },
-    { account: 9, owner: 4, title: "BlueGrid — pilot to production", description: "Delayed pending security sign-off.", state: "CONTRACT", status: "Delayed", revenue: 110000, marginPct: 41, tags: ["Requirements Changed"] },
+    { account: 3, owner: 2, title: "Cedar & Stone — annual platform", description: "Contract in legal review.", stage: "CONTRACT", status: "In Progress", revenue: 88000, marginPct: 36, tags: ["Contract Signed", "Implementation Planned"] },
+    { account: 7, owner: 3, title: "Maple — enterprise agreement", description: "Closed won, onboarding scheduled.", stage: "CONTRACT", status: "In Progress", revenue: 156000, marginPct: 44, tags: ["Closed Won", "Onboarding Started"] },
+    { account: 9, owner: 4, title: "BlueGrid — pilot to production", description: "Delayed pending security sign-off.", stage: "CONTRACT", status: "Delayed", revenue: 110000, marginPct: 41, tags: ["Requirements Changed"] },
     // PROJECT
-    { account: 1, owner: 2, title: "Helios — phase 2 deployment", description: "Implementation underway across two plants.", state: "PROJECT", status: "In Progress", revenue: 120000, marginPct: 38, tags: ["Delayed Internally"] },
-    { account: 11, owner: 3, title: "Tidewater — rollout", description: "Project kickoff completed.", state: "PROJECT", status: "In Progress", revenue: 72000, marginPct: 35, tags: ["Waiting for Future Opportunity"] },
-    { account: 7, owner: 4, title: "Maple — onboarding project", description: "Onboarding the finance team.", state: "PROJECT", status: "In Progress", revenue: 156000, marginPct: 44, tags: ["Budget Frozen"] },
+    { account: 1, owner: 2, title: "Helios — phase 2 deployment", description: "Implementation underway across two plants.", stage: "PROJECT", status: "In Progress", revenue: 120000, marginPct: 38, tags: ["Delayed Internally"] },
+    { account: 11, owner: 3, title: "Tidewater — rollout", description: "Project kickoff completed.", stage: "PROJECT", status: "In Progress", revenue: 72000, marginPct: 35, tags: ["Waiting for Future Opportunity"] },
+    { account: 7, owner: 4, title: "Maple — onboarding project", description: "Onboarding the finance team.", stage: "PROJECT", status: "In Progress", revenue: 156000, marginPct: 44, tags: ["Budget Frozen"] },
   ];
 
   const opps = [];
@@ -170,8 +170,8 @@ async function main() {
         title: o.title,
         description: o.description,
         accountableId: owner.id,
-        state: o.state,
-        statusId: statusId(o.state, o.status),
+        stage: o.stage,
+        statusId: statusId(o.stage, o.status),
         revenue: o.revenue,
         marginPct: o.marginPct,
         isCancelled: o.isCancelled ?? false,
@@ -181,12 +181,12 @@ async function main() {
       },
     });
     opps.push(opp);
-    const tagIds = o.tags.map((label) => tagId(o.state, label)).filter((id): id is string => !!id);
+    const tagIds = o.tags.map((label) => tagId(o.stage, label)).filter((id): id is string => !!id);
     if (tagIds.length) {
       await db.opportunityTag.createMany({ data: tagIds.map((tagId) => ({ opportunityId: opp.id, tagId })) });
     }
     await db.activityLog.create({
-      data: { opportunityId: opp.id, userId: owner.id, actionType: "created", fieldChanged: "state", oldValue: null, newValue: o.state },
+      data: { opportunityId: opp.id, userId: owner.id, actionType: "created", fieldChanged: "stage", oldValue: null, newValue: o.stage },
     });
   }
 
@@ -205,7 +205,7 @@ async function main() {
     data: [
       { userId: admin.id, opportunityId: opps[1].id, type: "assigned", message: `New opportunity created: ${opps[1].title}` },
       { userId: owners[1].id, opportunityId: opps[4].id, type: "comment", message: "New comment on Helios — production line analytics" },
-      { userId: owners[1].id, opportunityId: opps[8].id, type: "state_change", message: "Cedar & Stone moved to Contract" },
+      { userId: owners[1].id, opportunityId: opps[8].id, type: "stage", message: "Cedar & Stone moved to Contract" },
       { userId: admin.id, opportunityId: opps[7].id, type: "cancelled", message: "Atlas — fleet tracking was cancelled" },
     ],
   });

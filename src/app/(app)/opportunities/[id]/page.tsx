@@ -5,7 +5,7 @@ import { requireUser } from "@/lib/session";
 import { getOpportunity } from "@/services/opportunity-service";
 import { updateOpportunityAction } from "@/actions/opportunity-actions";
 import { canAdvance, canMoveBack } from "@/lib/domain/lifecycle";
-import { StateStepper } from "@/components/opportunities/StateStepper";
+import { StageStepper } from "@/components/opportunities/StageStepper";
 import { TransitionControls } from "@/components/opportunities/TransitionControls";
 import { OpportunityEditForm } from "@/components/opportunities/OpportunityEditForm";
 import { TagPicker } from "@/components/opportunities/TagPicker";
@@ -24,8 +24,8 @@ export default async function OpportunityDetail({ params }: { params: Promise<{ 
   if (!o) notFound();
 
   const [statuses, tags, users] = await Promise.all([
-    db.status.findMany({ where: { state: o.state, isActive: true }, orderBy: { label: "asc" } }),
-    db.tag.findMany({ where: { state: o.state, isActive: true }, orderBy: { label: "asc" } }),
+    db.status.findMany({ where: { stage: o.stage, isActive: true }, orderBy: { label: "asc" } }),
+    db.tag.findMany({ where: { stage: o.stage, isActive: true }, orderBy: { label: "asc" } }),
     db.user.findMany({ orderBy: { name: "asc" } }),
   ]);
   const attached = new Set(o.tags.map((t) => t.tag.id));
@@ -45,7 +45,7 @@ export default async function OpportunityDetail({ params }: { params: Promise<{ 
           <span className="block text-sm tabular-nums text-ggrey">{opportunityRef(o.number)}</span>
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-semibold leading-tight tracking-[-0.015em] text-gink">{o.title}</h1>
-            <Pill state={o.isCancelled ? "CANCELLED" : o.state} />
+            <Pill stage={o.isCancelled ? "CANCELLED" : o.stage} />
           </div>
           <div className="flex items-center gap-2 text-sm text-ggrey">
             <span className="material-symbols-outlined" style={{ fontSize: 18 }}>domain</span>
@@ -68,9 +68,9 @@ export default async function OpportunityDetail({ params }: { params: Promise<{ 
       </div>
 
       <Card className="space-y-5">
-        <StateStepper state={o.state} cancelled={o.isCancelled} />
+        <StageStepper stage={o.stage} cancelled={o.isCancelled} />
         <div className="border-t border-gline-2 pt-4">
-          <TransitionControls id={o.id} canAdvance={canAdvance(o.state)} canBack={canMoveBack(o.state)} cancelled={o.isCancelled} />
+          <TransitionControls id={o.id} canAdvance={canAdvance(o.stage)} canBack={canMoveBack(o.stage)} cancelled={o.isCancelled} />
         </div>
       </Card>
 

@@ -9,7 +9,7 @@ beforeAll(async () => {
   const u = await db.user.create({ data: { name: "T", email: `tag${Date.now()}@x.com`, passwordHash: "x", role: "AGENT" } });
   userId = u.id;
   accountId = (await db.account.create({ data: { name: "A", createdById: userId } })).id;
-  tagId = (await db.tag.create({ data: { state: "PROSPECT", label: `Tag${Date.now()}` } })).id;
+  tagId = (await db.tag.create({ data: { stage: "PROSPECT", label: `Tag${Date.now()}` } })).id;
 });
 afterAll(async () => {
   await db.activityLog.deleteMany(); await db.opportunityTag.deleteMany(); await db.opportunity.deleteMany();

@@ -4,7 +4,7 @@ import { grossProfit } from "@/lib/domain/finance";
 import { money, opportunityRef } from "@/lib/format";
 
 type Row = {
-  id: string; number: number; title: string; state: string; isCancelled: boolean;
+  id: string; number: number; title: string; stage: string; isCancelled: boolean;
   revenue: unknown; marginPct: unknown; account: { name: string };
 };
 
@@ -19,11 +19,11 @@ export function KanbanBoard({ rows }: { rows: Row[] }) {
   const active = rows.filter((r) => !r.isCancelled);
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      {ORDER.map((state) => {
-        const items = active.filter((r) => r.state === state);
-        const m = META[state];
+      {ORDER.map((stage) => {
+        const items = active.filter((r) => r.stage === stage);
+        const m = META[stage];
         return (
-          <div key={state} className="flex flex-col rounded-lg border border-gline-2 bg-gbg">
+          <div key={stage} className="flex flex-col rounded-lg border border-gline-2 bg-gbg">
             <div className={`h-[3px] rounded-t-lg ${m.bar}`} />
             <div className="flex items-center justify-between px-4 py-3">
               <span className="flex items-center gap-2 text-sm font-semibold text-gink">

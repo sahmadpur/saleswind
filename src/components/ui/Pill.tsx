@@ -1,6 +1,6 @@
 import { cn } from "@/lib/cn";
 
-const STATE_STYLES: Record<string, { wrap: string; dot: string }> = {
+const STAGE_STYLES: Record<string, { wrap: string; dot: string }> = {
   PROSPECT: { wrap: "bg-gyellow-50 text-gyellow-dark", dot: "bg-gyellow" },
   SALES: { wrap: "bg-gsales-50 text-gsales", dot: "bg-gsales" },
   CONTRACT: { wrap: "bg-gviolet-50 text-gviolet", dot: "bg-gviolet" },
@@ -8,8 +8,8 @@ const STATE_STYLES: Record<string, { wrap: string; dot: string }> = {
   CANCELLED: { wrap: "bg-gred-50 text-gred", dot: "bg-gred" },
 };
 
-export function Pill({ state }: { state: string }) {
-  const s = STATE_STYLES[state] ?? { wrap: "bg-ghover text-ggrey", dot: "bg-ggrey-2" };
+export function Pill({ stage }: { stage: string }) {
+  const s = STAGE_STYLES[stage] ?? { wrap: "bg-ghover text-ggrey", dot: "bg-ggrey-2" };
   return (
     <span
       className={cn(
@@ -18,7 +18,7 @@ export function Pill({ state }: { state: string }) {
       )}
     >
       <span className={cn("h-1.5 w-1.5 rounded-full", s.dot)} />
-      {state.charAt(0) + state.slice(1).toLowerCase()}
+      {stage.charAt(0) + stage.slice(1).toLowerCase()}
     </span>
   );
 }

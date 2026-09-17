@@ -3,8 +3,8 @@ import { cn } from "@/lib/cn";
 
 const LABEL: Record<string, string> = { PROSPECT: "Prospect", SALES: "Sales", CONTRACT: "Contract", PROJECT: "Project" };
 
-export function StateStepper({ state, cancelled }: { state: string; cancelled: boolean }) {
-  const currentIdx = ORDER.indexOf(state as (typeof ORDER)[number]);
+export function StageStepper({ stage, cancelled }: { stage: string; cancelled: boolean }) {
+  const currentIdx = ORDER.indexOf(stage as (typeof ORDER)[number]);
   return (
     <div className="flex items-center">
       {ORDER.map((s, i) => {

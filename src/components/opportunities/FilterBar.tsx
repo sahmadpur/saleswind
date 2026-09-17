@@ -7,7 +7,7 @@ import { FILTER_KEYS, type Filters } from "@/lib/opportunity-sort";
 
 type Options = Record<keyof Filters, string[]>;
 const LABELS: Record<keyof Filters, [string, string]> = {
-  state: ["State", "All states"], status: ["Status", "All statuses"], accountable: ["Accountable", "All accountables"], account: ["Account", "All accounts"],
+  stage: ["Stage", "All stages"], status: ["Status", "All statuses"], accountable: ["Accountable", "All accountables"], account: ["Account", "All accounts"],
 };
 
 /** Filter selects for the opportunities table. Filters live in the URL, like sorting, so links and reloads keep them. */
@@ -37,7 +37,7 @@ export function FilterBar({ filters, options, query }: { filters: Filters; optio
         >
           <option value="">{LABELS[k][1]}</option>
           {options[k].map((v) => (
-            <option key={v} value={v}>{k === "state" ? v.charAt(0) + v.slice(1).toLowerCase() : v}</option>
+            <option key={v} value={v}>{k === "stage" ? v.charAt(0) + v.slice(1).toLowerCase() : v}</option>
           ))}
         </Select>
       ))}

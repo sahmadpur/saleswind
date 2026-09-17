@@ -17,15 +17,15 @@ test("pipeline feedback batch: sorting, filters, row click, menu toggle, account
   await expect(page).toHaveURL(/sort=revenue/);
   await expect(page).toHaveURL(/dir=desc/);
 
-  // Filtering by state: URL param set, every row shows that state, sort survives, Clear resets
-  await page.getByLabel("State").selectOption("SALES");
-  await expect(page).toHaveURL(/state=SALES/);
+  // Filtering by stage: URL param set, every row shows that stage, sort survives, Clear resets
+  await page.getByLabel("Stage").selectOption("SALES");
+  await expect(page).toHaveURL(/stage=SALES/);
   await expect(page).toHaveURL(/sort=revenue/);
   const pills = page.locator("tbody tr td:nth-child(4)");
   await expect(pills.first()).toBeVisible();
   for (const t of await pills.allInnerTexts()) expect(t.trim()).toBe("Sales");
   await page.click('button:has-text("Clear")');
-  await expect(page).not.toHaveURL(/state=/);
+  await expect(page).not.toHaveURL(/stage=/);
 
   // Clicking anywhere on a row (not just the title link) opens the detail page
   await page.locator("tbody tr").first().locator("td").nth(2).click();

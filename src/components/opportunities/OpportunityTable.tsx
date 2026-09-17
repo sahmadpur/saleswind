@@ -6,10 +6,10 @@ import { SortableTH } from "@/components/ui/SortableTH";
 import { ColResizer, RestoreColumnWidths } from "@/components/ui/ColResizer";
 import { grossProfit } from "@/lib/domain/finance";
 import { money, relativeTime, opportunityRef } from "@/lib/format";
-import { displayState, type SortDir, type SortKey } from "@/lib/opportunity-sort";
+import { displayStage, type SortDir, type SortKey } from "@/lib/opportunity-sort";
 
 type Row = {
-  id: string; number: number; title: string; state: string; isCancelled: boolean;
+  id: string; number: number; title: string; stage: string; isCancelled: boolean;
   revenue: unknown; marginPct: unknown;
   account: { name: string }; accountable: { name: string }; status: { label: string } | null;
   tags: { tag: { label: string } }[]; lastModifiedAt: Date;
@@ -17,7 +17,7 @@ type Row = {
 
 const TH = "relative px-2 py-2.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-gink";
 const TD = "px-2 py-2";
-// Left rail colour per pipeline state — the one bit of colour on each row.
+// Left rail colour per pipeline stage — the one bit of colour on each row.
 const RAIL: Record<string, string> = {
   PROSPECT: "var(--color-gyellow)", SALES: "var(--color-gsales)", CONTRACT: "var(--color-gviolet)",
   PROJECT: "var(--color-ggreen)", CANCELLED: "var(--color-gline)",
@@ -31,7 +31,7 @@ function BodyRow({ o }: { o: Row }) {
     >
       <td
         className={`${TD} whitespace-nowrap tabular-nums text-ggrey`}
-        style={{ boxShadow: `inset 3px 0 0 ${RAIL[displayState(o)]}` }}
+        style={{ boxShadow: `inset 3px 0 0 ${RAIL[displayStage(o)]}` }}
       >
         {opportunityRef(o.number)}
       </td>
@@ -45,7 +45,7 @@ function BodyRow({ o }: { o: Row }) {
         </Link>
       </td>
       <td className={`${TD} truncate text-gink-2`}>{o.account.name}</td>
-      <td className={TD}><Pill state={displayState(o)} /></td>
+      <td className={TD}><Pill stage={displayStage(o)} /></td>
       <td className={`${TD} truncate text-gink-2`}>{o.status?.label ?? "—"}</td>
       <td className={TD}>
         <div className="flex flex-wrap gap-1">
@@ -87,7 +87,7 @@ export function OpportunityTable({ rows, sort, dir, query, filtered }: {
             <SortableTH label="ID" sortKey="ref" {...sortable} />
             <SortableTH label="Title" sortKey="title" {...sortable} />
             <SortableTH label="Account" sortKey="account" {...sortable} />
-            <SortableTH label="State" sortKey="state" {...sortable} />
+            <SortableTH label="Stage" sortKey="stage" {...sortable} />
             <SortableTH label="Status" sortKey="status" {...sortable} />
             <th data-col="Tags" className={TH}>Tags<ColResizer /></th>
             <SortableTH label="PR" sortKey="revenue" align="right" {...sortable} />

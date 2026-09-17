@@ -2,7 +2,7 @@ import "server-only";
 import { db } from "@/lib/db";
 import { diffFields } from "@/lib/domain/activity-diff";
 import { notify } from "@/services/notification-service";
-import { nextState, prevState, canAdvance, canMoveBack } from "@/lib/domain/lifecycle";
+import { nextStage, prevStage, canAdvance, canMoveBack } from "@/lib/domain/lifecycle";
 import type { OpportunityCreateInput, OpportunityUpdateInput } from "@/schemas/opportunity";
 
 export async function createOpportunity(input: OpportunityCreateInput, userId: string) {
@@ -82,15 +82,15 @@ export async function transitionOpportunity(id: string, kind: TransitionKind, us
     const o = await tx.opportunity.findUniqueOrThrow({ where: { id } });
     if (o.isCancelled) throw new Error("Opportunity is cancelled");
 
-    let newState = o.state;
+    let newStage = o.stage;
     let isCancelled: boolean = o.isCancelled;
 
     if (kind === "advance") {
-      if (!canAdvance(o.state)) throw new Error("Cannot advance past the final state");
-      newState = nextState(o.state)!;
+      if (!canAdvance(o.stage)) throw new Error("Cannot advance past the final stage");
+      newStage = nextStage(o.stage)!;
     } else if (kind === "back") {
-      if (!canMoveBack(o.state)) throw new Error("Cannot move back from the first state");
-      newState = prevState(o.state)!;
+      if (!canMoveBack(o.stage)) throw new Error("Cannot move back from the first stage");
+      newStage = prevStage(o.stage)!;
     } else {
       if (!reason) throw new Error("A reason is required to cancel");
       isCancelled = true;
@@ -98,16 +98,16 @@ export async function transitionOpportunity(id: string, kind: TransitionKind, us
 
     const updated = await tx.opportunity.update({
       where: { id },
-      data: { state: newState, isCancelled, statusId: kind === "cancel" ? o.statusId : null, lastReason: reason ?? null, lastModifiedAt: new Date(), lastModifiedById: userId },
+      data: { stage: newStage, isCancelled, statusId: kind === "cancel" ? o.statusId : null, lastReason: reason ?? null, lastModifiedAt: new Date(), lastModifiedById: userId },
     });
 
     await tx.activityLog.create({
-      data: { opportunityId: id, userId, actionType: kind, fieldChanged: "state", oldValue: o.state, newValue: isCancelled ? "CANCELLED" : newState },
+      data: { opportunityId: id, userId, actionType: kind, fieldChanged: "stage", oldValue: o.stage, newValue: isCancelled ? "CANCELLED" : newStage },
     });
 
     if (o.accountableId !== userId) {
-      const verb = kind === "cancel" ? "was cancelled" : `moved to ${newState}`;
-      await notify(tx, o.accountableId, id, "state", `"${o.title}" ${verb}`);
+      const verb = kind === "cancel" ? "was cancelled" : `moved to ${newStage}`;
+      await notify(tx, o.accountableId, id, "stage", `"${o.title}" ${verb}`);
     }
 
     return updated;

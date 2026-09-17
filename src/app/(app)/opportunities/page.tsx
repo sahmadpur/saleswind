@@ -23,7 +23,7 @@ export default async function OpportunitiesPage({ searchParams }: { searchParams
   // Current query minus `view`, so sort links and filter changes preserve each other.
   const query = { sort, dir, ...filters };
   const options = {
-    state: [...ORDER, "CANCELLED"],
+    stage: [...ORDER, "CANCELLED"],
     status: distinct(rows.map((r) => r.status?.label)),
     accountable: distinct(rows.map((r) => r.accountable.name)),
     account: distinct(rows.map((r) => r.account.name)),

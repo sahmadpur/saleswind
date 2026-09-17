@@ -67,7 +67,7 @@ export default async function AccountDetail({ params }: { params: Promise<{ id: 
           <thead className="border-y border-gline-2 bg-gbg text-left">
             <tr>
               <th className="px-6 py-2 text-xs font-medium uppercase tracking-wide text-ggrey">Title</th>
-              <th className="px-6 py-2 text-xs font-medium uppercase tracking-wide text-ggrey">State</th>
+              <th className="px-6 py-2 text-xs font-medium uppercase tracking-wide text-ggrey">Stage</th>
               <th className="px-6 py-2 text-xs font-medium uppercase tracking-wide text-ggrey">Status</th>
               <th className="px-6 py-2"><span className="sr-only">Open</span></th>
             </tr>
@@ -78,7 +78,7 @@ export default async function AccountDetail({ params }: { params: Promise<{ id: 
                 <td className="px-6 py-2.5">
                   <Link href={`/opportunities/${o.id}`} className="font-medium text-gblue hover:underline">{o.title}</Link>
                 </td>
-                <td className="px-6 py-2.5"><Pill state={o.state} /></td>
+                <td className="px-6 py-2.5"><Pill stage={o.stage} /></td>
                 <td className="px-6 py-2.5 text-gink-2">{o.status?.label ?? "—"}</td>
               </RowLink>
             ))}
