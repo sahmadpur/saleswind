@@ -12,6 +12,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Segmented } from "@/components/ui/Segmented";
 import { Icon } from "@/components/ui/Icon";
 import { Pagination } from "@/components/ui/Pagination";
+import { ResetColumnWidths } from "@/components/ui/ColResizer";
 import { ORDER } from "@/lib/domain/lifecycle";
 import { PAGE_SIZES, paginate, parsePage } from "@/lib/pagination";
 import { filterOpportunities, parseFilters, parseSort, sortOpportunities } from "@/lib/opportunity-sort";
@@ -91,7 +92,10 @@ export default async function OpportunitiesPage({ searchParams }: { searchParams
         <KanbanBoard rows={rows} />
       ) : (
         <>
-          <FilterBar filters={filters} options={options} query={{ ...query, view: "table" }} />
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <FilterBar filters={filters} options={options} query={{ ...query, view: "table" }} />
+            <ResetColumnWidths className="inline-flex h-9 items-center gap-1.5 rounded-md px-3 text-sm font-medium text-gblue transition-colors hover:bg-gblue-50 disabled:cursor-default disabled:text-ggrey-2 disabled:hover:bg-transparent" />
+          </div>
           <Card className="overflow-hidden p-0">
             <OpportunityTable
               rows={pageRows}

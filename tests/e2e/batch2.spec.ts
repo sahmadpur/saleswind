@@ -115,3 +115,26 @@ test("task board: add to To do, move by menu, drag to Done, persists", async ({ 
   await page.reload();
   await expect(card("Done")).toBeVisible();
 });
+
+test("resizing a column enables Reset columns, which restores automatic widths", async ({ page }) => {
+  await login(page);
+  await page.evaluate(() => localStorage.removeItem("opp-col-widths"));
+  await page.reload();
+  const reset = page.getByRole("button", { name: "Reset columns" });
+  await expect(reset).toBeDisabled();
+
+  const title = page.locator('th[data-col="Title"]');
+  const before = (await title.boundingBox())!.width;
+  const handle = (await title.getByTitle("Drag to resize column").boundingBox())!;
+  await page.mouse.move(handle.x + 2, handle.y + 5);
+  await page.mouse.down();
+  await page.mouse.move(handle.x + 120, handle.y + 5, { steps: 5 });
+  await page.mouse.up();
+  expect((await title.boundingBox())!.width).toBeGreaterThan(before + 100);
+  await expect(reset).toBeEnabled();
+
+  await reset.click();
+  await expect(reset).toBeDisabled();
+  expect(Math.abs((await title.boundingBox())!.width - before)).toBeLessThan(2);
+  expect(await page.evaluate(() => localStorage.getItem("opp-col-widths"))).toBeNull();
+});

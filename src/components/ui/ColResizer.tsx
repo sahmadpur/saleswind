@@ -1,5 +1,5 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 const KEY = "opp-col-widths";
 type Widths = Record<string, number>;
@@ -8,8 +8,15 @@ const MIN = 40;
 function load(): Widths | null {
   try { return JSON.parse(localStorage.getItem(KEY) ?? "null"); } catch { return null; }
 }
-function save(w: Widths) {
-  try { localStorage.setItem(KEY, JSON.stringify(w)); } catch {}
+// Lets the reset button know whether custom widths exist.
+const CHANGE_EVENT = "col-widths-change";
+
+function save(w: Widths | null) {
+  try {
+    if (w) localStorage.setItem(KEY, JSON.stringify(w));
+    else localStorage.removeItem(KEY);
+  } catch {}
+  window.dispatchEvent(new Event(CHANGE_EVENT));
 }
 
 // Chosen (unstretched) widths per resizable table, once it has switched to fixed layout.
@@ -61,6 +68,41 @@ export function RestoreColumnWidths() {
     return () => observer.disconnect();
   }, []);
   return null;
+}
+
+/** Clears saved widths and returns the table to automatic layout. Disabled until a column was resized. */
+export function ResetColumnWidths({ className }: { className?: string }) {
+  const [custom, setCustom] = useState(false);
+  useEffect(() => {
+    const sync = () => setCustom(!!load());
+    sync();
+    window.addEventListener(CHANGE_EVENT, sync);
+    return () => window.removeEventListener(CHANGE_EVENT, sync);
+  }, []);
+
+  function reset() {
+    const table = document.querySelector<HTMLTableElement>("table[data-resizable]");
+    if (table) {
+      chosen.delete(table);
+      for (const th of headers(table)) th.style.width = "";
+      table.style.tableLayout = "";
+      table.style.width = "";
+    }
+    save(null);
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={reset}
+      disabled={!custom}
+      title={custom ? "Reset column widths" : "Drag a column edge to resize; reset appears here"}
+      className={className}
+    >
+      <span className="material-symbols-outlined" style={{ fontSize: 18 }}>restart_alt</span>
+      Reset columns
+    </button>
+  );
 }
 
 // ponytail: widths keyed by column label via data-col; renaming a column just drops its saved width.
