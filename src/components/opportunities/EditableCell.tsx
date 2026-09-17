@@ -93,14 +93,14 @@ export function EditableCell({ value, display, kind, options, save, align, class
 
   if (iconTrigger) {
     return (
-      <div className={cn("group/cell flex min-w-0 items-center gap-1", className)}>
+      <div className={cn("group/cell relative flex min-w-0 items-center", className)}>
         {display}
         <button
           type="button"
           title={`Edit ${label}`}
           aria-label={`Edit ${label}`}
           onClick={open}
-          className="grid h-5 w-5 shrink-0 place-items-center rounded text-ggrey-2 opacity-0 transition-opacity hover:bg-gsurface hover:text-gink focus:opacity-100 group-hover/cell:opacity-100"
+          className="absolute right-0 top-1/2 grid h-5 w-5 -translate-y-1/2 place-items-center rounded bg-gsurface text-ggrey-2 opacity-0 shadow-g1 transition-opacity hover:text-gink focus:opacity-100 group-hover/cell:opacity-100"
         >
           <span className="material-symbols-outlined" style={{ fontSize: 13 }}>edit</span>
         </button>
@@ -114,13 +114,19 @@ export function EditableCell({ value, display, kind, options, save, align, class
       title={`Edit ${label}`}
       onClick={open}
       className={cn(
-        "group/cell -mx-1 flex w-[calc(100%+0.5rem)] min-w-0 items-center gap-1 rounded px-1 py-0.5 text-left transition-colors hover:bg-gsurface hover:ring-1 hover:ring-gline",
+        "group/cell relative -mx-1 flex w-[calc(100%+0.5rem)] min-w-0 items-center rounded px-1 py-0.5 text-left transition-colors hover:bg-gsurface hover:ring-1 hover:ring-gline",
         align === "right" && "justify-end text-right",
         className,
       )}
     >
       <span className="min-w-0 truncate">{display}</span>
-      <span className="material-symbols-outlined shrink-0 text-ggrey-2 opacity-0 group-hover/cell:opacity-100" style={{ fontSize: 13 }}>edit</span>
+      {/* Overlaid, not inline, so the hover icon never widens the column. */}
+      <span
+        className={cn("material-symbols-outlined pointer-events-none absolute top-1/2 -translate-y-1/2 rounded bg-gsurface px-0.5 text-ggrey-2 opacity-0 group-hover/cell:opacity-100", align === "right" ? "left-0.5" : "right-0.5")}
+        style={{ fontSize: 13 }}
+      >
+        edit
+      </span>
     </button>
   );
 }

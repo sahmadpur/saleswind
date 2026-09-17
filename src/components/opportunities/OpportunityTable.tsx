@@ -8,7 +8,7 @@ import { ColResizer, RestoreColumnWidths } from "@/components/ui/ColResizer";
 import { EditableCell } from "@/components/opportunities/EditableCell";
 import { updateOpportunityFieldAction } from "@/actions/opportunity-actions";
 import { grossProfit } from "@/lib/domain/finance";
-import { money, dateTime, opportunityRef, shortName } from "@/lib/format";
+import { money, shortDate, opportunityRef, shortName, dateTime } from "@/lib/format";
 import { displayStage, type SortDir, type SortKey } from "@/lib/opportunity-sort";
 
 type Row = {
@@ -52,10 +52,10 @@ function BodyRow({ o, edit }: { o: Row; edit: EditOptions | null }) {
       >
         {opportunityRef(o.number)}
       </td>
-      <td className={`${TD} max-w-[16rem]`}>
+      <td className={`${TD} max-w-[12rem]`}>
         {edit ? <EditableCell value={o.title} display={titleLink} kind="text" save={save("title")} label="title" iconTrigger /> : titleLink}
       </td>
-      <td className={`${TD} truncate text-gink-2`}>{o.account.name}</td>
+      <td className={`${TD} max-w-[8rem] truncate text-gink-2`} title={o.account.name}>{o.account.name}</td>
       <td className={TD}><Pill stage={displayStage(o)} /></td>
       <td className={`${TD} text-gink-2`}>
         {edit ? (
@@ -71,7 +71,7 @@ function BodyRow({ o, edit }: { o: Row; edit: EditOptions | null }) {
       </td>
       <td className={TD}>
         <div className="flex flex-wrap gap-1">
-          {o.tags.map((t) => <Chip key={t.tag.label} label={t.tag.label} className="max-w-36" />)}
+          {o.tags.map((t) => <Chip key={t.tag.label} label={t.tag.label} className="max-w-28" />)}
         </div>
       </td>
       <td className={`${TD} whitespace-nowrap text-right tabular-nums text-gink-2`}>
@@ -88,7 +88,10 @@ function BodyRow({ o, edit }: { o: Row; edit: EditOptions | null }) {
           <EditableCell value={o.accountableId} display={shortName(o.accountable.name)} kind="select" options={edit.users} save={save("accountableId")} label="accountable" />
         ) : shortName(o.accountable.name)}
       </td>
-      <td className={`${TD} whitespace-nowrap text-ggrey-2`}>{dateTime(new Date(o.lastModifiedAt))}</td>
+      <td className={`${TD} whitespace-nowrap leading-4 text-ggrey-2`} title={dateTime(new Date(o.lastModifiedAt))}>
+        {shortDate(new Date(o.lastModifiedAt))}
+        <span className="block text-[11px] text-ggrey-2/80">{dateTime(new Date(o.lastModifiedAt)).split(", ")[1]}</span>
+      </td>
     </RowLink>
   );
 }

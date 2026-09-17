@@ -10,7 +10,9 @@ export function Card({
   return (
     <div
       className={cn(
-        "rounded-lg border border-gline-2 bg-gsurface p-6",
+        "rounded-lg border border-gline-2 bg-gsurface",
+        // cn() doesn't merge classes, so only apply default padding when the caller sets none.
+        !/(^|\s)p-\d/.test(className) && "p-6",
         className,
       )}
     >
