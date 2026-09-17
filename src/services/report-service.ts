@@ -18,7 +18,7 @@ export async function pipelineSummary(): Promise<StageSummary[]> {
 
 export async function opportunitiesForExport() {
   return db.opportunity.findMany({
-    include: { account: true, accountable: true, status: true },
+    include: { account: true, accountable: true, status: true, tags: { include: { tag: true } } },
     orderBy: { createdAt: "desc" },
   });
 }

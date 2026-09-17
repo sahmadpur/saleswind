@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { db } from "@/lib/db";
-import { createOpportunity, updateOpportunity } from "@/services/opportunity-service";
+import { createOpportunity, updateOpportunity, updateOpportunityField } from "@/services/opportunity-service";
 
 let userId: string, accountId: string;
 
@@ -11,7 +11,7 @@ beforeAll(async () => {
   accountId = a.id;
 });
 afterAll(async () => {
-  await db.activityLog.deleteMany(); await db.opportunity.deleteMany();
+  await db.activityLog.deleteMany(); await db.notification.deleteMany(); await db.opportunity.deleteMany(); await db.status.deleteMany({ where: { label: { startsWith: "Demo " } } });
   await db.account.deleteMany(); await db.user.deleteMany(); await db.$disconnect();
 });
 
@@ -31,5 +31,30 @@ describe("opportunity-service", () => {
     expect(logs[0].newValue).toBe("New");
     const updated = await db.opportunity.findUnique({ where: { id: o.id } });
     expect(updated?.lastModifiedById).toBe(userId);
+  });
+});
+
+describe("opportunity-service: stage/status on create and inline edits", () => {
+  it("creates in a chosen stage with a status of that stage", async () => {
+    const status = await db.status.create({ data: { stage: "SALES", label: `Demo ${Date.now()}` } });
+    const o = await createOpportunity({ accountId, title: "Staged", accountableId: userId, stage: "SALES", statusId: status.id, revenue: 1, marginPct: 1 }, userId);
+    expect(o.stage).toBe("SALES");
+    expect(o.statusId).toBe(status.id);
+    await expect(
+      createOpportunity({ accountId, title: "Bad", accountableId: userId, stage: "PROSPECT", statusId: status.id, revenue: 1, marginPct: 1 }, userId),
+    ).rejects.toThrow(/does not belong/);
+  });
+
+  it("updates a single field and logs only that change", async () => {
+    const o = await createOpportunity({ accountId, title: "Inline", accountableId: userId, revenue: 10, marginPct: 5 }, userId);
+    await updateOpportunityField(o.id, { field: "revenue", value: 250 }, userId);
+    const row = await db.opportunity.findUniqueOrThrow({ where: { id: o.id } });
+    expect(Number(row.revenue)).toBe(250);
+    expect(row.title).toBe("Inline");
+    const logs = await db.activityLog.findMany({ where: { opportunityId: o.id, actionType: "updated" } });
+    expect(logs.map((l) => [l.fieldChanged, l.oldValue, l.newValue])).toEqual([["revenue", "10", "250"]]);
+    // Clearing the status is allowed; no-op edits log nothing
+    await updateOpportunityField(o.id, { field: "statusId", value: "" }, userId);
+    expect(await db.activityLog.count({ where: { opportunityId: o.id, actionType: "updated" } })).toBe(1);
   });
 });

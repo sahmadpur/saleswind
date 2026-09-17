@@ -28,11 +28,11 @@ export default async function ReportsPage() {
         actions={
           <>
             <a
-              href="/reports/export?format=csv"
+              href="/reports/export?format=xlsx"
               className="g-press inline-flex h-9 items-center gap-1.5 rounded-md border border-gline bg-gsurface px-4 text-sm font-medium text-gink transition-colors hover:bg-ghover [&_.material-symbols-outlined]:text-[18px]"
             >
               <Icon name="table_view" />
-              CSV
+              Excel
             </a>
             <a
               href="/reports/export?format=pdf"

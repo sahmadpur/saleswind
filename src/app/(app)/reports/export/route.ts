@@ -2,23 +2,20 @@ import { NextResponse } from "next/server";
 import { PDFDocument, StandardFonts } from "pdf-lib";
 import { requireRole } from "@/lib/session";
 import { opportunitiesForExport, pipelineSummary } from "@/services/report-service";
-import { grossProfit } from "@/lib/domain/finance";
-import { opportunityRef } from "@/lib/format";
-import { toCsv } from "@/lib/csv";
+import { opportunitiesXlsx } from "@/lib/export/opportunities";
 
 export async function GET(req: Request) {
   await requireRole("reports:view");
-  const format = new URL(req.url).searchParams.get("format") ?? "csv";
+  const format = new URL(req.url).searchParams.get("format") ?? "xlsx";
   const opps = await opportunitiesForExport();
 
-  if (format === "csv") {
-    const headers = ["ID", "Title", "Account", "Stage", "Status", "Accountable", "Predicted Revenue", "Margin %", "Predicted Gross Profit", "Cancelled"];
-    const rows = opps.map((o) => [
-      opportunityRef(o.number), o.title, o.account.name, o.stage, o.status?.label ?? "", o.accountable.name,
-      Number(o.revenue), Number(o.marginPct), grossProfit(Number(o.revenue), Number(o.marginPct)), o.isCancelled ? "Yes" : "No",
-    ]);
-    return new NextResponse(toCsv(headers, rows), {
-      headers: { "Content-Type": "text/csv", "Content-Disposition": 'attachment; filename="opportunities.csv"' },
+  if (format === "xlsx") {
+    const buf = await opportunitiesXlsx(opps);
+    return new NextResponse(new Uint8Array(buf), {
+      headers: {
+        "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "Content-Disposition": 'attachment; filename="opportunities.xlsx"',
+      },
     });
   }
 

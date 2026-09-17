@@ -9,6 +9,9 @@ import { money } from "@/lib/format";
 import type { FormState } from "@/lib/action-state";
 
 type Option = { id: string; label: string };
+type StatusOption = Option & { stage: string };
+
+const STAGES = [["PROSPECT", "Prospect"], ["SALES", "Sales"], ["CONTRACT", "Contract"], ["PROJECT", "Project"]] as const;
 
 function Labeled({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -19,11 +22,14 @@ function Labeled({ label, children }: { label: string; children: React.ReactNode
   );
 }
 
-export function OpportunityCreateForm({ action, accounts, users }: {
+export function OpportunityCreateForm({ action, accounts, users, statuses }: {
   action: (prev: unknown, fd: FormData) => Promise<FormState>;
-  accounts: Option[]; users: Option[];
+  accounts: Option[]; users: Option[]; statuses: StatusOption[];
 }) {
   const [state, formAction, pending] = useActionState(action, {} as FormState);
+  const [stage, setStage] = useState(state.values?.stage ?? "PROSPECT");
+  const [statusId, setStatusId] = useState(state.values?.statusId ?? "");
+  const stageStatuses = statuses.filter((s) => s.stage === stage);
   const [revenue, setRevenue] = useState(0);
   const [margin, setMargin] = useState(0);
   return (
@@ -49,6 +55,21 @@ export function OpportunityCreateForm({ action, accounts, users }: {
         </Select>
         <FieldError errors={state.error?.accountableId} />
       </Labeled>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Labeled label="Stage">
+          <Select name="stage" value={stage} onChange={(e) => { setStage(e.target.value); setStatusId(""); }}>
+            {STAGES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+          </Select>
+          <FieldError errors={state.error?.stage} />
+        </Labeled>
+        <Labeled label="Status">
+          <Select name="statusId" value={statusId} onChange={(e) => setStatusId(e.target.value)}>
+            <option value="">No status</option>
+            {stageStatuses.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
+          </Select>
+          <FieldError errors={state.error?.statusId} />
+        </Labeled>
+      </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <Labeled label="PR">
           <Input name="revenue" type="number" step="0.01" placeholder="0.00" required defaultValue={state.values?.revenue} onChange={(e) => setRevenue(Number(e.target.value))} />

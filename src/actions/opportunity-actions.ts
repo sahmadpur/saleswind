@@ -3,8 +3,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/session";
 import { formValues } from "@/lib/action-state";
-import { opportunityCreateSchema, opportunityUpdateSchema } from "@/schemas/opportunity";
-import { createOpportunity, updateOpportunity, transitionOpportunity, attachTag, detachTag, type TransitionKind } from "@/services/opportunity-service";
+import { opportunityCreateSchema, opportunityFieldSchema, opportunityUpdateSchema, type EditableField } from "@/schemas/opportunity";
+import { createOpportunity, updateOpportunity, updateOpportunityField, transitionOpportunity, attachTag, detachTag, type TransitionKind } from "@/services/opportunity-service";
 
 export async function createOpportunityAction(_prev: unknown, formData: FormData) {
   const user = await requireRole("opportunity:write");
@@ -32,6 +32,21 @@ export async function updateOpportunityAction(id: string, _prev: unknown, formDa
   }
   revalidatePath(`/opportunities/${id}`);
   return { ok: true };
+}
+
+/** Inline table edit. Returns an error message instead of throwing so the cell can show it. */
+export async function updateOpportunityFieldAction(id: string, field: EditableField, value: string): Promise<{ error?: string }> {
+  const user = await requireRole("opportunity:write");
+  const parsed = opportunityFieldSchema.safeParse({ field, value });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid value" };
+  try {
+    await updateOpportunityField(id, parsed.data, user.id);
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Could not save" };
+  }
+  revalidatePath("/opportunities");
+  revalidatePath(`/opportunities/${id}`);
+  return {};
 }
 
 export async function transitionAction(id: string, kind: TransitionKind, reason?: string) {

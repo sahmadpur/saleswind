@@ -6,9 +6,10 @@ import { Card } from "@/components/ui/Card";
 import { PageHeader } from "@/components/ui/PageHeader";
 
 export default async function NewOpportunityPage() {
-  const [accounts, users] = await Promise.all([
+  const [accounts, users, statuses] = await Promise.all([
     db.account.findMany({ orderBy: { name: "asc" } }),
     db.user.findMany({ orderBy: { name: "asc" } }),
+    db.status.findMany({ where: { isActive: true }, orderBy: { label: "asc" } }),
   ]);
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -22,6 +23,7 @@ export default async function NewOpportunityPage() {
           action={createOpportunityAction}
           accounts={accounts.map((a) => ({ id: a.id, label: a.name }))}
           users={users.map((u) => ({ id: u.id, label: u.name }))}
+          statuses={statuses.map((s) => ({ id: s.id, label: s.label, stage: s.stage }))}
         />
       </Card>
     </div>
