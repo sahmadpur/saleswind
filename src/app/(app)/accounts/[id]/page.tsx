@@ -5,6 +5,7 @@ import { updateAccountNotesAction } from "@/actions/account-actions";
 import { AccountNotesForm } from "@/components/accounts/AccountNotesForm";
 import { Card, CardLabel } from "@/components/ui/Card";
 import { Pill } from "@/components/ui/Pill";
+import { StatusPill } from "@/components/ui/StatusPill";
 import { Avatar } from "@/components/ui/Avatar";
 import { RowLink } from "@/components/ui/RowLink";
 import { accountRef } from "@/lib/format";
@@ -79,7 +80,7 @@ export default async function AccountDetail({ params }: { params: Promise<{ id: 
                   <Link href={`/opportunities/${o.id}`} className="font-medium text-gblue hover:underline">{o.title}</Link>
                 </td>
                 <td className="px-6 py-2.5"><Pill stage={o.stage} /></td>
-                <td className="px-6 py-2.5 text-gink-2">{o.status?.label ?? "—"}</td>
+                <td className="px-6 py-2.5 text-gink-2">{o.status ? <StatusPill label={o.status.label} color={o.status.color} /> : "—"}</td>
               </RowLink>
             ))}
             {account.opportunities.length === 0 && (

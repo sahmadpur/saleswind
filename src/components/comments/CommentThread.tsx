@@ -2,9 +2,9 @@
 import { addCommentAction, deleteCommentAction } from "@/actions/comment-actions";
 import { Button } from "@/components/ui/Button";
 import { Avatar } from "@/components/ui/Avatar";
-import { relativeTime } from "@/lib/format";
+import { shortName } from "@/lib/format";
 
-type Comment = { id: string; body: string; author: string; authorId: string; createdAt: Date };
+type Comment = { id: string; body: string; author: string; authorId: string; when: string };
 
 export function CommentThread({ opportunityId, comments, currentUserId, isElevated }: { opportunityId: string; comments: Comment[]; currentUserId: string; isElevated: boolean }) {
   return (
@@ -23,9 +23,9 @@ export function CommentThread({ opportunityId, comments, currentUserId, isElevat
             <Avatar name={c.author} size={32} />
             <div className="min-w-0 flex-1 rounded-lg rounded-tl-sm bg-gbg px-4 py-2.5">
               <div className="flex items-center justify-between gap-2">
-                <span className="text-sm font-medium text-gink">{c.author}</span>
+                <span className="text-sm font-medium text-gink" title={c.author}>{shortName(c.author)}</span>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-ggrey-2">{relativeTime(new Date(c.createdAt))}</span>
+                  <span className="text-xs text-ggrey-2">{c.when}</span>
                   {(c.authorId === currentUserId || isElevated) && (
                     <button
                       onClick={() => deleteCommentAction(opportunityId, c.id)}

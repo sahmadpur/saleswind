@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { markAllReadAction } from "@/actions/notification-actions";
 
-type Item = { id: string; message: string; read: boolean };
+type Item = { id: string; message: string; read: boolean; when: string };
 
 export function NotificationDropdown({ count, items }: { count: number; items: Item[] }) {
   const [open, setOpen] = useState(false);
@@ -64,9 +64,12 @@ export function NotificationDropdown({ count, items }: { count: number; items: I
                 <span
                   className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${n.read ? "bg-transparent" : "bg-gblue"}`}
                 />
-                <p className={`text-sm leading-snug ${n.read ? "text-ggrey" : "text-gink"}`}>
-                  {n.message}
-                </p>
+                <div>
+                  <p className={`text-sm leading-snug ${n.read ? "text-ggrey" : "text-gink"}`}>
+                    {n.message}
+                  </p>
+                  <p className="mt-0.5 text-xs text-ggrey-2">{n.when}</p>
+                </div>
               </div>
             ))}
           </div>

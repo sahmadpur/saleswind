@@ -2,10 +2,11 @@ import Link from "next/link";
 import { ORDER } from "@/lib/domain/lifecycle";
 import { grossProfit } from "@/lib/domain/finance";
 import { money, opportunityRef } from "@/lib/format";
+import { StatusPill } from "@/components/ui/StatusPill";
 
 type Row = {
   id: string; number: number; title: string; stage: string; isCancelled: boolean;
-  revenue: unknown; marginPct: unknown; account: { name: string };
+  revenue: unknown; marginPct: unknown; account: { name: string }; status: { label: string; color: string } | null;
 };
 
 const META: Record<string, { label: string; dot: string; bar: string }> = {
@@ -49,6 +50,7 @@ export function KanbanBoard({ rows }: { rows: Row[] }) {
                   <div className="text-[11px] tabular-nums text-ggrey">{opportunityRef(o.number)}</div>
                   <div className="text-sm font-semibold text-gink group-hover:text-gblue">{o.title}</div>
                   <div className="mt-0.5 text-xs text-ggrey">{o.account.name}</div>
+                  {o.status && <StatusPill label={o.status.label} color={o.status.color} className="mt-2" />}
                   <div className="mt-3 flex items-center justify-between border-t border-gline-2 pt-2.5">
                     <span className="text-xs text-ggrey-2">PGP</span>
                     <span className="text-sm font-semibold tabular-nums text-gink">

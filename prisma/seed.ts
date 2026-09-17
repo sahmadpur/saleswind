@@ -24,6 +24,11 @@ const STATUSES: Record<Stage, string[]> = {
   PROJECT: ["In Progress", "Cancelled"],
 };
 
+// Default colour per status label (admins can change them in the Dictionary).
+const STATUS_COLOR: Record<string, string> = {
+  "Not Started": "grey", "In Progress": "blue", Pending: "amber", Delayed: "amber", Cancelled: "red", Lost: "red",
+};
+
 const TAGS: Record<Stage, string[]> = {
   PROSPECT: ["Researching", "Initial Contract", "Mail sent", "Working with other partner", "Hard to get in", "Contact attempted", "Lead is not defined", "High Chance", "Low Chance"],
   SALES: ["Contact Attempted", "Presentation Sent", "Meeting Completed", "Qualification", "Unresponsive", "Waiting for response", "Mostly Negative", "Mostly Positive", "High Chances", "Demo", "Lead is defined"],
@@ -64,7 +69,7 @@ async function main() {
 
   for (const stage of Object.values(Stage)) {
     for (const label of STATUSES[stage]) {
-      await db.status.upsert({ where: { stage_label: { stage, label } }, update: {}, create: { stage, label } });
+      await db.status.upsert({ where: { stage_label: { stage, label } }, update: {}, create: { stage, label, color: STATUS_COLOR[label] ?? "grey" } });
     }
     for (const label of TAGS[stage]) {
       await db.tag.upsert({ where: { stage_label: { stage, label } }, update: {}, create: { stage, label } });

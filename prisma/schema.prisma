@@ -56,6 +56,7 @@ model Status {
   id       String  @id @default(cuid())
   stage    Stage
   label    String
+  color    String  @default("grey")
   isActive Boolean @default(true)
 
   opportunities Opportunity[]

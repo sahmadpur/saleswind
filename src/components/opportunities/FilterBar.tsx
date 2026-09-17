@@ -4,6 +4,7 @@ import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { FILTER_KEYS, type Filters } from "@/lib/opportunity-sort";
+import { shortName } from "@/lib/format";
 
 type Options = Record<keyof Filters, string[]>;
 const LABELS: Record<keyof Filters, [string, string]> = {
@@ -37,7 +38,7 @@ export function FilterBar({ filters, options, query }: { filters: Filters; optio
         >
           <option value="">{LABELS[k][1]}</option>
           {options[k].map((v) => (
-            <option key={v} value={v}>{k === "stage" ? v.charAt(0) + v.slice(1).toLowerCase() : v}</option>
+            <option key={v} value={v}>{k === "stage" ? v.charAt(0) + v.slice(1).toLowerCase() : k === "accountable" ? shortName(v) : v}</option>
           ))}
         </Select>
       ))}

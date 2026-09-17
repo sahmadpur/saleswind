@@ -2,7 +2,8 @@
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/session";
 import type { Stage } from "@prisma/client";
-import { addStatus, toggleStatus, addTag, toggleTag, upsertDefinition } from "@/services/dictionary-service";
+import { isStatusColor } from "@/lib/status-colors";
+import { addStatus, setStatusColor, toggleStatus, addTag, toggleTag, upsertDefinition } from "@/services/dictionary-service";
 
 export async function addStatusAction(formData: FormData) {
   await requireRole("dictionary:manage");
@@ -13,6 +14,13 @@ export async function toggleStatusAction(id: string) {
   await requireRole("dictionary:manage");
   await toggleStatus(id);
   revalidatePath("/dictionary");
+}
+export async function setStatusColorAction(id: string, color: string) {
+  await requireRole("dictionary:manage");
+  if (!isStatusColor(color)) throw new Error("Unknown colour");
+  await setStatusColor(id, color);
+  revalidatePath("/dictionary");
+  revalidatePath("/opportunities");
 }
 export async function addTagAction(formData: FormData) {
   await requireRole("dictionary:manage");

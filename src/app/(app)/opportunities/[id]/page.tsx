@@ -13,9 +13,10 @@ import { CommentThread } from "@/components/comments/CommentThread";
 import { ActivityLogView } from "@/components/activity/ActivityLogView";
 import { Card, CardLabel } from "@/components/ui/Card";
 import { Pill } from "@/components/ui/Pill";
+import { StatusPill } from "@/components/ui/StatusPill";
 import { Avatar } from "@/components/ui/Avatar";
 import { grossProfit } from "@/lib/domain/finance";
-import { money, opportunityRef } from "@/lib/format";
+import { money, opportunityRef, dateTime } from "@/lib/format";
 
 export default async function OpportunityDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -46,6 +47,7 @@ export default async function OpportunityDetail({ params }: { params: Promise<{ 
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-semibold leading-tight tracking-[-0.015em] text-gink">{o.title}</h1>
             <Pill stage={o.isCancelled ? "CANCELLED" : o.stage} />
+            {o.status && <StatusPill label={o.status.label} color={o.status.color} />}
           </div>
           <div className="flex items-center gap-2 text-sm text-ggrey">
             <span className="material-symbols-outlined" style={{ fontSize: 18 }}>domain</span>
@@ -96,7 +98,7 @@ export default async function OpportunityDetail({ params }: { params: Promise<{ 
       <Card>
         <CommentThread
           opportunityId={o.id}
-          comments={o.comments.map((c) => ({ id: c.id, body: c.body, author: c.author.name, authorId: c.authorId, createdAt: c.createdAt }))}
+          comments={o.comments.map((c) => ({ id: c.id, body: c.body, author: c.author.name, authorId: c.authorId, when: dateTime(c.createdAt) }))}
           currentUserId={user.id}
           isElevated={user.role === "ADMIN" || user.role === "MANAGER"}
         />

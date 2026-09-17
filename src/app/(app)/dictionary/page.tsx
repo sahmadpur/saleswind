@@ -1,10 +1,11 @@
 import { requireRole } from "@/lib/session";
 import { listVocabularies } from "@/services/dictionary-service";
-import { addStatusAction, toggleStatusAction, addTagAction, toggleTagAction, upsertDefinitionAction } from "@/actions/dictionary-actions";
+import { addStatusAction, addTagAction, toggleTagAction, upsertDefinitionAction } from "@/actions/dictionary-actions";
 import { Card, CardLabel } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { StatusChip } from "@/components/dictionary/StatusChip";
 
 const STAGES = ["PROSPECT", "SALES", "CONTRACT", "PROJECT"] as const;
 
@@ -39,19 +40,7 @@ export default async function DictionaryPage() {
               <StageLabel stage={s} />
               <div className="flex flex-wrap items-center gap-2">
                 {statuses.filter((x) => x.stage === s).map((x) => (
-                  <form key={x.id} action={toggleStatusAction.bind(null, x.id)}>
-                    <button
-                      type="submit"
-                      className={`g-press inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
-                        x.isActive
-                          ? "bg-gblue-100 text-gblue-dark hover:bg-gblue-200"
-                          : "bg-ghover text-ggrey-2 line-through hover:bg-gline-2"
-                      }`}
-                    >
-                      <span className={`h-1.5 w-1.5 rounded-full ${x.isActive ? "bg-gblue" : "bg-ggrey-2"}`} />
-                      {x.label}
-                    </button>
-                  </form>
+                  <StatusChip key={x.id} id={x.id} label={x.label} color={x.color} isActive={x.isActive} />
                 ))}
                 <form action={addStatusAction} className="flex items-center gap-1.5">
                   <input type="hidden" name="stage" value={s} />

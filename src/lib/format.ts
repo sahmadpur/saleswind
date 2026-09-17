@@ -9,16 +9,33 @@ export function money(n: number): string {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
 }
 
-export function shortDate(d: Date): string {
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "2-digit" }).format(d);
+// Dates render in one fixed zone so server output is stable regardless of host TZ.
+// Server-side only: client components receive pre-formatted strings.
+const timeZone = () => process.env.APP_TIMEZONE || "Asia/Baku";
+
+function parts(d: Date, withTime: boolean): Record<string, string> {
+  const fmt = new Intl.DateTimeFormat("en-US", {
+    day: "numeric", month: "short", year: "numeric", timeZone: timeZone(),
+    ...(withTime ? { hour: "2-digit", minute: "2-digit", hourCycle: "h23" } : {}),
+  } as Intl.DateTimeFormatOptions);
+  return Object.fromEntries(fmt.formatToParts(d).map((p) => [p.type, p.value]));
 }
 
-export function relativeTime(d: Date): string {
-  const diff = Date.now() - d.getTime();
-  const mins = Math.round(diff / 60000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.round(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  return `${Math.round(hrs / 24)}d ago`;
+/** Exact date, e.g. "17 Sep 2026". */
+export function shortDate(d: Date): string {
+  const p = parts(d, false);
+  return `${p.day} ${p.month} ${p.year}`;
+}
+
+/** Exact timestamp, e.g. "17 Sep 2026, 14:05". */
+export function dateTime(d: Date): string {
+  const p = parts(d, true);
+  return `${p.day} ${p.month} ${p.year}, ${p.hour}:${p.minute}`;
+}
+
+/** "Ruslan Sultanov" → "Ruslan S."; single names are returned unchanged. */
+export function shortName(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length < 2) return parts[0] ?? "";
+  return `${parts[0]} ${parts[parts.length - 1][0].toUpperCase()}.`;
 }

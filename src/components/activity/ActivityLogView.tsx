@@ -1,4 +1,4 @@
-import { relativeTime } from "@/lib/format";
+import { dateTime } from "@/lib/format";
 
 type Entry = { id: string; actionType: string; fieldChanged: string | null; oldValue: string | null; newValue: string | null; createdAt: Date };
 
@@ -47,7 +47,7 @@ export function ActivityLogView({ entries }: { entries: Entry[] }) {
               </div>
               <div className="pb-3 pt-1.5">
                 <p className="text-sm text-gink-2">{describe(e)}</p>
-                <p className="text-xs text-ggrey-2">{relativeTime(new Date(e.createdAt))}</p>
+                <p className="text-xs text-ggrey-2">{dateTime(new Date(e.createdAt))}</p>
               </div>
             </li>
           );

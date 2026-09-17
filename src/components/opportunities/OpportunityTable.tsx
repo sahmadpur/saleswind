@@ -1,17 +1,18 @@
 import Link from "next/link";
 import { Pill } from "@/components/ui/Pill";
 import { Chip } from "@/components/ui/Chip";
+import { StatusPill } from "@/components/ui/StatusPill";
 import { RowLink } from "@/components/ui/RowLink";
 import { SortableTH } from "@/components/ui/SortableTH";
 import { ColResizer, RestoreColumnWidths } from "@/components/ui/ColResizer";
 import { grossProfit } from "@/lib/domain/finance";
-import { money, relativeTime, opportunityRef } from "@/lib/format";
+import { money, dateTime, opportunityRef, shortName } from "@/lib/format";
 import { displayStage, type SortDir, type SortKey } from "@/lib/opportunity-sort";
 
 type Row = {
   id: string; number: number; title: string; stage: string; isCancelled: boolean;
   revenue: unknown; marginPct: unknown;
-  account: { name: string }; accountable: { name: string }; status: { label: string } | null;
+  account: { name: string }; accountable: { name: string }; status: { label: string; color: string } | null;
   tags: { tag: { label: string } }[]; lastModifiedAt: Date;
 };
 
@@ -46,7 +47,7 @@ function BodyRow({ o }: { o: Row }) {
       </td>
       <td className={`${TD} truncate text-gink-2`}>{o.account.name}</td>
       <td className={TD}><Pill stage={displayStage(o)} /></td>
-      <td className={`${TD} truncate text-gink-2`}>{o.status?.label ?? "—"}</td>
+      <td className={`${TD} text-gink-2`}>{o.status ? <StatusPill label={o.status.label} color={o.status.color} /> : "—"}</td>
       <td className={TD}>
         <div className="flex flex-wrap gap-1">
           {o.tags.map((t) => <Chip key={t.tag.label} label={t.tag.label} className="max-w-36" />)}
@@ -57,8 +58,8 @@ function BodyRow({ o }: { o: Row }) {
       <td className={`${TD} whitespace-nowrap text-right font-medium tabular-nums text-gink`}>
         {money(grossProfit(Number(o.revenue), Number(o.marginPct)))}
       </td>
-      <td className={`${TD} truncate text-gink-2`}>{o.accountable.name}</td>
-      <td className={`${TD} whitespace-nowrap text-ggrey-2`}>{relativeTime(new Date(o.lastModifiedAt))}</td>
+      <td className={`${TD} truncate text-gink-2`} title={o.accountable.name}>{shortName(o.accountable.name)}</td>
+      <td className={`${TD} whitespace-nowrap text-ggrey-2`}>{dateTime(new Date(o.lastModifiedAt))}</td>
     </RowLink>
   );
 }

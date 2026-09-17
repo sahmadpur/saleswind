@@ -1,6 +1,7 @@
 import "server-only";
 import { db } from "@/lib/db";
 import type { Stage } from "@prisma/client";
+import type { StatusColor } from "@/lib/status-colors";
 
 export async function addStatus(stage: Stage, label: string) {
   return db.status.create({ data: { stage, label } });
@@ -8,6 +9,9 @@ export async function addStatus(stage: Stage, label: string) {
 export async function toggleStatus(id: string) {
   const s = await db.status.findUniqueOrThrow({ where: { id } });
   return db.status.update({ where: { id }, data: { isActive: !s.isActive } });
+}
+export async function setStatusColor(id: string, color: StatusColor) {
+  return db.status.update({ where: { id }, data: { color } });
 }
 export async function renameStatus(id: string, label: string) {
   return db.status.update({ where: { id }, data: { label } });
