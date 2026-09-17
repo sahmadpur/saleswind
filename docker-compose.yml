@@ -39,6 +39,7 @@ services:
       # Canonical external origin so Auth.js builds correct redirects and uses
       # secure cookies (the app runs behind Cloudflare->Traefik over http).
       AUTH_URL: https://${APP_HOST}
+      APP_TIMEZONE: ${APP_TIMEZONE:-Asia/Baku}
       NODE_ENV: production
     networks:
       - default            # reach the db
