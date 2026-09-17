@@ -3,6 +3,7 @@ import { useEffect } from "react";
 
 const KEY = "opp-col-widths";
 type Widths = Record<string, number>;
+const MIN = 40;
 
 function load(): Widths | null {
   try { return JSON.parse(localStorage.getItem(KEY) ?? "null"); } catch { return null; }
@@ -11,25 +12,53 @@ function save(w: Widths) {
   try { localStorage.setItem(KEY, JSON.stringify(w)); } catch {}
 }
 
-/** Switch a table to fixed layout with every header pinned to an explicit pixel width. */
-function freeze(table: HTMLTableElement, widths?: Widths | null) {
-  const ths = Array.from(table.querySelectorAll<HTMLTableCellElement>("thead th"));
-  let total = 0;
-  for (const th of ths) {
-    const w = widths?.[th.dataset.col ?? ""] ?? th.offsetWidth;
+// Chosen (unstretched) widths per resizable table, once it has switched to fixed layout.
+const chosen = new WeakMap<HTMLTableElement, Widths>();
+
+const headers = (table: HTMLTableElement) => Array.from(table.querySelectorAll<HTMLTableCellElement>("thead th"));
+const colOf = (th: HTMLTableCellElement) => th.dataset.col ?? "";
+
+/**
+ * Pin every header to its chosen pixel width in fixed layout. If the columns add up to less than
+ * the visible area, the last column stretches to fill it (its chosen width is kept as the minimum).
+ */
+function apply(table: HTMLTableElement, widths: Widths) {
+  const ths = headers(table);
+  if (ths.length === 0) return;
+  const available = table.parentElement?.clientWidth ?? 0;
+  const last = ths[ths.length - 1];
+  let others = 0;
+  for (const th of ths.slice(0, -1)) {
+    const w = widths[colOf(th)] ?? th.offsetWidth;
     th.style.width = `${w}px`;
-    total += w;
+    others += w;
   }
+  const lastW = Math.max(widths[colOf(last)] ?? last.offsetWidth, available - others, MIN);
+  last.style.width = `${lastW}px`;
   table.style.tableLayout = "fixed";
-  table.style.width = `${total}px`;
+  table.style.width = `${others + lastW}px`;
+  chosen.set(table, widths);
 }
 
-/** Applies saved widths once on mount. Render inside the table wrapper, before the table. */
+/** Current widths as the starting point for fixed layout. */
+function measure(table: HTMLTableElement): Widths {
+  // offsetWidth rounds fractional widths down, which would clip content once pinned.
+  return Object.fromEntries(headers(table).map((th) => [colOf(th), Math.ceil(th.getBoundingClientRect().width)]));
+}
+
+/** Applies saved widths on mount and keeps the last column filling the space when the page resizes. */
 export function RestoreColumnWidths() {
   useEffect(() => {
-    const saved = load();
     const table = document.querySelector<HTMLTableElement>("table[data-resizable]");
-    if (saved && table) freeze(table, saved);
+    if (!table?.parentElement) return;
+    const saved = load();
+    if (saved) apply(table, saved);
+    const observer = new ResizeObserver(() => {
+      const w = chosen.get(table);
+      if (w) apply(table, w);
+    });
+    observer.observe(table.parentElement);
+    return () => observer.disconnect();
   }, []);
   return null;
 }
@@ -40,18 +69,17 @@ export function ColResizer() {
   function onPointerDown(e: React.PointerEvent<HTMLSpanElement>) {
     const th = e.currentTarget.closest("th")!;
     const table = th.closest("table")!;
-    if (table.style.tableLayout !== "fixed") freeze(table);
-    const startX = e.clientX, startW = th.offsetWidth, startT = table.offsetWidth;
+    const widths = { ...(chosen.get(table) ?? measure(table)) };
+    const col = colOf(th);
+    // Start from what is on screen, so dragging a stretched last column doesn't jump.
+    const startX = e.clientX, startW = th.offsetWidth;
     const move = (ev: PointerEvent) => {
-      const w = Math.max(40, startW + ev.clientX - startX);
-      th.style.width = `${w}px`;
-      table.style.width = `${startT + w - startW}px`;
+      widths[col] = Math.max(MIN, startW + ev.clientX - startX);
+      apply(table, widths);
     };
     const up = () => {
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", up);
-      const widths: Widths = {};
-      for (const h of table.querySelectorAll<HTMLTableCellElement>("thead th")) widths[h.dataset.col ?? ""] = h.offsetWidth;
       save(widths);
     };
     window.addEventListener("pointermove", move);
