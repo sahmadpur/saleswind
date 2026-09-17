@@ -1,6 +1,6 @@
 import { requireRole } from "@/lib/session";
 import { listUsers } from "@/services/user-service";
-import { createUserAction, deleteUserAction } from "@/actions/user-actions";
+import { createUserAction, deleteUserAction, updateUserAction } from "@/actions/user-actions";
 import { Card, CardLabel } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -8,6 +8,7 @@ import { Select } from "@/components/ui/Select";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Avatar } from "@/components/ui/Avatar";
 import { DeleteUserButton } from "@/components/users/DeleteUserButton";
+import { EditUserDialog } from "@/components/users/EditUserDialog";
 
 const ROLE_STYLE: Record<string, string> = {
   ADMIN: "bg-gviolet-50 text-gviolet",
@@ -85,8 +86,11 @@ export default async function UsersPage() {
                     {u.role.toLowerCase()}
                   </span>
                 </td>
-                <td className="px-5 py-3 text-right">
-                  {u.id !== me.id && <DeleteUserButton action={deleteUserAction.bind(null, u.id)} name={u.name} />}
+                <td className="px-5 py-3">
+                  <div className="flex items-center justify-end gap-1">
+                    <EditUserDialog action={updateUserAction.bind(null, u.id)} user={{ name: u.name, email: u.email, role: u.role }} isSelf={u.id === me.id} />
+                    {u.id !== me.id && <DeleteUserButton action={deleteUserAction.bind(null, u.id)} name={u.name} />}
+                  </div>
                 </td>
               </tr>
             ))}

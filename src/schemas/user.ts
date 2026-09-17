@@ -7,6 +7,15 @@ export const userCreateSchema = z.object({
 });
 export type UserCreateInput = z.infer<typeof userCreateSchema>;
 
+export const userUpdateSchema = z.object({
+  name: z.string().trim().min(1, "Name is required"),
+  email: z.string().trim().email("Enter a valid email"),
+  role: z.enum(["ADMIN", "MANAGER", "AGENT"]),
+  // Blank keeps the current password.
+  password: z.union([z.literal(""), z.string().min(8, "At least 8 characters")]).optional(),
+});
+export type UserUpdateInput = z.infer<typeof userUpdateSchema>;
+
 export const passwordChangeSchema = z
   .object({
     currentPassword: z.string().min(1),
