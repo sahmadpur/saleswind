@@ -4,13 +4,27 @@ import { db } from "@/lib/db";
 import { notify } from "@/services/notification-service";
 import { audit } from "@/services/audit-service";
 import { opportunityRef } from "@/lib/format";
+import { parseMentions, plainText } from "@/lib/mentions";
 
 export async function addComment(opportunityId: string, body: string, authorId: string) {
   return db.$transaction(async (tx) => {
     const comment = await tx.comment.create({ data: { opportunityId, body, authorId } });
     const o = await tx.opportunity.findUniqueOrThrow({ where: { id: opportunityId } });
-    if (o.accountableId !== authorId) await notify(tx, o.accountableId, opportunityId, "comment", `New comment on "${o.title}"`);
-    await audit(tx, { userId: authorId, action: "comment.add", entityType: "opportunity", entityId: opportunityId, summary: `Commented on ${opportunityRef(o.number)}` });
+    const author = await tx.user.findUniqueOrThrow({ where: { id: authorId } });
+    // Only real users other than the author get mention notifications.
+    const mentioned = await tx.user.findMany({ where: { id: { in: parseMentions(body).filter((id) => id !== authorId) } }, select: { id: true } });
+    for (const u of mentioned) {
+      await notify(tx, u.id, opportunityId, "mention", `${author.name} mentioned you on ${opportunityRef(o.number)} "${o.title}"`);
+    }
+    const mentionedIds = new Set(mentioned.map((u) => u.id));
+    if (o.accountableId !== authorId && !mentionedIds.has(o.accountableId)) {
+      await notify(tx, o.accountableId, opportunityId, "comment", `New comment on "${o.title}"`);
+    }
+    await audit(tx, {
+      userId: authorId, action: "comment.add", entityType: "opportunity", entityId: opportunityId,
+      summary: `Commented on ${opportunityRef(o.number)}${mentioned.length ? ` mentioning ${mentioned.length} user(s)` : ""}`,
+      details: { body: plainText(body) },
+    });
     return comment;
   });
 }

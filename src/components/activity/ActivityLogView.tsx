@@ -13,10 +13,13 @@ const ICON: Record<string, { name: string; tint: string; bg: string }> = {
   "comment-deleted": { name: "delete", tint: "text-gred", bg: "bg-gred-50" },
 };
 
-function describe(e: Entry): string {
+const FIELD: Record<string, string> = { statusId: "status", accountableId: "accountable", revenue: "PR", marginPct: "MR" };
+
+function describe(e: Entry, labels: Record<string, string>): string {
+  const val = (v: string | null) => (v === null ? "—" : labels[v] ?? v);
   switch (e.actionType) {
     case "created": return "Created the opportunity";
-    case "updated": return `Changed ${e.fieldChanged} from "${e.oldValue ?? "—"}" to "${e.newValue ?? "—"}"`;
+    case "updated": return `Changed ${FIELD[e.fieldChanged ?? ""] ?? e.fieldChanged} from "${val(e.oldValue)}" to "${val(e.newValue)}"`;
     case "advance": return `Advanced to ${e.newValue}`;
     case "back": return `Moved back to ${e.newValue}`;
     case "cancel": return "Cancelled the opportunity";
@@ -27,7 +30,8 @@ function describe(e: Entry): string {
   }
 }
 
-export function ActivityLogView({ entries }: { entries: Entry[] }) {
+/** `labels` maps stored ids (statuses, users) to display names. */
+export function ActivityLogView({ entries, labels = {} }: { entries: Entry[]; labels?: Record<string, string> }) {
   return (
     <div className="space-y-5">
       <h2 className="flex items-center gap-2 text-sm font-medium text-gink">
@@ -46,7 +50,7 @@ export function ActivityLogView({ entries }: { entries: Entry[] }) {
                 {i < entries.length - 1 && <span className="mt-1 w-px flex-1 bg-gline-2" />}
               </div>
               <div className="pb-3 pt-1.5">
-                <p className="text-sm text-gink-2">{describe(e)}</p>
+                <p className="text-sm text-gink-2">{describe(e, labels)}</p>
                 <p className="text-xs text-ggrey-2">{dateTime(new Date(e.createdAt))}</p>
               </div>
             </li>

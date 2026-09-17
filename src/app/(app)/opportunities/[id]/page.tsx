@@ -24,11 +24,13 @@ export default async function OpportunityDetail({ params }: { params: Promise<{ 
   const o = await getOpportunity(id);
   if (!o) notFound();
 
-  const [statuses, tags, users] = await Promise.all([
+  const [statuses, tags, users, allStatuses] = await Promise.all([
     db.status.findMany({ where: { stage: o.stage, isActive: true }, orderBy: { label: "asc" } }),
     db.tag.findMany({ where: { stage: o.stage, isActive: true }, orderBy: { label: "asc" } }),
     db.user.findMany({ orderBy: { name: "asc" } }),
+    db.status.findMany({ select: { id: true, label: true } }),
   ]);
+  const labels = Object.fromEntries([...allStatuses.map((s) => [s.id, s.label]), ...users.map((u) => [u.id, u.name])]);
   const attached = new Set(o.tags.map((t) => t.tag.id));
   const bind = updateOpportunityAction.bind(null, id);
   const gp = grossProfit(Number(o.revenue), Number(o.marginPct));
@@ -101,10 +103,11 @@ export default async function OpportunityDetail({ params }: { params: Promise<{ 
           comments={o.comments.map((c) => ({ id: c.id, body: c.body, author: c.author.name, authorId: c.authorId, when: dateTime(c.createdAt) }))}
           currentUserId={user.id}
           isElevated={user.role === "ADMIN" || user.role === "MANAGER"}
+          users={users.map((u) => ({ id: u.id, name: u.name }))}
         />
       </Card>
       <Card>
-        <ActivityLogView entries={o.activities} />
+        <ActivityLogView entries={o.activities} labels={labels} />
       </Card>
     </div>
   );

@@ -6,5 +6,5 @@ import { NotificationDropdown } from "@/components/nav/NotificationDropdown";
 export async function NotificationBell() {
   const user = await requireUser();
   const [items, count] = await Promise.all([listNotifications(user.id), unreadCount(user.id)]);
-  return <NotificationDropdown count={count} items={items.map((n) => ({ id: n.id, message: n.message, read: !!n.readAt, when: dateTime(n.createdAt) }))} />;
+  return <NotificationDropdown count={count} items={items.map((n) => ({ id: n.id, message: n.message, read: !!n.readAt, when: dateTime(n.createdAt), type: n.type, href: n.opportunityId ? `/opportunities/${n.opportunityId}` : null }))} />;
 }

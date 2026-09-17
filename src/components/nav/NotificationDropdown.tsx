@@ -1,9 +1,12 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { markAllReadAction } from "@/actions/notification-actions";
 
-type Item = { id: string; message: string; read: boolean; when: string };
+type Item = { id: string; message: string; read: boolean; when: string; type: string; href: string | null };
+
+const ICON: Record<string, string> = { mention: "alternate_email", comment: "chat_bubble", assignment: "person_add", stage: "swap_horiz", task: "task_alt" };
 
 export function NotificationDropdown({ count, items }: { count: number; items: Item[] }) {
   const [open, setOpen] = useState(false);
@@ -56,22 +59,24 @@ export function NotificationDropdown({ count, items }: { count: number; items: I
                 <p className="text-sm text-ggrey">You&apos;re all caught up</p>
               </div>
             )}
-            {items.map((n) => (
-              <div
-                key={n.id}
-                className="flex items-start gap-3 px-5 py-3 transition-colors hover:bg-ghover"
-              >
-                <span
-                  className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${n.read ? "bg-transparent" : "bg-gblue"}`}
-                />
-                <div>
-                  <p className={`text-sm leading-snug ${n.read ? "text-ggrey" : "text-gink"}`}>
-                    {n.message}
-                  </p>
-                  <p className="mt-0.5 text-xs text-ggrey-2">{n.when}</p>
-                </div>
-              </div>
-            ))}
+            {items.map((n) => {
+              const inner = (
+                <>
+                  <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${n.read ? "bg-transparent" : "bg-gblue"}`} />
+                  <span className="material-symbols-outlined mt-0.5 shrink-0 text-ggrey-2" style={{ fontSize: 18 }}>{ICON[n.type] ?? "notifications"}</span>
+                  <div>
+                    <p className={`text-sm leading-snug ${n.read ? "text-ggrey" : "text-gink"}`}>{n.message}</p>
+                    <p className="mt-0.5 text-xs text-ggrey-2">{n.when}</p>
+                  </div>
+                </>
+              );
+              const cls = "flex items-start gap-2.5 px-5 py-3 transition-colors hover:bg-ghover";
+              return n.href ? (
+                <Link key={n.id} href={n.href} onClick={() => setOpen(false)} className={cls}>{inner}</Link>
+              ) : (
+                <div key={n.id} className={cls}>{inner}</div>
+              );
+            })}
           </div>
         </div>
       )}
