@@ -59,6 +59,7 @@ test("create account keeps entered values and shows field errors on failed valid
   await expect(page).toHaveURL(/opportunities/);
 
   await page.goto("/accounts");
+  await page.click('button:has-text("New account")');
   await page.fill('input[name="name"]', "Persistence Test");
   await page.fill('input[name="website"]', "not a valid website at all");
   await page.click('button:has-text("Save account")');

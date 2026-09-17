@@ -25,14 +25,14 @@ export function DirectoryForm({ action, defaults = {}, contactLabel, namePlaceho
   const v = (k: keyof Values) => state.values?.[k] ?? defaults[k] ?? "";
   return (
     <form action={formAction} className="space-y-4">
-      <Labeled label="Name">
-        <Input name="name" placeholder={namePlaceholder} required defaultValue={v("name")} />
-        <FieldError errors={state.error?.name} />
-      </Labeled>
-      <Labeled label={contactLabel}>
-        <Input name="contactName" defaultValue={v("contactName")} />
-      </Labeled>
       <div className="grid gap-4 sm:grid-cols-2">
+        <Labeled label="Name">
+          <Input name="name" placeholder={namePlaceholder} required defaultValue={v("name")} />
+          <FieldError errors={state.error?.name} />
+        </Labeled>
+        <Labeled label={contactLabel}>
+          <Input name="contactName" defaultValue={v("contactName")} />
+        </Labeled>
         <Labeled label="Email">
           <Input name="email" type="email" placeholder="name@company.com" defaultValue={v("email")} />
           <FieldError errors={state.error?.email} />
@@ -40,11 +40,11 @@ export function DirectoryForm({ action, defaults = {}, contactLabel, namePlaceho
         <Labeled label="Phone">
           <Input name="phone" placeholder="+994 50 000 00 00" defaultValue={v("phone")} />
         </Labeled>
+        <Labeled label="Website">
+          <Input name="website" placeholder="company.com" defaultValue={v("website")} />
+          <FieldError errors={state.error?.website} />
+        </Labeled>
       </div>
-      <Labeled label="Website">
-        <Input name="website" placeholder="company.com" defaultValue={v("website")} />
-        <FieldError errors={state.error?.website} />
-      </Labeled>
       <Labeled label="Notes">
         <Textarea name="notes" rows={5} defaultValue={v("notes")} />
       </Labeled>

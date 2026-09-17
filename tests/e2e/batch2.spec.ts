@@ -74,6 +74,7 @@ test("new pages: tasks quick add, vendors directory, instructions", async ({ pag
   await expect(page.getByText(title)).toBeVisible();
 
   await page.goto("/vendors");
+  await page.click('button:has-text("New vendor")');
   const vendor = `E2E Vendor ${Date.now()}`;
   await page.fill('input[name="name"]', vendor);
   await page.click('button:has-text("Save vendor")');

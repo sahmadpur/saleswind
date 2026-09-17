@@ -9,6 +9,7 @@ test("core flow: login → create account → create opportunity → advance →
 
   // Create account
   await page.goto("/accounts");
+  await page.click('button:has-text("New account")');
   await page.fill('input[name="name"]', "E2E Account");
   await page.click('button:has-text("Save account")');
   await expect(page.locator("h1")).toContainText("E2E Account");

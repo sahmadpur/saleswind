@@ -12,8 +12,12 @@ export async function createAccount(input: AccountInput, userId: string) {
   });
 }
 
-export async function listAccounts() {
-  return db.account.findMany({ orderBy: { createdAt: "desc" }, include: { _count: { select: { opportunities: true } } } });
+export async function listAccounts(q?: string) {
+  return db.account.findMany({
+    where: q ? { OR: (["name", "industry", "primaryContactName", "primaryContactEmail"] as const).map((f) => ({ [f]: { contains: q, mode: "insensitive" as const } })) } : undefined,
+    orderBy: { createdAt: "desc" },
+    include: { _count: { select: { opportunities: true } } },
+  });
 }
 
 export async function getAccount(id: string) {
