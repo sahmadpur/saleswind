@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { db } from "@/lib/db";
-import { createTask, deleteTask, listMyTasks, listOpportunityTasks, setTaskDone } from "@/services/task-service";
+import { createTask, deleteTask, listMyTasks, listOpportunityTasks, setTaskStatus } from "@/services/task-service";
 
 let me: string, other: string, oppId: string;
 
@@ -22,8 +22,34 @@ describe("task-service", () => {
     await createTask({ title: "Sooner", dueDate: "2026-10-01", opportunityId: oppId }, me);
     const open = await listMyTasks(me, "open");
     expect(open.map((t) => t.title)).toEqual(["Sooner", "Later", "Undated"]);
+    expect(open.every((t) => t.status === "TODO")).toBe(true);
     expect(open[0].dueDate?.toISOString()).toBe("2026-10-01T00:00:00.000Z");
     expect((await listOpportunityTasks(oppId)).map((t) => t.title)).toEqual(["Sooner"]);
+  });
+
+  it("moves through statuses, stamping doneAt only while done", async () => {
+    const t = await createTask({ title: "Flow" }, me);
+    let row = await setTaskStatus(t.id, "IN_PROGRESS", me, false);
+    expect([row.status, row.doneAt]).toEqual(["IN_PROGRESS", null]);
+    row = await setTaskStatus(t.id, "DONE", me, false);
+    expect(row.status).toBe("DONE");
+    expect(row.doneAt).toBeInstanceOf(Date);
+    row = await setTaskStatus(t.id, "CANCELLED", me, false);
+    expect([row.status, row.doneAt]).toEqual(["CANCELLED", null]);
+    expect((await listMyTasks(me, "cancelled")).map((x) => x.id)).toContain(t.id);
+    expect((await listMyTasks(me, "open")).map((x) => x.id)).not.toContain(t.id);
+  });
+
+  it("board shows open work plus recently finished tasks only", async () => {
+    const recent = await createTask({ title: "Recent done" }, me);
+    await setTaskStatus(recent.id, "DONE", me, false);
+    const old = await createTask({ title: "Old cancelled" }, me);
+    await setTaskStatus(old.id, "CANCELLED", me, false);
+    await db.$executeRaw`UPDATE "Task" SET "updatedAt" = now() - interval '45 days' WHERE id = ${old.id}`;
+    const board = (await listMyTasks(me, "board")).map((x) => x.title);
+    expect(board).toContain("Recent done");
+    expect(board).toContain("Undated");
+    expect(board).not.toContain("Old cancelled");
   });
 
   it("notifies someone else when assigned, and lets only assignee/creator/elevated edit", async () => {
@@ -32,10 +58,10 @@ describe("task-service", () => {
     expect(n.message).toBe('Task Me assigned you a task: "For other"');
 
     const stranger = (await db.user.create({ data: { name: "S", email: `s${Date.now()}@x.com`, passwordHash: "x", role: "AGENT" } })).id;
-    await expect(setTaskDone(t.id, true, stranger, false)).rejects.toThrow("Forbidden");
-    await setTaskDone(t.id, true, other, false);
+    await expect(setTaskStatus(t.id, "DONE", stranger, false)).rejects.toThrow("Forbidden");
+    await setTaskStatus(t.id, "DONE", other, false);
     expect((await listMyTasks(other, "done")).map((x) => x.id)).toEqual([t.id]);
-    await setTaskDone(t.id, false, stranger, true);
+    await setTaskStatus(t.id, "TODO", stranger, true);
     expect((await listMyTasks(other, "open")).map((x) => x.id)).toEqual([t.id]);
     await deleteTask(t.id, me, false);
     expect(await db.task.count({ where: { id: t.id } })).toBe(0);

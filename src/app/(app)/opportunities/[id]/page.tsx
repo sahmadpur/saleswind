@@ -35,6 +35,7 @@ export default async function OpportunityDetail({ params }: { params: Promise<{ 
     db.status.findMany({ select: { id: true, label: true } }),
     listOpportunityTasks(id),
   ]);
+  const openTasks = tasks.filter((t) => t.status === "TODO" || t.status === "IN_PROGRESS").length;
   const labels = Object.fromEntries([...allStatuses.map((s) => [s.id, s.label]), ...users.map((u) => [u.id, u.name])]);
   const attached = new Set(o.tags.map((t) => t.tag.id));
   const bind = updateOpportunityAction.bind(null, id);
@@ -106,8 +107,8 @@ export default async function OpportunityDetail({ params }: { params: Promise<{ 
         <h2 className="flex items-center gap-2 px-6 pt-5 text-sm font-medium text-gink">
           <span className="material-symbols-outlined text-ggrey" style={{ fontSize: 20 }}>task_alt</span>
           Tasks
-          {tasks.some((t) => !t.doneAt) && (
-            <span className="rounded-full bg-ghover px-2 py-0.5 text-xs font-medium text-ggrey">{tasks.filter((t) => !t.doneAt).length} open</span>
+          {openTasks > 0 && (
+            <span className="rounded-full bg-ghover px-2 py-0.5 text-xs font-medium text-ggrey">{openTasks} open</span>
           )}
         </h2>
         <div className="px-6 pb-4 pt-3">

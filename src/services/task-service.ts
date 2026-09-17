@@ -1,5 +1,7 @@
 import "server-only";
+import type { Prisma, TaskStatus } from "@prisma/client";
 import { db } from "@/lib/db";
+import { TASK_STATUS } from "@/lib/task-status";
 import { audit } from "@/services/audit-service";
 import { notify } from "@/services/notification-service";
 import type { TaskCreateInput } from "@/schemas/task";
@@ -37,11 +39,16 @@ async function loadEditable(id: string, userId: string, elevated: boolean) {
   return t;
 }
 
-export async function setTaskDone(id: string, done: boolean, userId: string, elevated: boolean) {
-  await loadEditable(id, userId, elevated);
+/** Move a task to a status. `doneAt` records when it was completed and is cleared otherwise. */
+export async function setTaskStatus(id: string, status: TaskStatus, userId: string, elevated: boolean) {
+  const before = await loadEditable(id, userId, elevated);
+  if (before.status === status) return before;
   return db.$transaction(async (tx) => {
-    const t = await tx.task.update({ where: { id }, data: { doneAt: done ? new Date() : null } });
-    await audit(tx, { userId, action: done ? "task.done" : "task.reopen", entityType: t.opportunityId ? "opportunity" : "task", entityId: t.opportunityId ?? t.id, summary: `${done ? "Completed" : "Reopened"} task "${t.title}"` });
+    const t = await tx.task.update({ where: { id }, data: { status, doneAt: status === "DONE" ? new Date() : null } });
+    await audit(tx, {
+      userId, action: "task.status", entityType: t.opportunityId ? "opportunity" : "task", entityId: t.opportunityId ?? t.id,
+      summary: `Moved task "${t.title}" from ${TASK_STATUS[before.status].label} to ${TASK_STATUS[status].label}`,
+    });
     return t;
   });
 }
@@ -55,14 +62,22 @@ export async function deleteTask(id: string, userId: string, elevated: boolean) 
   });
 }
 
-export type TaskScope = "open" | "done";
+export type TaskScope = "board" | "open" | "done" | "cancelled";
+
+/** Board keeps finished columns short: done/cancelled tasks drop off after this many days. */
+export const BOARD_FINISHED_DAYS = 30;
 
 export async function listMyTasks(userId: string, scope: TaskScope) {
+  const since = new Date(Date.now() - BOARD_FINISHED_DAYS * 86_400_000);
+  const where: Prisma.TaskWhereInput =
+    scope === "board"
+      ? { assigneeId: userId, OR: [{ status: { in: ["TODO", "IN_PROGRESS"] } }, { status: { in: ["DONE", "CANCELLED"] }, updatedAt: { gte: since } }] }
+      : { assigneeId: userId, status: scope === "open" ? { in: ["TODO", "IN_PROGRESS"] } : scope === "done" ? "DONE" : "CANCELLED" };
   return db.task.findMany({
-    where: { assigneeId: userId, doneAt: scope === "open" ? null : { not: null } },
-    // Open: soonest due first, undated last. Done: most recently completed first.
-    orderBy: scope === "open" ? [{ dueDate: { sort: "asc", nulls: "last" } }, { createdAt: "asc" }] : [{ doneAt: "desc" }],
-    take: scope === "done" ? 100 : undefined,
+    where,
+    // Open work: soonest due first, undated last. Finished: most recent first.
+    orderBy: scope === "done" ? [{ doneAt: "desc" }] : scope === "cancelled" ? [{ updatedAt: "desc" }] : [{ dueDate: { sort: "asc", nulls: "last" } }, { createdAt: "asc" }],
+    take: scope === "done" || scope === "cancelled" ? 100 : undefined,
     include,
   });
 }
@@ -70,9 +85,10 @@ export async function listMyTasks(userId: string, scope: TaskScope) {
 export async function listOpportunityTasks(opportunityId: string) {
   return db.task.findMany({
     where: { opportunityId },
-    orderBy: [{ doneAt: { sort: "desc", nulls: "first" } }, { dueDate: { sort: "asc", nulls: "last" } }, { createdAt: "asc" }],
+    // Open work first, then finished; within each, soonest due first.
+    orderBy: [{ status: "asc" }, { dueDate: { sort: "asc", nulls: "last" } }, { createdAt: "asc" }],
     include,
   });
 }
 
-export const countOpenTasks = (userId: string) => db.task.count({ where: { assigneeId: userId, doneAt: null } });
+export const countOpenTasks = (userId: string) => db.task.count({ where: { assigneeId: userId, status: { in: ["TODO", "IN_PROGRESS"] } } });

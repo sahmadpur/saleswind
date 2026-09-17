@@ -1,9 +1,10 @@
 import type { SessionUser } from "@/lib/session";
 import { dateOnly, opportunityRef, shortName, todayIso } from "@/lib/format";
 import type { TaskItem } from "@/components/tasks/TaskList";
+import type { TaskStatusValue } from "@/lib/task-status";
 
 type TaskRow = {
-  id: string; title: string; dueDate: Date | null; doneAt: Date | null; assigneeId: string; createdById: string;
+  id: string; title: string; status: TaskStatusValue; dueDate: Date | null; doneAt: Date | null; assigneeId: string; createdById: string;
   assignee: { name: string }; opportunity: { id: string; number: number; title: string } | null;
 };
 
@@ -16,7 +17,8 @@ export function toTaskItems(rows: TaskRow[], user: SessionUser, opts: { showAssi
     return {
       id: t.id,
       title: t.title,
-      done: !!t.doneAt,
+      status: t.status,
+      done: t.status === "DONE",
       canEdit: elevated || t.assigneeId === user.id || t.createdById === user.id,
       due: t.dueDate ? dateOnly(t.dueDate) : null,
       dueState: !dueIso ? null : dueIso < today ? "overdue" : dueIso === today ? "today" : null,

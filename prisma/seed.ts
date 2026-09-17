@@ -236,8 +236,9 @@ async function main() {
       { title: "Follow up on proposal", dueDate: day(-1), assigneeId: owners[2].id, createdById: owners[1].id, opportunityId: opps[0].id },
       { title: "Schedule security review", dueDate: day(0), assigneeId: owners[2].id, createdById: owners[2].id, opportunityId: opps[4].id },
       { title: "Prepare onboarding plan", dueDate: day(5), assigneeId: owners[3].id, createdById: owners[1].id, opportunityId: opps[9].id },
-      { title: "Update Q4 forecast", dueDate: day(7), assigneeId: admin.id, createdById: admin.id },
-      { title: "Clean up stale prospects", assigneeId: owners[1].id, createdById: owners[1].id, doneAt: new Date() },
+      { title: "Update Q4 forecast", dueDate: day(7), status: "IN_PROGRESS", assigneeId: admin.id, createdById: admin.id },
+      { title: "Draft partner agreement", assigneeId: admin.id, createdById: admin.id, status: "CANCELLED" },
+      { title: "Clean up stale prospects", assigneeId: owners[1].id, createdById: owners[1].id, status: "DONE", doneAt: new Date() },
     ],
   });
 }

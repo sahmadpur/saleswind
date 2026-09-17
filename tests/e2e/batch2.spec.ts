@@ -62,7 +62,7 @@ test("comment mentions autocomplete and render as mention chips", async ({ page 
 test("new pages: tasks quick add, vendors directory, instructions", async ({ page }) => {
   await login(page);
 
-  await page.goto("/tasks");
+  await page.goto("/tasks?view=list");
   const title = `E2E task ${Date.now()}`;
   await page.fill('input[name="title"]', title);
   await page.click('button:has-text("Add")');
@@ -70,7 +70,7 @@ test("new pages: tasks quick add, vendors directory, instructions", async ({ pag
   await page.getByRole("checkbox", { name: `Complete "${title}"` }).check();
   // Completed tasks drop off the open list once the server confirms.
   await expect(page.getByText(title)).toHaveCount(0);
-  await page.goto("/tasks?show=done");
+  await page.goto("/tasks?view=list&show=done");
   await expect(page.getByText(title)).toBeVisible();
 
   await page.goto("/vendors");
@@ -84,4 +84,34 @@ test("new pages: tasks quick add, vendors directory, instructions", async ({ pag
   await page.goto("/instructions");
   await expect(page.locator("h1").first()).toHaveText("Instructions");
   await expect(page.getByRole("button", { name: "Edit" })).toBeVisible();
+});
+
+test("task board: add to To do, move by menu, drag to Done, persists", async ({ page }) => {
+  await login(page);
+  await page.goto("/tasks");
+  const title = `Board task ${Date.now()}`;
+  await page.fill('input[name="title"]', title);
+  await page.click('button:has-text("Add")');
+
+  const column = (name: string) => page.getByRole("region", { name });
+  const card = (name: string) => column(name).locator("[data-task-id]", { hasText: title });
+  await expect(card("To do")).toBeVisible();
+
+  await card("To do").getByRole("button", { name: `Actions for "${title}"` }).click();
+  const moved = page.waitForResponse((r) => r.request().method() === "POST" && r.url().includes("/tasks"));
+  await page.getByRole("menuitem", { name: "Move to In progress" }).click();
+  await expect(card("In progress")).toBeVisible();
+  await moved;
+
+  // Native HTML5 drag: press, move in steps so Chromium starts a drag session, release over the column.
+  await card("In progress").hover();
+  await page.mouse.down();
+  const target = (await column("Done").boundingBox())!;
+  await page.mouse.move(target.x + target.width / 2, target.y + 80, { steps: 12 });
+  const saved = page.waitForResponse((r) => r.request().method() === "POST" && r.url().includes("/tasks"));
+  await page.mouse.up();
+  await expect(card("Done")).toBeVisible();
+  await saved;
+  await page.reload();
+  await expect(card("Done")).toBeVisible();
 });

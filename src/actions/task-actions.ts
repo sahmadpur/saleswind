@@ -1,9 +1,10 @@
 "use server";
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 import { requireRole, requireUser } from "@/lib/session";
 import { formValues, type FormState } from "@/lib/action-state";
 import { taskCreateSchema } from "@/schemas/task";
-import { createTask, deleteTask, setTaskDone } from "@/services/task-service";
+import { createTask, deleteTask, setTaskStatus } from "@/services/task-service";
 
 function revalidate(opportunityId?: string | null) {
   revalidatePath("/tasks");
@@ -24,11 +25,24 @@ export async function createTaskAction(_prev: unknown, formData: FormData): Prom
 }
 
 const elevated = (role: string) => role === "ADMIN" || role === "MANAGER";
+const statusSchema = z.enum(["TODO", "IN_PROGRESS", "DONE", "CANCELLED"]);
 
-export async function setTaskDoneAction(id: string, done: boolean) {
+export async function setTaskStatusAction(id: string, status: string): Promise<{ error?: string }> {
   const user = await requireUser();
-  const t = await setTaskDone(id, done, user.id, elevated(user.role));
-  revalidate(t.opportunityId);
+  const parsed = statusSchema.safeParse(status);
+  if (!parsed.success) return { error: "Unknown status" };
+  try {
+    const t = await setTaskStatus(id, parsed.data, user.id, elevated(user.role));
+    revalidate(t.opportunityId);
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Could not move task" };
+  }
+  return {};
+}
+
+/** Checkbox toggle used by task lists: Done ↔ To do. */
+export async function setTaskDoneAction(id: string, done: boolean) {
+  return setTaskStatusAction(id, done ? "DONE" : "TODO");
 }
 
 export async function deleteTaskAction(id: string) {

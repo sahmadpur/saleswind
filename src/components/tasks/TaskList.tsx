@@ -3,9 +3,10 @@ import Link from "next/link";
 import { useOptimistic, useTransition } from "react";
 import { deleteTaskAction, setTaskDoneAction } from "@/actions/task-actions";
 import { cn } from "@/lib/cn";
+import { TASK_STATUS, type TaskStatusValue } from "@/lib/task-status";
 
 export type TaskItem = {
-  id: string; title: string; done: boolean; canEdit: boolean;
+  id: string; title: string; status: TaskStatusValue; done: boolean; canEdit: boolean;
   due: string | null; dueState: "overdue" | "today" | null;
   assignee: string | null; opportunity: { href: string; label: string } | null;
 };
@@ -13,6 +14,7 @@ export type TaskItem = {
 function Row({ t }: { t: TaskItem }) {
   const [pending, start] = useTransition();
   const [done, setDone] = useOptimistic(t.done);
+  const finished = done || t.status === "CANCELLED";
   return (
     <li className={cn("group flex items-start gap-3 px-4 py-2.5", pending && "opacity-70")}>
       <input
@@ -24,12 +26,17 @@ function Row({ t }: { t: TaskItem }) {
         className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-gblue"
       />
       <div className="min-w-0 flex-1">
-        <p className={cn("text-sm text-gink", done && "text-ggrey-2 line-through")}>{t.title}</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <p className={cn("text-sm text-gink", finished && "text-ggrey-2 line-through")}>{t.title}</p>
+          {(t.status === "IN_PROGRESS" || t.status === "CANCELLED") && !done && (
+            <span className={cn("rounded-full px-1.5 py-0.5 text-[11px] font-medium", TASK_STATUS[t.status].pill)}>{TASK_STATUS[t.status].label}</span>
+          )}
+        </div>
         <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-ggrey">
           {t.due && (
-            <span className={cn("inline-flex items-center gap-1", !done && t.dueState === "overdue" && "font-medium text-gred", !done && t.dueState === "today" && "font-medium text-gyellow-dark")}>
+            <span className={cn("inline-flex items-center gap-1", !finished && t.dueState === "overdue" && "font-medium text-gred", !finished && t.dueState === "today" && "font-medium text-gyellow-dark")}>
               <span className="material-symbols-outlined" style={{ fontSize: 14 }}>event</span>
-              {!done && t.dueState === "overdue" ? `Overdue · ${t.due}` : !done && t.dueState === "today" ? "Due today" : t.due}
+              {!finished && t.dueState === "overdue" ? `Overdue · ${t.due}` : !finished && t.dueState === "today" ? "Due today" : t.due}
             </span>
           )}
           {t.assignee && (
