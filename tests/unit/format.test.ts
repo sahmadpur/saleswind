@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from "vitest";
-import { dateTime, shortDate, shortName } from "@/lib/format";
+import { dateOnly, dateTime, shortDate, shortName, todayIso } from "@/lib/format";
 
 describe("shortName", () => {
   it("abbreviates the last name", () => {
@@ -19,5 +19,13 @@ describe("dates", () => {
     const d = new Date("2026-09-17T14:05:00Z");
     expect(dateTime(d)).toBe("17 Sep 2026, 14:05");
     expect(shortDate(d)).toBe("17 Sep 2026");
+  });
+});
+
+describe("date-only helpers", () => {
+  it("formats stored UTC dates without shifting and gives today in the app zone", () => {
+    process.env.APP_TIMEZONE = "Asia/Baku";
+    expect(dateOnly(new Date("2026-09-17T00:00:00Z"))).toBe("17 Sep 2026");
+    expect(todayIso(new Date("2026-09-17T21:30:00Z"))).toBe("2026-09-18");
   });
 });

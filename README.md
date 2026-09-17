@@ -3,7 +3,9 @@
 Saleswind is a sales-pipeline CRM where teams manage accounts and opportunities and move
 each opportunity through a **Prospect → Sales → Contract → Project** lifecycle with
 admin-configurable statuses and tags, tracking revenue, comments, activity history,
-notifications, and reports.
+notifications, and reports. Also: inline table editing, Excel/PDF export, @mentions,
+personal/opportunity tasks, Vendors/Staff/Partners directories, an admin-editable
+Instructions page and an admin audit log.
 
 Built with Next.js (App Router, TypeScript), PostgreSQL via Prisma, Auth.js (NextAuth v5)
 credentials auth, Tailwind CSS, Vitest, and Playwright.
@@ -62,11 +64,12 @@ Set these in the Vercel project settings (Production, and Preview if used):
 | --------------- | --------------------------------------------------------------------------- |
 | `DATABASE_URL`  | Connection string for a production Postgres (Vercel Postgres or external).   |
 | `AUTH_SECRET`   | Secret for Auth.js session encryption. Generate with the Node crypto snippet above. |
+| `APP_TIMEZONE`  | Optional IANA zone for displayed dates (default `Asia/Baku`).               |
 
 ### First deploy: seed the production database
 
 Migrations apply automatically on each deploy, but the database must be **seeded once**
-after the first successful deploy to create the admin user and the per-state
+after the first successful deploy to create the admin user and the per-stage
 status/tag vocabularies. Run the seed against the production `DATABASE_URL`:
 
 ```bash

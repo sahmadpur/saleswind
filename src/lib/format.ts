@@ -33,6 +33,19 @@ export function dateTime(d: Date): string {
   return `${p.day} ${p.month} ${p.year}, ${p.hour}:${p.minute}`;
 }
 
+/** A date-only value (stored as UTC midnight), e.g. a due date → "17 Sep 2026". */
+export function dateOnly(d: Date): string {
+  const p = Object.fromEntries(
+    new Intl.DateTimeFormat("en-US", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).formatToParts(d).map((x) => [x.type, x.value]),
+  );
+  return `${p.day} ${p.month} ${p.year}`;
+}
+
+/** Today's date as "YYYY-MM-DD" in the app time zone. */
+export function todayIso(now = new Date()): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: timeZone() }).format(now);
+}
+
 /** "Ruslan Sultanov" → "Ruslan S."; single names are returned unchanged. */
 export function shortName(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);

@@ -214,6 +214,32 @@ async function main() {
       { userId: admin.id, opportunityId: opps[7].id, type: "cancelled", message: "Atlas — fleet tracking was cancelled" },
     ],
   });
+
+  // Directories: numbered per kind.
+  const directory: { kind: "VENDOR" | "STAFF" | "PARTNER"; name: string; contactName: string; email: string; phone: string }[] = [
+    { kind: "VENDOR", name: "Dell Technologies", contactName: "Nigar Aliyeva", email: "nigar@dell.example", phone: "+994 12 555 0101" },
+    { kind: "VENDOR", name: "HP Inc.", contactName: "Elvin Mammadov", email: "elvin@hp.example", phone: "+994 12 555 0102" },
+    { kind: "STAFF", name: "Ruslan Sultanov", contactName: "Presales engineer", email: "ruslan@saleswind.local", phone: "+994 50 555 0103" },
+    { kind: "STAFF", name: "Aysel Karimova", contactName: "Project manager", email: "aysel@saleswind.local", phone: "+994 50 555 0104" },
+    { kind: "PARTNER", name: "Caspian Integrators", contactName: "Farid Huseynov", email: "farid@caspian.example", phone: "+994 12 555 0105" },
+  ];
+  const counters: Record<string, number> = {};
+  for (const d of directory) {
+    counters[d.kind] = (counters[d.kind] ?? 0) + 1;
+    await db.directoryEntry.create({ data: { ...d, number: counters[d.kind], createdById: admin.id } });
+  }
+
+  // Tasks, one overdue, some linked to opportunities.
+  const day = (offset: number) => new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate() + offset));
+  await db.task.createMany({
+    data: [
+      { title: "Follow up on proposal", dueDate: day(-1), assigneeId: owners[2].id, createdById: owners[1].id, opportunityId: opps[0].id },
+      { title: "Schedule security review", dueDate: day(0), assigneeId: owners[2].id, createdById: owners[2].id, opportunityId: opps[4].id },
+      { title: "Prepare onboarding plan", dueDate: day(5), assigneeId: owners[3].id, createdById: owners[1].id, opportunityId: opps[9].id },
+      { title: "Update Q4 forecast", dueDate: day(7), assigneeId: admin.id, createdById: admin.id },
+      { title: "Clean up stale prospects", assigneeId: owners[1].id, createdById: owners[1].id, doneAt: new Date() },
+    ],
+  });
 }
 
 main().then(() => db.$disconnect()).catch((e) => { console.error(e); db.$disconnect(); process.exit(1); });

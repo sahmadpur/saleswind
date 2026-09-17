@@ -71,11 +71,12 @@ export async function updateUser(id: string, input: UserUpdateInput, actorId: st
 }
 
 export async function deleteUser(id: string, actorId: string | null) {
-  const [opps, comments] = await Promise.all([
+  const [opps, comments, tasks] = await Promise.all([
     db.opportunity.count({ where: { accountableId: id } }),
     db.comment.count({ where: { authorId: id } }),
+    db.task.count({ where: { OR: [{ assigneeId: id }, { createdById: id }] } }),
   ]);
-  if (opps > 0 || comments > 0) throw new Error("Cannot delete: user has opportunities or comments");
+  if (opps > 0 || comments > 0 || tasks > 0) throw new Error("Cannot delete: user has opportunities, comments or tasks");
   await db.$transaction(async (tx) => {
     await tx.notification.deleteMany({ where: { userId: id } });
     const u = await tx.user.delete({ where: { id } });

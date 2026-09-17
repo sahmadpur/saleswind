@@ -3,7 +3,7 @@ import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/session";
 import { userCreateSchema, userUpdateSchema } from "@/schemas/user";
 import { createUser, deleteUser, updateUser, UserUpdateError } from "@/services/user-service";
-import type { FormState } from "@/lib/action-state";
+import { formValues, type FormState } from "@/lib/action-state";
 
 export async function createUserAction(_prev: unknown, formData: FormData) {
   const me = await requireRole("users:manage");
@@ -28,12 +28,15 @@ export async function deleteUserAction(id: string, _prev: unknown, _fd: FormData
 
 export async function updateUserAction(id: string, _prev: unknown, formData: FormData): Promise<FormState> {
   const me = await requireRole("users:manage");
+  // Echo back everything except the password so the dialog keeps the edits.
+  const values = formValues(formData);
+  delete values.password;
   const parsed = userUpdateSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
+  if (!parsed.success) return { error: parsed.error.flatten().fieldErrors, values };
   try {
     await updateUser(id, parsed.data, me.id);
   } catch (e) {
-    if (e instanceof UserUpdateError) return { error: { [e.field]: [e.message] } };
+    if (e instanceof UserUpdateError) return { error: { [e.field]: [e.message] }, values };
     throw e;
   }
   revalidatePath("/users");

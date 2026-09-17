@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 
 type Tx = PrismaClient | Prisma.TransactionClient;
 
-export async function notify(tx: Tx, userId: string, opportunityId: string, type: string, message: string) {
+export async function notify(tx: Tx, userId: string, opportunityId: string | null, type: string, message: string) {
   return tx.notification.create({ data: { userId, opportunityId, type, message } });
 }
 

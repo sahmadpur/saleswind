@@ -28,17 +28,17 @@ function EditForm({ action, user, isSelf, onDone }: {
     <form action={formAction} className="space-y-4">
       <h2 className="text-lg font-semibold text-gink">Edit user</h2>
       <Labeled label="Name">
-        <Input name="name" defaultValue={user.name} required />
+        <Input name="name" defaultValue={state.values?.name ?? user.name} required />
         <FieldError errors={state.error?.name} />
       </Labeled>
       <Labeled label="Email">
-        <Input name="email" type="email" defaultValue={user.email} required />
+        <Input name="email" type="email" defaultValue={state.values?.email ?? user.email} required />
         <FieldError errors={state.error?.email} />
       </Labeled>
       <Labeled label="Role">
         {/* Disabled selects don't submit, so mirror the value in a hidden input. */}
         {isSelf && <input type="hidden" name="role" value={user.role} />}
-        <Select name={isSelf ? undefined : "role"} defaultValue={user.role} disabled={isSelf}>
+        <Select key={state.values?.role} name={isSelf ? undefined : "role"} defaultValue={state.values?.role ?? user.role} disabled={isSelf}>
           <option value="AGENT">Agent</option>
           <option value="MANAGER">Manager</option>
           <option value="ADMIN">Admin</option>

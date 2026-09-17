@@ -11,13 +11,23 @@ const NAV: { label: string; items: NavItem[] }[] = [
     items: [
       { href: "/opportunities", label: "Opportunities", icon: "monitoring", action: null },
       { href: "/accounts", label: "Accounts", icon: "domain", action: null },
+      { href: "/tasks", label: "My tasks", icon: "task_alt", action: null },
       { href: "/reports", label: "Reports", icon: "bar_chart", action: "reports:view" },
+    ],
+  },
+  {
+    label: "Directory",
+    items: [
+      { href: "/vendors", label: "Vendors", icon: "local_shipping", action: null },
+      { href: "/staff", label: "Staff", icon: "badge", action: null },
+      { href: "/partners", label: "Partners", icon: "handshake", action: null },
     ],
   },
   {
     label: "Manage",
     items: [
       { href: "/dictionary", label: "Dictionary", icon: "menu_book", action: "dictionary:manage" },
+      { href: "/instructions", label: "Instructions", icon: "help", action: null },
       { href: "/users", label: "Users", icon: "group", action: "users:manage" },
       { href: "/audit", label: "Audit log", icon: "policy", action: "audit:view" },
     ],

@@ -23,16 +23,18 @@ enum Stage {
 }
 
 model User {
-  id            String   @id @default(cuid())
-  name          String
-  email         String   @unique
-  passwordHash  String
-  role          Role     @default(AGENT)
-  createdAt     DateTime @default(now())
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(AGENT)
+  createdAt    DateTime @default(now())
 
-  accountableOpportunities Opportunity[] @relation("AccountableOpportunities")
-  comments           Comment[]
-  notifications      Notification[]
+  accountableOpportunities Opportunity[]  @relation("AccountableOpportunities")
+  comments                 Comment[]
+  notifications            Notification[]
+  assignedTasks            Task[]         @relation("TaskAssignee")
+  createdTasks             Task[]         @relation("TaskCreator")
 }
 
 model Account {
@@ -60,6 +62,7 @@ model Status {
   isActive Boolean @default(true)
 
   opportunities Opportunity[]
+
   @@unique([stage, label])
 }
 
@@ -70,6 +73,7 @@ model Tag {
   isActive Boolean @default(true)
 
   opportunityTags OpportunityTag[]
+
   @@unique([stage, label])
 }
 
@@ -91,13 +95,14 @@ model Opportunity {
   lastModifiedAt   DateTime @default(now())
   lastModifiedById String
 
-  account        Account          @relation(fields: [accountId], references: [id])
-  accountable    User             @relation("AccountableOpportunities", fields: [accountableId], references: [id])
-  status         Status?          @relation(fields: [statusId], references: [id])
-  tags           OpportunityTag[]
-  comments       Comment[]
-  activities     ActivityLog[]
-  notifications  Notification[]
+  account       Account          @relation(fields: [accountId], references: [id])
+  accountable   User             @relation("AccountableOpportunities", fields: [accountableId], references: [id])
+  status        Status?          @relation(fields: [statusId], references: [id])
+  tags          OpportunityTag[]
+  comments      Comment[]
+  activities    ActivityLog[]
+  notifications Notification[]
+  tasks         Task[]
 }
 
 model OpportunityTag {
@@ -105,6 +110,7 @@ model OpportunityTag {
   tagId         String
   opportunity   Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
   tag           Tag         @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
   @@id([opportunityId, tagId])
 }
 
@@ -167,4 +173,54 @@ model AuditLog {
 
   @@index([createdAt])
   @@index([userId])
+}
+
+enum DirectoryKind {
+  VENDOR
+  STAFF
+  PARTNER
+}
+
+// Vendors, staff and partners: simple contact directories, numbered per kind.
+model DirectoryEntry {
+  id          String        @id @default(cuid())
+  kind        DirectoryKind
+  number      Int
+  name        String
+  contactName String?
+  email       String?
+  phone       String?
+  website     String?
+  notes       String?
+  createdById String
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@unique([kind, number])
+}
+
+model Task {
+  id            String    @id @default(cuid())
+  title         String
+  dueDate       DateTime? @db.Date
+  doneAt        DateTime?
+  assigneeId    String
+  createdById   String
+  opportunityId String?
+  createdAt     DateTime  @default(now())
+
+  assignee    User         @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  createdBy   User         @relation("TaskCreator", fields: [createdById], references: [id])
+  opportunity Opportunity? @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+
+  @@index([assigneeId, doneAt])
+  @@index([opportunityId])
+}
+
+// Editable app content keyed by slug, e.g. "instructions".
+model Page {
+  key         String   @id
+  body        String
+  updatedAt   DateTime @updatedAt
+  updatedById String?
 }

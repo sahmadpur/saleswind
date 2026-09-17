@@ -23,6 +23,11 @@ function entityHref(type: string | null, id: string | null): string | null {
     case "account": return id ? `/accounts/${id}` : null;
     case "user": return "/users";
     case "status": case "tag": case "definition": return "/dictionary";
+    case "vendor": return id ? `/vendors/${id}` : null;
+    case "staff": return id ? `/staff/${id}` : null;
+    case "partner": return id ? `/partners/${id}` : null;
+    case "task": return "/tasks";
+    case "page": return id === "instructions" ? "/instructions" : null;
     default: return null;
   }
 }
@@ -58,10 +63,10 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
           {entityTypes.map((e) => <option key={e} value={e}>{e}</option>)}
         </Select>
         <label className="flex items-center gap-1.5 text-xs text-ggrey">
-          From <Input type="date" name="from" defaultValue={filters.from} className="h-9 w-auto text-[13px]" />
+          From <Input type="date" name="from" defaultValue={filters.from} className="h-9 text-[13px]" style={{ width: "auto" }} />
         </label>
         <label className="flex items-center gap-1.5 text-xs text-ggrey">
-          To <Input type="date" name="to" defaultValue={filters.to} className="h-9 w-auto text-[13px]" />
+          To <Input type="date" name="to" defaultValue={filters.to} className="h-9 text-[13px]" style={{ width: "auto" }} />
         </label>
         <Button type="submit" variant="outline">Apply</Button>
         {Object.keys(filters).length > 0 && (

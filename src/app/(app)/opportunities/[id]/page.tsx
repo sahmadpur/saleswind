@@ -11,6 +11,10 @@ import { OpportunityEditForm } from "@/components/opportunities/OpportunityEditF
 import { TagPicker } from "@/components/opportunities/TagPicker";
 import { CommentThread } from "@/components/comments/CommentThread";
 import { ActivityLogView } from "@/components/activity/ActivityLogView";
+import { QuickAddTask } from "@/components/tasks/QuickAddTask";
+import { TaskList } from "@/components/tasks/TaskList";
+import { listOpportunityTasks } from "@/services/task-service";
+import { toTaskItems } from "@/lib/task-view";
 import { Card, CardLabel } from "@/components/ui/Card";
 import { Pill } from "@/components/ui/Pill";
 import { StatusPill } from "@/components/ui/StatusPill";
@@ -24,11 +28,12 @@ export default async function OpportunityDetail({ params }: { params: Promise<{ 
   const o = await getOpportunity(id);
   if (!o) notFound();
 
-  const [statuses, tags, users, allStatuses] = await Promise.all([
+  const [statuses, tags, users, allStatuses, tasks] = await Promise.all([
     db.status.findMany({ where: { stage: o.stage, isActive: true }, orderBy: { label: "asc" } }),
     db.tag.findMany({ where: { stage: o.stage, isActive: true }, orderBy: { label: "asc" } }),
     db.user.findMany({ orderBy: { name: "asc" } }),
     db.status.findMany({ select: { id: true, label: true } }),
+    listOpportunityTasks(id),
   ]);
   const labels = Object.fromEntries([...allStatuses.map((s) => [s.id, s.label]), ...users.map((u) => [u.id, u.name])]);
   const attached = new Set(o.tags.map((t) => t.tag.id));
@@ -96,6 +101,24 @@ export default async function OpportunityDetail({ params }: { params: Promise<{ 
           <TagPicker opportunityId={o.id} allTags={tags.map((t) => ({ id: t.id, label: t.label }))} attachedIds={[...attached]} />
         </Card>
       </div>
+
+      <Card className="overflow-hidden p-0">
+        <h2 className="flex items-center gap-2 px-6 pt-5 text-sm font-medium text-gink">
+          <span className="material-symbols-outlined text-ggrey" style={{ fontSize: 20 }}>task_alt</span>
+          Tasks
+          {tasks.some((t) => !t.doneAt) && (
+            <span className="rounded-full bg-ghover px-2 py-0.5 text-xs font-medium text-ggrey">{tasks.filter((t) => !t.doneAt).length} open</span>
+          )}
+        </h2>
+        <div className="px-6 pb-4 pt-3">
+          <QuickAddTask opportunityId={o.id} currentUserId={user.id} users={users.map((u) => ({ id: u.id, label: u.name }))} />
+        </div>
+        {tasks.length > 0 && (
+          <div className="border-t border-gline-2 [&_li]:px-6">
+            <TaskList tasks={toTaskItems(tasks, user, { showAssignee: true, showOpportunity: false })} empty="" />
+          </div>
+        )}
+      </Card>
 
       <Card>
         <CommentThread
