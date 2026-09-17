@@ -19,6 +19,7 @@ const NAV: { label: string; items: NavItem[] }[] = [
     items: [
       { href: "/dictionary", label: "Dictionary", icon: "menu_book", action: "dictionary:manage" },
       { href: "/users", label: "Users", icon: "group", action: "users:manage" },
+      { href: "/audit", label: "Audit log", icon: "policy", action: "audit:view" },
     ],
   },
 ];

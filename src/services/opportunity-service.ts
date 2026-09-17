@@ -2,6 +2,8 @@ import "server-only";
 import { db } from "@/lib/db";
 import { diffFields } from "@/lib/domain/activity-diff";
 import { notify } from "@/services/notification-service";
+import { audit } from "@/services/audit-service";
+import { opportunityRef } from "@/lib/format";
 import { nextStage, prevStage, canAdvance, canMoveBack } from "@/lib/domain/lifecycle";
 import type { OpportunityCreateInput, OpportunityUpdateInput } from "@/schemas/opportunity";
 
@@ -20,6 +22,7 @@ export async function createOpportunity(input: OpportunityCreateInput, userId: s
       },
     });
     await tx.activityLog.create({ data: { opportunityId: o.id, userId, actionType: "created" } });
+    await audit(tx, { userId, action: "opportunity.create", entityType: "opportunity", entityId: o.id, summary: `Created ${opportunityRef(o.number)} "${o.title}"` });
     // Assignment notification: tell the accountable if they didn't create it themselves
     if (o.accountableId !== userId) await notify(tx, o.accountableId, o.id, "assignment", `You were assigned "${o.title}"`);
     return o;
@@ -47,6 +50,13 @@ export async function updateOpportunity(id: string, input: OpportunityUpdateInpu
     });
     for (const c of changes) {
       await tx.activityLog.create({ data: { opportunityId: id, userId, actionType: "updated", ...c } });
+    }
+    if (changes.length > 0) {
+      await audit(tx, {
+        userId, action: "opportunity.update", entityType: "opportunity", entityId: id,
+        summary: `Updated ${opportunityRef(updated.number)} (${changes.map((c) => c.fieldChanged).join(", ")})`,
+        details: changes.map((c) => ({ ...c })),
+      });
     }
     // Assignment notification: tell the new accountable if accountability changed to someone else
     if (after.accountableId !== before.accountableId && after.accountableId !== userId) {
@@ -105,6 +115,11 @@ export async function transitionOpportunity(id: string, kind: TransitionKind, us
       data: { opportunityId: id, userId, actionType: kind, fieldChanged: "stage", oldValue: o.stage, newValue: isCancelled ? "CANCELLED" : newStage },
     });
 
+    await audit(tx, {
+      userId, action: `opportunity.${kind}`, entityType: "opportunity", entityId: id,
+      summary: kind === "cancel" ? `Cancelled ${opportunityRef(o.number)}: ${reason}` : `Moved ${opportunityRef(o.number)} from ${o.stage} to ${newStage}`,
+    });
+
     if (o.accountableId !== userId) {
       const verb = kind === "cancel" ? "was cancelled" : `moved to ${newStage}`;
       await notify(tx, o.accountableId, id, "stage", `"${o.title}" ${verb}`);
@@ -119,7 +134,8 @@ export async function attachTag(opportunityId: string, tagId: string, userId: st
     await tx.opportunityTag.create({ data: { opportunityId, tagId } });
     const tag = await tx.tag.findUniqueOrThrow({ where: { id: tagId } });
     await tx.activityLog.create({ data: { opportunityId, userId, actionType: "tag-added", newValue: tag.label } });
-    await tx.opportunity.update({ where: { id: opportunityId }, data: { lastModifiedAt: new Date(), lastModifiedById: userId } });
+    const o = await tx.opportunity.update({ where: { id: opportunityId }, data: { lastModifiedAt: new Date(), lastModifiedById: userId } });
+    await audit(tx, { userId, action: "opportunity.tag-add", entityType: "opportunity", entityId: opportunityId, summary: `Added tag "${tag.label}" to ${opportunityRef(o.number)}` });
   });
 }
 
@@ -128,6 +144,7 @@ export async function detachTag(opportunityId: string, tagId: string, userId: st
     await tx.opportunityTag.delete({ where: { opportunityId_tagId: { opportunityId, tagId } } });
     const tag = await tx.tag.findUniqueOrThrow({ where: { id: tagId } });
     await tx.activityLog.create({ data: { opportunityId, userId, actionType: "tag-removed", oldValue: tag.label } });
-    await tx.opportunity.update({ where: { id: opportunityId }, data: { lastModifiedAt: new Date(), lastModifiedById: userId } });
+    const o = await tx.opportunity.update({ where: { id: opportunityId }, data: { lastModifiedAt: new Date(), lastModifiedById: userId } });
+    await audit(tx, { userId, action: "opportunity.tag-remove", entityType: "opportunity", entityId: opportunityId, summary: `Removed tag "${tag.label}" from ${opportunityRef(o.number)}` });
   });
 }

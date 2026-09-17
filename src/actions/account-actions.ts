@@ -17,10 +17,10 @@ export async function createAccountAction(_prev: unknown, formData: FormData) {
 }
 
 export async function updateAccountAction(id: string, _prev: unknown, formData: FormData) {
-  await requireRole("account:write");
+  const user = await requireRole("account:write");
   const parsed = accountSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors, values: formValues(formData) };
-  await updateAccount(id, parsed.data);
+  await updateAccount(id, parsed.data, user.id);
   revalidatePath(`/accounts/${id}`);
   return { ok: true };
 }
@@ -28,10 +28,10 @@ export async function updateAccountAction(id: string, _prev: unknown, formData: 
 const notesSchema = z.object({ notes: z.string() });
 
 export async function updateAccountNotesAction(id: string, _prev: unknown, formData: FormData) {
-  await requireRole("account:write");
+  const user = await requireRole("account:write");
   const parsed = notesSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors, values: formValues(formData) };
-  await updateAccountNotes(id, parsed.data.notes);
+  await updateAccountNotes(id, parsed.data.notes, user.id);
   revalidatePath(`/accounts/${id}`);
   return { ok: true };
 }

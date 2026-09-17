@@ -151,3 +151,20 @@ model Definition {
   term       String @unique
   definition String
 }
+
+// Who did what, app-wide. No FK to User so entries survive user deletion.
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  action     String
+  entityType String?
+  entityId   String?
+  summary    String
+  details    Json?
+  ip         String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([userId])
+}

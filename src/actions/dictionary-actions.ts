@@ -6,34 +6,34 @@ import { isStatusColor } from "@/lib/status-colors";
 import { addStatus, setStatusColor, toggleStatus, addTag, toggleTag, upsertDefinition } from "@/services/dictionary-service";
 
 export async function addStatusAction(formData: FormData) {
-  await requireRole("dictionary:manage");
-  await addStatus(formData.get("stage") as Stage, String(formData.get("label")));
+  const user = await requireRole("dictionary:manage");
+  await addStatus(formData.get("stage") as Stage, String(formData.get("label")), user.id);
   revalidatePath("/dictionary");
 }
 export async function toggleStatusAction(id: string) {
-  await requireRole("dictionary:manage");
-  await toggleStatus(id);
+  const user = await requireRole("dictionary:manage");
+  await toggleStatus(id, user.id);
   revalidatePath("/dictionary");
 }
 export async function setStatusColorAction(id: string, color: string) {
-  await requireRole("dictionary:manage");
+  const user = await requireRole("dictionary:manage");
   if (!isStatusColor(color)) throw new Error("Unknown colour");
-  await setStatusColor(id, color);
+  await setStatusColor(id, color, user.id);
   revalidatePath("/dictionary");
   revalidatePath("/opportunities");
 }
 export async function addTagAction(formData: FormData) {
-  await requireRole("dictionary:manage");
-  await addTag(formData.get("stage") as Stage, String(formData.get("label")));
+  const user = await requireRole("dictionary:manage");
+  await addTag(formData.get("stage") as Stage, String(formData.get("label")), user.id);
   revalidatePath("/dictionary");
 }
 export async function toggleTagAction(id: string) {
-  await requireRole("dictionary:manage");
-  await toggleTag(id);
+  const user = await requireRole("dictionary:manage");
+  await toggleTag(id, user.id);
   revalidatePath("/dictionary");
 }
 export async function upsertDefinitionAction(formData: FormData) {
-  await requireRole("dictionary:manage");
-  await upsertDefinition(String(formData.get("term")), String(formData.get("definition")));
+  const user = await requireRole("dictionary:manage");
+  await upsertDefinition(String(formData.get("term")), String(formData.get("definition")), user.id);
   revalidatePath("/dictionary");
 }

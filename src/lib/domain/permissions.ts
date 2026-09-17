@@ -6,12 +6,13 @@ export type Action =
   | "comment:write"
   | "reports:view"
   | "dictionary:manage"
-  | "users:manage";
+  | "users:manage"
+  | "audit:view";
 
 const MATRIX: Record<Role, Action[]> = {
   AGENT: ["opportunity:write", "account:write", "comment:write"],
   MANAGER: ["opportunity:write", "account:write", "comment:write", "reports:view"],
-  ADMIN: ["opportunity:write", "account:write", "comment:write", "reports:view", "dictionary:manage", "users:manage"],
+  ADMIN: ["opportunity:write", "account:write", "comment:write", "reports:view", "dictionary:manage", "users:manage", "audit:view"],
 };
 
 export function can(role: Role, action: Action): boolean {
