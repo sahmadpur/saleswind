@@ -30,7 +30,7 @@ test("core flow: login → create account → create opportunity → advance →
   await expect(page.getByText("Sales", { exact: true })).toBeVisible();
 
   // Comment
-  await page.fill('input[name="body"]', "First comment");
+  await page.fill('textarea[name="body"]', "First comment");
   await page.click('button:has-text("Post")');
   await expect(page.locator("text=First comment")).toBeVisible();
 });
