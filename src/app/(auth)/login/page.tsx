@@ -77,7 +77,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
 
       {/* Form panel */}
       <section className="flex items-center justify-center bg-gbg px-4 py-10">
-        <form action={login} className="w-full max-w-[22rem]">
+        <div className="w-full max-w-[22rem]">
           <div className="mb-8 flex items-center gap-2.5 lg:hidden">
             <span className="grid h-8 w-8 place-items-center rounded-md bg-gblue text-white" aria-hidden>
               <span className="material-symbols-outlined fill" style={{ fontSize: 20 }}>air</span>
@@ -85,9 +85,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             <span className="text-lg font-semibold tracking-[-0.01em] text-gink">Saleswind</span>
           </div>
           <h2 className="text-2xl font-semibold tracking-[-0.015em] text-gink">Sign in</h2>
-          <p className="mt-1 text-sm text-ggrey">
-            {showPassword ? "Use the email and password your admin gave you." : "Use your company Microsoft 365 (Office) account."}
-          </p>
+          <p className="mt-1 text-sm text-ggrey">Use your company Office 365 (Microsoft) account.</p>
 
           {error && (
             <div className="mt-6 flex items-center gap-2 rounded-md bg-gred-50 px-3 py-2.5 text-sm text-gred">
@@ -96,21 +94,37 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             </div>
           )}
 
-          {microsoft && (
-            <Button type="submit" formAction={microsoftLogin} formNoValidate variant={showPassword ? "outline" : "primary"} className="mt-7 w-full">
-              <svg aria-hidden viewBox="0 0 21 21" width="16" height="16">
+          {/* Always shown so people know Office sign-in is the way in; disabled until the Microsoft app is configured. */}
+          <form action={microsoftLogin}>
+            <button
+              type="submit"
+              disabled={!microsoft}
+              className="g-press mt-7 flex h-11 w-full items-center justify-center gap-3 rounded-md border border-gline bg-gsurface text-sm font-semibold text-gink shadow-g1 transition-colors hover:bg-ghover disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-gsurface"
+            >
+              <svg aria-hidden viewBox="0 0 21 21" width="20" height="20">
                 <rect x="1" y="1" width="9" height="9" fill="#f25022" />
                 <rect x="11" y="1" width="9" height="9" fill="#7fba00" />
                 <rect x="1" y="11" width="9" height="9" fill="#00a4ef" />
                 <rect x="11" y="11" width="9" height="9" fill="#ffb900" />
               </svg>
-              Sign in with Microsoft
-            </Button>
+              Sign in with Office 365
+            </button>
+          </form>
+          {!microsoft && (
+            <p className="mt-2 text-center text-xs text-ggrey">Office 365 sign-in is being set up. Use your email and password for now.</p>
           )}
 
           {showPassword && (
-            <>
-              <div className="mt-7 space-y-4">
+            <div className="mt-6 flex items-center gap-3 text-xs text-ggrey-2">
+              <span className="h-px flex-1 bg-gline" />
+              or with password
+              <span className="h-px flex-1 bg-gline" />
+            </div>
+          )}
+
+          {showPassword && (
+            <form action={login}>
+              <div className="mt-5 space-y-4">
                 <div>
                   <label htmlFor="email" className="mb-1.5 block text-xs font-medium text-ggrey">Email</label>
                   <Input id="email" name="email" type="email" placeholder="you@company.com" autoComplete="email" required />
@@ -121,10 +135,10 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
                 </div>
               </div>
 
-              <Button type="submit" className="mt-7 w-full">Sign in</Button>
-            </>
+              <Button type="submit" className="mt-6 w-full">Sign in</Button>
+            </form>
           )}
-        </form>
+        </div>
       </section>
     </main>
   );
