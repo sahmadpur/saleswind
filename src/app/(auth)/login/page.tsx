@@ -1,4 +1,4 @@
-import { isBlockedLogin, signIn } from "@/lib/auth";
+import { isBlockedLogin, microsoftLoginEnabled, signIn } from "@/lib/auth";
 import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { redirect } from "next/navigation";
 import { Input } from "@/components/ui/Input";
@@ -10,8 +10,21 @@ const FEATURES = [
   { icon: "bar_chart", title: "Reports", body: "Predicted revenue and gross profit, live." },
 ];
 
-export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
-  const { error } = await searchParams;
+const ERRORS: Record<string, string> = {
+  blocked: "Your account is blocked. Contact your admin.",
+  "1": "Email or password is incorrect.",
+  AccessDenied: "This Microsoft account can't sign in to Saleswind. Use your company Office account.",
+};
+
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string; password?: string }> }) {
+  const { error, password } = await searchParams;
+  const microsoft = microsoftLoginEnabled();
+  // With Microsoft sign-in on, the password form is only a hidden fallback for admins (/login?password=1).
+  const showPassword = !microsoft || !!password;
+  async function microsoftLogin() {
+    "use server";
+    await signIn("microsoft-entra-id", { redirectTo: "/opportunities" });
+  }
   async function login(formData: FormData) {
     "use server";
     if (await isBlockedLogin(String(formData.get("email") ?? ""), String(formData.get("password") ?? ""))) {
@@ -72,27 +85,45 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             <span className="text-lg font-semibold tracking-[-0.01em] text-gink">Saleswind</span>
           </div>
           <h2 className="text-2xl font-semibold tracking-[-0.015em] text-gink">Sign in</h2>
-          <p className="mt-1 text-sm text-ggrey">Use the email and password your admin gave you.</p>
+          <p className="mt-1 text-sm text-ggrey">
+            {showPassword ? "Use the email and password your admin gave you." : "Use your company Microsoft 365 (Office) account."}
+          </p>
 
           {error && (
             <div className="mt-6 flex items-center gap-2 rounded-md bg-gred-50 px-3 py-2.5 text-sm text-gred">
               <span className="material-symbols-outlined" style={{ fontSize: 18 }}>error</span>
-              {error === "blocked" ? "Your account is blocked. Contact your admin." : "Email or password is incorrect."}
+              {ERRORS[error] ?? "Sign-in failed. Try again."}
             </div>
           )}
 
-          <div className="mt-7 space-y-4">
-            <div>
-              <label htmlFor="email" className="mb-1.5 block text-xs font-medium text-ggrey">Email</label>
-              <Input id="email" name="email" type="email" placeholder="you@company.com" autoComplete="email" required />
-            </div>
-            <div>
-              <label htmlFor="password" className="mb-1.5 block text-xs font-medium text-ggrey">Password</label>
-              <Input id="password" name="password" type="password" autoComplete="current-password" required />
-            </div>
-          </div>
+          {microsoft && (
+            <Button type="submit" formAction={microsoftLogin} formNoValidate variant={showPassword ? "outline" : "primary"} className="mt-7 w-full">
+              <svg aria-hidden viewBox="0 0 21 21" width="16" height="16">
+                <rect x="1" y="1" width="9" height="9" fill="#f25022" />
+                <rect x="11" y="1" width="9" height="9" fill="#7fba00" />
+                <rect x="1" y="11" width="9" height="9" fill="#00a4ef" />
+                <rect x="11" y="11" width="9" height="9" fill="#ffb900" />
+              </svg>
+              Sign in with Microsoft
+            </Button>
+          )}
 
-          <Button type="submit" className="mt-7 w-full">Sign in</Button>
+          {showPassword && (
+            <>
+              <div className="mt-7 space-y-4">
+                <div>
+                  <label htmlFor="email" className="mb-1.5 block text-xs font-medium text-ggrey">Email</label>
+                  <Input id="email" name="email" type="email" placeholder="you@company.com" autoComplete="email" required />
+                </div>
+                <div>
+                  <label htmlFor="password" className="mb-1.5 block text-xs font-medium text-ggrey">Password</label>
+                  <Input id="password" name="password" type="password" autoComplete="current-password" required />
+                </div>
+              </div>
+
+              <Button type="submit" className="mt-7 w-full">Sign in</Button>
+            </>
+          )}
         </form>
       </section>
     </main>
