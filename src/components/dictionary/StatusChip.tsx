@@ -2,9 +2,10 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { cn } from "@/lib/cn";
 import { STATUS_COLORS, statusColor, type StatusColor } from "@/lib/status-colors";
-import { setStatusColorAction, toggleStatusAction } from "@/actions/dictionary-actions";
+import { deleteStatusAction, setStatusColorAction, toggleStatusAction } from "@/actions/dictionary-actions";
+import { DictionaryDeleteButton } from "@/components/dictionary/DictionaryDeleteButton";
 
-/** Dictionary status: click the label to toggle active, the swatch to pick a colour. */
+/** Dictionary status: click the label to toggle active, the swatch to pick a colour, × to delete. */
 export function StatusChip({ id, label, color, isActive }: { id: string; label: string; color: string; isActive: boolean }) {
   const [open, setOpen] = useState(false);
   const [pending, start] = useTransition();
@@ -32,10 +33,16 @@ export function StatusChip({ id, label, color, isActive }: { id: string; label: 
         type="button"
         title={isActive ? "Click to deactivate" : "Click to activate"}
         onClick={() => start(() => toggleStatusAction(id))}
-        className={cn("h-7 rounded-r-md pl-1 pr-2.5 hover:bg-black/5", !isActive && "line-through")}
+        className={cn("h-7 pl-1 pr-1 hover:bg-black/5", !isActive && "line-through")}
       >
         {label}
       </button>
+      <DictionaryDeleteButton
+        action={() => deleteStatusAction(id)}
+        label={label}
+        confirmText={`Delete status "${label}"?`}
+        className="rounded-r-md hover:bg-black/5"
+      />
       {open && (
         <div className="g-pop absolute left-0 top-full z-20 mt-1 flex gap-1.5 rounded-md border border-gline-2 bg-gsurface p-2 shadow-g2">
           {(Object.keys(STATUS_COLORS) as StatusColor[]).map((k) => (

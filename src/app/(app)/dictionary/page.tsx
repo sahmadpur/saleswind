@@ -1,11 +1,12 @@
 import { requireRole } from "@/lib/session";
 import { listVocabularies } from "@/services/dictionary-service";
-import { addStatusAction, addTagAction, toggleTagAction, upsertDefinitionAction } from "@/actions/dictionary-actions";
+import { addStatusAction, addTagAction, deleteDefinitionAction, deleteTagAction, toggleTagAction, upsertDefinitionAction } from "@/actions/dictionary-actions";
 import { Card, CardLabel } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StatusChip } from "@/components/dictionary/StatusChip";
+import { DictionaryDeleteButton } from "@/components/dictionary/DictionaryDeleteButton";
 
 const STAGES = ["PROSPECT", "SALES", "CONTRACT", "PROJECT"] as const;
 
@@ -65,18 +66,32 @@ export default async function DictionaryPage() {
               <StageLabel stage={s} />
               <div className="flex flex-wrap items-center gap-2">
                 {tags.filter((x) => x.stage === s).map((x) => (
-                  <form key={x.id} action={toggleTagAction.bind(null, x.id)}>
-                    <button
-                      type="submit"
-                      className={`g-press inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${
-                        x.isActive
-                          ? "border-gline bg-gsurface text-gink-2 hover:bg-ghover"
-                          : "border-transparent bg-ghover text-ggrey-2 line-through"
-                      }`}
-                    >
-                      {x.label}
-                    </button>
-                  </form>
+                  <div
+                    key={x.id}
+                    className={`inline-flex items-center rounded-md border text-xs font-medium ${
+                      x.isActive ? "border-gline bg-gsurface text-gink-2" : "border-transparent bg-ghover text-ggrey-2"
+                    }`}
+                  >
+                    <form action={toggleTagAction.bind(null, x.id)}>
+                      <button
+                        type="submit"
+                        title={x.isActive ? "Click to deactivate" : "Click to activate"}
+                        className={`g-press h-7 rounded-l-md pl-2.5 pr-1 transition-colors hover:bg-ghover ${x.isActive ? "" : "line-through"}`}
+                      >
+                        {x.label}
+                      </button>
+                    </form>
+                    <DictionaryDeleteButton
+                      action={deleteTagAction.bind(null, x.id)}
+                      label={x.label}
+                      confirmText={
+                        x._count.opportunityTags
+                          ? `Delete tag "${x.label}"? It will be removed from ${x._count.opportunityTags} ${x._count.opportunityTags === 1 ? "opportunity" : "opportunities"}.`
+                          : `Delete tag "${x.label}"?`
+                      }
+                      className="rounded-r-md hover:bg-ghover"
+                    />
+                  </div>
                 ))}
                 <form action={addTagAction} className="flex items-center gap-1.5">
                   <input type="hidden" name="stage" value={s} />
@@ -97,9 +112,17 @@ export default async function DictionaryPage() {
         <CardLabel>Definitions</CardLabel>
         <ul className="mb-5 divide-y divide-gline-2">
           {definitions.map((d) => (
-            <li key={d.id} className="py-2.5 text-sm">
-              <span className="font-medium text-gink">{d.term}</span>
-              <span className="text-ggrey"> — {d.definition}</span>
+            <li key={d.id} className="flex items-start justify-between gap-3 py-2.5 text-sm">
+              <span>
+                <span className="font-medium text-gink">{d.term}</span>
+                <span className="text-ggrey"> — {d.definition}</span>
+              </span>
+              <DictionaryDeleteButton
+                action={deleteDefinitionAction.bind(null, d.id)}
+                label={d.term}
+                confirmText={`Delete definition "${d.term}"?`}
+                className="shrink-0 rounded text-ggrey hover:bg-ghover"
+              />
             </li>
           ))}
           {definitions.length === 0 && <li className="py-2.5 text-sm text-ggrey">No definitions yet.</li>}

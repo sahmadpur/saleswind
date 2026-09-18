@@ -57,10 +57,41 @@ export async function renameTag(id: string, label: string, userId: string) {
     return t;
   });
 }
+/** Refuses while opportunities use the status: status is required, so deactivate it instead. */
+export async function deleteStatus(id: string, userId: string) {
+  return db.$transaction(async (tx) => {
+    const s = await tx.status.findUniqueOrThrow({ where: { id } });
+    const used = await tx.opportunity.count({ where: { statusId: id } });
+    if (used > 0) throw new Error(`"${s.label}" is used by ${used} ${used === 1 ? "opportunity" : "opportunities"}. Change their status or deactivate it instead.`);
+    await tx.status.delete({ where: { id } });
+    await audit(tx, { userId, action: "status.delete", entityType: "status", entityId: id, summary: `Deleted status "${s.label}" (${s.stage})` });
+  });
+}
+/** Also removes the tag from every opportunity that has it. */
+export async function deleteTag(id: string, userId: string) {
+  return db.$transaction(async (tx) => {
+    const t = await tx.tag.findUniqueOrThrow({ where: { id } });
+    const links = await tx.opportunityTag.findMany({ where: { tagId: id }, select: { opportunityId: true } });
+    for (const l of links) {
+      await tx.activityLog.create({ data: { opportunityId: l.opportunityId, userId, actionType: "tag-removed", oldValue: t.label } });
+    }
+    await tx.tag.delete({ where: { id } });
+    await audit(tx, {
+      userId, action: "tag.delete", entityType: "tag", entityId: id,
+      summary: `Deleted tag "${t.label}" (${t.stage})${links.length ? `, removed from ${links.length} opportunities` : ""}`,
+    });
+  });
+}
+export async function deleteDefinition(id: string, userId: string) {
+  return db.$transaction(async (tx) => {
+    const d = await tx.definition.delete({ where: { id } });
+    await audit(tx, { userId, action: "definition.delete", entityType: "definition", entityId: id, summary: `Deleted definition "${d.term}"` });
+  });
+}
 export async function listVocabularies() {
   const [statuses, tags, definitions] = await Promise.all([
     db.status.findMany({ orderBy: [{ stage: "asc" }, { label: "asc" }] }),
-    db.tag.findMany({ orderBy: [{ stage: "asc" }, { label: "asc" }] }),
+    db.tag.findMany({ orderBy: [{ stage: "asc" }, { label: "asc" }], include: { _count: { select: { opportunityTags: true } } } }),
     db.definition.findMany({ orderBy: { term: "asc" } }),
   ]);
   return { statuses, tags, definitions };

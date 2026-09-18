@@ -8,6 +8,7 @@ import { ColResizer, RestoreColumnWidths } from "@/components/ui/ColResizer";
 import { EditableCell } from "@/components/opportunities/EditableCell";
 import { TagCell } from "@/components/opportunities/TagCell";
 import { updateOpportunityFieldAction } from "@/actions/opportunity-actions";
+import type { EditableField } from "@/schemas/opportunity";
 import { grossProfit } from "@/lib/domain/finance";
 import { money, shortDate, opportunityRef, shortName, dateTime } from "@/lib/format";
 import { type SortDir, type SortKey } from "@/lib/opportunity-sort";
@@ -29,9 +30,14 @@ const RAIL: Record<string, string> = {
   PROJECT: "var(--color-ggreen)",
 };
 
+const STAGE_OPTIONS = [
+  { value: "PROSPECT", label: "Prospect" }, { value: "SALES", label: "Sales" },
+  { value: "CONTRACT", label: "Contract" }, { value: "PROJECT", label: "Project" },
+];
+
 function BodyRow({ o, edit }: { o: Row; edit: EditOptions | null }) {
   const revenue = Number(o.revenue), margin = Number(o.marginPct);
-  const save = (field: "title" | "statusId" | "accountableId" | "revenue" | "marginPct") => updateOpportunityFieldAction.bind(null, o.id, field);
+  const save = (field: EditableField) => updateOpportunityFieldAction.bind(null, o.id, field);
   const titleLink = (
     <Link
       href={`/opportunities/${o.id}`}
@@ -57,7 +63,11 @@ function BodyRow({ o, edit }: { o: Row; edit: EditOptions | null }) {
         {edit ? <EditableCell value={o.title} display={titleLink} kind="text" save={save("title")} label="title" iconTrigger /> : titleLink}
       </td>
       <td className={`${TD} max-w-[8rem] truncate text-gink-2`} title={o.account.name}>{o.account.name}</td>
-      <td className={TD}><Pill stage={o.stage} /></td>
+      <td className={TD}>
+        {edit ? (
+          <EditableCell value={o.stage} display={<Pill stage={o.stage} />} kind="select" options={STAGE_OPTIONS} save={save("stage")} label="stage" />
+        ) : <Pill stage={o.stage} />}
+      </td>
       <td className={`${TD} text-gink-2`}>
         {edit ? (
           <EditableCell

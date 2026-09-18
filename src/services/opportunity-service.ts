@@ -5,7 +5,7 @@ import { diffFields } from "@/lib/domain/activity-diff";
 import { notify } from "@/services/notification-service";
 import { audit } from "@/services/audit-service";
 import { opportunityRef } from "@/lib/format";
-import { nextStage, prevStage, canAdvance, canMoveBack } from "@/lib/domain/lifecycle";
+import { ORDER, nextStage, prevStage, canAdvance, canMoveBack } from "@/lib/domain/lifecycle";
 import type { OpportunityCreateInput, OpportunityFieldInput, OpportunityUpdateInput } from "@/schemas/opportunity";
 
 type Tx = Prisma.TransactionClient;
@@ -98,8 +98,8 @@ export async function updateOpportunity(id: string, input: OpportunityUpdateInpu
   }, userId);
 }
 
-/** Inline table edit of a single field. */
-export async function updateOpportunityField(id: string, input: OpportunityFieldInput, userId: string) {
+/** Inline table edit of a single field. Stage changes go through setOpportunityStage. */
+export async function updateOpportunityField(id: string, input: Exclude<OpportunityFieldInput, { field: "stage" }>, userId: string) {
   const value = input.field === "statusId" ? input.value || null : input.value;
   return applyChanges(id, { [input.field]: value }, userId);
 }
@@ -126,16 +126,18 @@ export async function getOpportunity(id: string) {
 export type TransitionKind = "advance" | "back";
 
 export async function transitionOpportunity(id: string, kind: TransitionKind, userId: string) {
+  const o = await db.opportunity.findUniqueOrThrow({ where: { id } });
+  if (kind === "advance" && !canAdvance(o.stage)) throw new Error("Cannot advance past the final stage");
+  if (kind === "back" && !canMoveBack(o.stage)) throw new Error("Cannot move back from the first stage");
+  return setOpportunityStage(id, kind === "advance" ? nextStage(o.stage)! : prevStage(o.stage)!, userId);
+}
+
+/** Move to any stage. Clears the status, since statuses belong to a stage. */
+export async function setOpportunityStage(id: string, newStage: Stage, userId: string) {
   return db.$transaction(async (tx) => {
     const o = await tx.opportunity.findUniqueOrThrow({ where: { id } });
-    let newStage;
-    if (kind === "advance") {
-      if (!canAdvance(o.stage)) throw new Error("Cannot advance past the final stage");
-      newStage = nextStage(o.stage)!;
-    } else {
-      if (!canMoveBack(o.stage)) throw new Error("Cannot move back from the first stage");
-      newStage = prevStage(o.stage)!;
-    }
+    if (newStage === o.stage) return o;
+    const kind: TransitionKind = ORDER.indexOf(newStage) > ORDER.indexOf(o.stage) ? "advance" : "back";
 
     const updated = await tx.opportunity.update({
       where: { id },

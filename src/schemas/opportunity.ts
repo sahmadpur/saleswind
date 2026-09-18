@@ -30,6 +30,7 @@ export const opportunityUpdateSchema = z.object({
 /** One cell edited inline in the opportunities table. */
 export const opportunityFieldSchema = z.discriminatedUnion("field", [
   z.object({ field: z.literal("title"), value: z.string().trim().min(1, "Title is required") }),
+  z.object({ field: z.literal("stage"), value: z.enum(STAGES, { error: "Select a stage" }) }),
   z.object({ field: z.literal("statusId"), value: z.string() }),
   z.object({ field: z.literal("accountableId"), value: z.string().min(1, "Select who is accountable") }),
   z.object({ field: z.literal("revenue"), value: z.coerce.number({ error: "Enter a number" }).min(0, "Must be 0 or more") }),

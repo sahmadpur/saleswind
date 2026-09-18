@@ -3,7 +3,7 @@ import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/session";
 import type { Stage } from "@prisma/client";
 import { isStatusColor } from "@/lib/status-colors";
-import { addStatus, setStatusColor, toggleStatus, addTag, toggleTag, upsertDefinition } from "@/services/dictionary-service";
+import { addStatus, setStatusColor, toggleStatus, addTag, toggleTag, upsertDefinition, deleteStatus, deleteTag, deleteDefinition } from "@/services/dictionary-service";
 
 export async function addStatusAction(formData: FormData) {
   const user = await requireRole("dictionary:manage");
@@ -36,4 +36,26 @@ export async function upsertDefinitionAction(formData: FormData) {
   const user = await requireRole("dictionary:manage");
   await upsertDefinition(String(formData.get("term")), String(formData.get("definition")), user.id);
   revalidatePath("/dictionary");
+}
+
+/** Runs a dictionary delete, returning the error message instead of throwing so the UI can show it. */
+async function tryDelete(run: (userId: string) => Promise<unknown>): Promise<{ error?: string }> {
+  const user = await requireRole("dictionary:manage");
+  try {
+    await run(user.id);
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Delete failed" };
+  }
+  revalidatePath("/dictionary");
+  revalidatePath("/opportunities");
+  return {};
+}
+export async function deleteStatusAction(id: string) {
+  return tryDelete((userId) => deleteStatus(id, userId));
+}
+export async function deleteTagAction(id: string) {
+  return tryDelete((userId) => deleteTag(id, userId));
+}
+export async function deleteDefinitionAction(id: string) {
+  return tryDelete((userId) => deleteDefinition(id, userId));
 }

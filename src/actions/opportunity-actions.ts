@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/session";
 import { formValues } from "@/lib/action-state";
 import { opportunityCreateSchema, opportunityFieldSchema, opportunityUpdateSchema, type EditableField } from "@/schemas/opportunity";
-import { createOpportunity, updateOpportunity, updateOpportunityField, transitionOpportunity, attachTag, detachTag, type TransitionKind } from "@/services/opportunity-service";
+import { createOpportunity, updateOpportunity, updateOpportunityField, setOpportunityStage, transitionOpportunity, attachTag, detachTag, type TransitionKind } from "@/services/opportunity-service";
 
 export async function createOpportunityAction(_prev: unknown, formData: FormData) {
   const user = await requireRole("opportunity:write");
@@ -43,7 +43,8 @@ export async function updateOpportunityFieldAction(id: string, field: EditableFi
   const parsed = opportunityFieldSchema.safeParse({ field, value });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid value" };
   try {
-    await updateOpportunityField(id, parsed.data, user.id);
+    if (parsed.data.field === "stage") await setOpportunityStage(id, parsed.data.value, user.id);
+    else await updateOpportunityField(id, parsed.data, user.id);
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Could not save" };
   }
