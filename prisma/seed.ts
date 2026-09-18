@@ -141,7 +141,6 @@ async function main() {
     status: string;
     revenue: number;
     marginPct: number;
-    isCancelled?: boolean;
     lastReason?: string;
     tags: string[];
   };
@@ -150,12 +149,12 @@ async function main() {
     { account: 0, owner: 2, title: "Northwind — warehouse rollout", description: "Evaluating Saleswind for their distribution arm.", stage: "PROSPECT", status: "In Progress", revenue: 48000, marginPct: 35, tags: ["Researching", "High Chance"] },
     { account: 2, owner: 3, title: "Brightline — content team pilot", description: "Initial outreach to the editorial group.", stage: "PROSPECT", status: "Not Started", revenue: 22000, marginPct: 40, tags: ["Mail sent"] },
     { account: 6, owner: 4, title: "Vertex — developer tooling", description: "Inbound lead from the engineering org.", stage: "PROSPECT", status: "In Progress", revenue: 75000, marginPct: 45, tags: ["Initial Contract", "High Chance"] },
-    { account: 10, owner: 1, title: "Polaris — campus license", description: "Exploring a campus-wide deployment.", stage: "PROSPECT", status: "Cancelled", revenue: 30000, marginPct: 30, isCancelled: true, lastReason: "Budget cycle closed for the year.", tags: ["Low Chance"] },
+    { account: 10, owner: 1, title: "Polaris — campus license", description: "Exploring a campus-wide deployment.", stage: "PROSPECT", status: "Cancelled", revenue: 30000, marginPct: 30, lastReason: "Budget cycle closed for the year.", tags: ["Low Chance"] },
     // SALES
     { account: 1, owner: 2, title: "Helios — production line analytics", description: "Demo delivered to operations leadership.", stage: "SALES", status: "In Progress", revenue: 120000, marginPct: 38, tags: ["Demo", "Mostly Positive"] },
     { account: 4, owner: 3, title: "Quanta — compliance reporting", description: "Working through procurement requirements.", stage: "SALES", status: "Pending", revenue: 95000, marginPct: 42, tags: ["Waiting for response", "High Chances"] },
     { account: 8, owner: 4, title: "Orchard — store network rollout", description: "Multi-region expansion under discussion.", stage: "SALES", status: "In Progress", revenue: 64000, marginPct: 33, tags: ["Presentation Sent", "Qualification"] },
-    { account: 5, owner: 1, title: "Atlas — fleet tracking", description: "Lost momentum after reorg.", stage: "SALES", status: "Lost", revenue: 40000, marginPct: 30, isCancelled: true, lastReason: "Chose an in-house build.", tags: ["Unresponsive"] },
+    { account: 5, owner: 1, title: "Atlas — fleet tracking", description: "Lost momentum after reorg.", stage: "SALES", status: "Lost", revenue: 40000, marginPct: 30, lastReason: "Chose an in-house build.", tags: ["Unresponsive"] },
     // CONTRACT
     { account: 3, owner: 2, title: "Cedar & Stone — annual platform", description: "Contract in legal review.", stage: "CONTRACT", status: "In Progress", revenue: 88000, marginPct: 36, tags: ["Contract Signed", "Implementation Planned"] },
     { account: 7, owner: 3, title: "Maple — enterprise agreement", description: "Closed won, onboarding scheduled.", stage: "CONTRACT", status: "In Progress", revenue: 156000, marginPct: 44, tags: ["Closed Won", "Onboarding Started"] },
@@ -179,7 +178,6 @@ async function main() {
         statusId: statusId(o.stage, o.status),
         revenue: o.revenue,
         marginPct: o.marginPct,
-        isCancelled: o.isCancelled ?? false,
         lastReason: o.lastReason ?? null,
         createdById: owner.id,
         lastModifiedById: owner.id,

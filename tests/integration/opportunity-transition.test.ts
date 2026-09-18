@@ -33,9 +33,8 @@ describe("transitionOpportunity", () => {
     const r = await transitionOpportunity(o.id, "back", userId);
     expect(r.stage).toBe("PROSPECT");
   });
-  it("cancels with a reason from any stage", async () => {
+  it("rejects moving back from PROSPECT", async () => {
     const o = await createOpportunity({ accountId, title: "T", accountableId: userId, revenue: 1, marginPct: 1 }, userId);
-    const r = await transitionOpportunity(o.id, "cancel", userId, "lost");
-    expect(r.isCancelled).toBe(true);
+    await expect(transitionOpportunity(o.id, "back", userId)).rejects.toThrow();
   });
 });

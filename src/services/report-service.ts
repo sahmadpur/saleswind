@@ -7,7 +7,7 @@ import type { Stage } from "@prisma/client";
 export interface StageSummary { stage: Stage; count: number; revenue: number; grossProfit: number; }
 
 export async function pipelineSummary(): Promise<StageSummary[]> {
-  const opps = await db.opportunity.findMany({ where: { isCancelled: false }, select: { stage: true, revenue: true, marginPct: true } });
+  const opps = await db.opportunity.findMany({ where: { NOT: { status: { is: { label: "Cancelled" } } } }, select: { stage: true, revenue: true, marginPct: true } });
   return ORDER.map((stage) => {
     const rows = opps.filter((o) => o.stage === stage);
     const revenue = rows.reduce((sum, o) => sum + Number(o.revenue), 0);

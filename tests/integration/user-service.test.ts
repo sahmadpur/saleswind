@@ -1,7 +1,7 @@
 import { describe, it, expect, afterAll } from "vitest";
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
-import { createUser, deleteUser, listUsers, updateUser } from "@/services/user-service";
+import { createUser, deleteUser, listUsers, setUserBlocked, updateUser } from "@/services/user-service";
 
 afterAll(async () => { await db.$disconnect(); });
 
@@ -60,5 +60,25 @@ describe("user-service: updateUser", () => {
     await expect(updateUser(admin.id, { name: "Only", email: admin.email, role: "AGENT" }, admin.id)).rejects.toThrow("You cannot change your own role");
     await expect(updateUser(admin.id, { name: "Only", email: admin.email, role: "AGENT" }, other.id)).rejects.toThrow("At least one admin is required");
     await db.user.deleteMany({ where: { id: { in: [admin.id, other.id] } } });
+  });
+});
+
+describe("user-service: setUserBlocked", () => {
+  it("blocks and unblocks, refusing self and the last active admin", async () => {
+    await db.user.updateMany({ where: { role: "ADMIN" }, data: { role: "MANAGER" } });
+    const admin = await createUser({ name: "Admin", email: `ba${Date.now()}@x.com`, password: "password1", role: "ADMIN" }, null);
+    const agent = await createUser({ name: "Agent", email: `bb${Date.now()}@x.com`, password: "password1", role: "AGENT" }, null);
+
+    expect((await setUserBlocked(agent.id, true, admin.id)).blockedAt).toBeInstanceOf(Date);
+    expect((await listUsers()).find((u) => u.id === agent.id)?.blockedAt).not.toBeNull();
+    expect((await setUserBlocked(agent.id, false, admin.id)).blockedAt).toBeNull();
+
+    await expect(setUserBlocked(admin.id, true, admin.id)).rejects.toThrow("You cannot block yourself");
+    await expect(setUserBlocked(admin.id, true, agent.id)).rejects.toThrow("At least one active admin is required");
+
+    const audits = await db.auditLog.findMany({ where: { entityId: agent.id, action: { in: ["user.block", "user.unblock"] } } });
+    expect(audits).toHaveLength(2);
+    await db.auditLog.deleteMany({ where: { entityId: { in: [admin.id, agent.id] } } });
+    await db.user.deleteMany({ where: { id: { in: [admin.id, agent.id] } } });
   });
 });

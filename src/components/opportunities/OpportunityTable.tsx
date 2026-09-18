@@ -6,26 +6,27 @@ import { RowLink } from "@/components/ui/RowLink";
 import { SortableTH } from "@/components/ui/SortableTH";
 import { ColResizer, RestoreColumnWidths } from "@/components/ui/ColResizer";
 import { EditableCell } from "@/components/opportunities/EditableCell";
+import { TagCell } from "@/components/opportunities/TagCell";
 import { updateOpportunityFieldAction } from "@/actions/opportunity-actions";
 import { grossProfit } from "@/lib/domain/finance";
 import { money, shortDate, opportunityRef, shortName, dateTime } from "@/lib/format";
-import { displayStage, type SortDir, type SortKey } from "@/lib/opportunity-sort";
+import { type SortDir, type SortKey } from "@/lib/opportunity-sort";
 
 type Row = {
-  id: string; number: number; title: string; stage: string; isCancelled: boolean;
+  id: string; number: number; title: string; stage: string;
   revenue: unknown; marginPct: unknown; accountableId: string; statusId: string | null;
   account: { name: string }; accountable: { name: string }; status: { label: string; color: string } | null;
-  tags: { tag: { label: string } }[]; lastModifiedAt: Date;
+  tags: { tag: { id: string; label: string } }[]; lastModifiedAt: Date;
 };
 type Option = { value: string; label: string };
-export type EditOptions = { users: Option[]; statusesByStage: Record<string, Option[]> };
+export type EditOptions = { users: Option[]; statusesByStage: Record<string, Option[]>; tagsByStage: Record<string, Option[]> };
 
 const TH = "relative px-2 py-2.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-gink";
 const TD = "px-2 py-2";
 // Left rail colour per pipeline stage — the one bit of colour on each row.
 const RAIL: Record<string, string> = {
   PROSPECT: "var(--color-gyellow)", SALES: "var(--color-gsales)", CONTRACT: "var(--color-gviolet)",
-  PROJECT: "var(--color-ggreen)", CANCELLED: "var(--color-gline)",
+  PROJECT: "var(--color-ggreen)",
 };
 
 function BodyRow({ o, edit }: { o: Row; edit: EditOptions | null }) {
@@ -44,11 +45,11 @@ function BodyRow({ o, edit }: { o: Row; edit: EditOptions | null }) {
   return (
     <RowLink
       href={`/opportunities/${o.id}`}
-      className={`border-b border-gline-2 transition-colors last:border-0 hover:bg-ghover/70 ${o.isCancelled ? "opacity-55" : ""}`}
+      className="border-b border-gline-2 transition-colors last:border-0 hover:bg-ghover/70"
     >
       <td
         className={`${TD} whitespace-nowrap tabular-nums text-ggrey`}
-        style={{ boxShadow: `inset 3px 0 0 ${RAIL[displayStage(o)]}` }}
+        style={{ boxShadow: `inset 3px 0 0 ${RAIL[o.stage]}` }}
       >
         {opportunityRef(o.number)}
       </td>
@@ -56,7 +57,7 @@ function BodyRow({ o, edit }: { o: Row; edit: EditOptions | null }) {
         {edit ? <EditableCell value={o.title} display={titleLink} kind="text" save={save("title")} label="title" iconTrigger /> : titleLink}
       </td>
       <td className={`${TD} max-w-[8rem] truncate text-gink-2`} title={o.account.name}>{o.account.name}</td>
-      <td className={TD}><Pill stage={displayStage(o)} /></td>
+      <td className={TD}><Pill stage={o.stage} /></td>
       <td className={`${TD} text-gink-2`}>
         {edit ? (
           <EditableCell
@@ -70,9 +71,17 @@ function BodyRow({ o, edit }: { o: Row; edit: EditOptions | null }) {
         ) : statusDisplay}
       </td>
       <td className={TD}>
-        <div className="flex flex-wrap gap-1">
-          {o.tags.map((t) => <Chip key={t.tag.label} label={t.tag.label} className="max-w-28" />)}
-        </div>
+        {edit ? (
+          <TagCell
+            opportunityId={o.id}
+            attached={o.tags.map((t) => t.tag)}
+            options={edit.tagsByStage[o.stage] ?? []}
+          />
+        ) : (
+          <div className="flex flex-wrap gap-1">
+            {o.tags.map((t) => <Chip key={t.tag.label} label={t.tag.label} className="max-w-28" />)}
+          </div>
+        )}
       </td>
       <td className={`${TD} whitespace-nowrap text-right tabular-nums text-gink-2`}>
         {edit ? <EditableCell value={String(revenue)} display={money(revenue)} kind="number" align="right" save={save("revenue")} label="PR" /> : money(revenue)}

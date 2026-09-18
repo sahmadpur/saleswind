@@ -1,6 +1,6 @@
 import { requireRole } from "@/lib/session";
 import { listUsers } from "@/services/user-service";
-import { createUserAction, deleteUserAction, updateUserAction } from "@/actions/user-actions";
+import { createUserAction, deleteUserAction, setUserBlockedAction, updateUserAction } from "@/actions/user-actions";
 import { Card, CardLabel } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -9,6 +9,8 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Avatar } from "@/components/ui/Avatar";
 import { DeleteUserButton } from "@/components/users/DeleteUserButton";
 import { EditUserDialog } from "@/components/users/EditUserDialog";
+import { BlockUserButton } from "@/components/users/BlockUserButton";
+import { dateTime } from "@/lib/format";
 
 const ROLE_STYLE: Record<string, string> = {
   ADMIN: "bg-gviolet-50 text-gviolet",
@@ -68,12 +70,13 @@ export default async function UsersPage() {
               <th className={TH}>Name</th>
               <th className={TH}>Email</th>
               <th className={TH}>Role</th>
+              <th className={TH}>Status</th>
               <th className={TH}><span className="sr-only">Actions</span></th>
             </tr>
           </thead>
           <tbody>
             {users.map((u) => (
-              <tr key={u.id} className="border-b border-gline-2 transition-colors last:border-0 hover:bg-ghover/70">
+              <tr key={u.id} className={`border-b border-gline-2 transition-colors last:border-0 hover:bg-ghover/70 ${u.blockedAt ? "bg-gbg" : ""}`}>
                 <td className="px-5 py-3">
                   <span className="flex items-center gap-3 font-medium text-gink">
                     <Avatar name={u.name ?? u.email ?? "?"} size={28} />
@@ -87,8 +90,16 @@ export default async function UsersPage() {
                   </span>
                 </td>
                 <td className="px-5 py-3">
+                  {u.blockedAt ? (
+                    <span className="rounded-full bg-gred-50 px-2 py-0.5 text-xs font-medium text-gred" title={`Blocked ${dateTime(u.blockedAt)}`}>Blocked</span>
+                  ) : (
+                    <span className="rounded-full bg-ggreen-50 px-2 py-0.5 text-xs font-medium text-ggreen">Active</span>
+                  )}
+                </td>
+                <td className="px-5 py-3">
                   <div className="flex items-center justify-end gap-1">
                     <EditUserDialog action={updateUserAction.bind(null, u.id)} user={{ name: u.name, email: u.email, role: u.role }} isSelf={u.id === me.id} />
+                    {u.id !== me.id && <BlockUserButton action={setUserBlockedAction.bind(null, u.id, !u.blockedAt)} name={u.name} blocked={!!u.blockedAt} />}
                     {u.id !== me.id && <DeleteUserButton action={deleteUserAction.bind(null, u.id)} name={u.name} />}
                   </div>
                 </td>

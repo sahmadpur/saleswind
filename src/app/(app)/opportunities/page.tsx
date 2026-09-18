@@ -34,7 +34,7 @@ export default async function OpportunitiesPage({ searchParams }: { searchParams
   // Current query minus `view` and `page`, so sort links and filter changes preserve each other and restart at page 1.
   const query: Record<string, string> = { sort, dir, ...filters, ...(size !== PAGE_SIZES[0] && { size: String(size) }) };
   const options = {
-    stage: [...ORDER, "CANCELLED"],
+    stage: [...ORDER],
     status: distinct(rows.map((r) => r.status?.label)),
     accountable: distinct(rows.map((r) => r.accountable.name)),
     account: distinct(rows.map((r) => r.account.name)),
@@ -42,15 +42,22 @@ export default async function OpportunitiesPage({ searchParams }: { searchParams
 
   let edit: EditOptions | null = null;
   if (!isKanban && user && can(user.role, "opportunity:write")) {
-    const [users, statuses] = await Promise.all([
-      db.user.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } }),
+    const [users, statuses, tags] = await Promise.all([
+      db.user.findMany({ select: { id: true, name: true, blockedAt: true }, orderBy: { name: "asc" } }),
       db.status.findMany({ orderBy: { label: "asc" } }),
+      db.tag.findMany({ where: { isActive: true }, orderBy: { label: "asc" } }),
     ]);
     const inUse = new Set(pageRows.map((r) => r.statusId));
     const statusesByStage: EditOptions["statusesByStage"] = {};
     // Inactive statuses stay selectable only where a row still uses them.
     for (const s of statuses) if (s.isActive || inUse.has(s.id)) (statusesByStage[s.stage] ??= []).push({ value: s.id, label: s.label });
-    edit = { users: users.map((u) => ({ value: u.id, label: u.name })), statusesByStage };
+    // Inactive tags aren't offered; TagCell still shows (and can remove) ones already attached.
+    const tagsByStage: EditOptions["tagsByStage"] = {};
+    for (const t of tags) (tagsByStage[t.stage] ??= []).push({ value: t.id, label: t.label });
+    // Blocked users can't be newly assigned, but stay selectable where already accountable.
+    const accountable = new Set(pageRows.map((r) => r.accountableId));
+    const assignable = users.filter((u) => !u.blockedAt || accountable.has(u.id));
+    edit = { users: assignable.map((u) => ({ value: u.id, label: u.name })), statusesByStage, tagsByStage };
   }
   const exportQuery = new URLSearchParams({ sort, dir, ...filters });
 

@@ -5,7 +5,6 @@ const STAGE_STYLES: Record<string, { wrap: string; dot: string }> = {
   SALES: { wrap: "bg-gsales-50 text-gsales", dot: "bg-gsales" },
   CONTRACT: { wrap: "bg-gviolet-50 text-gviolet", dot: "bg-gviolet" },
   PROJECT: { wrap: "bg-ggreen-50 text-ggreen", dot: "bg-ggreen" },
-  CANCELLED: { wrap: "bg-gred-50 text-gred", dot: "bg-gred" },
 };
 
 export function Pill({ stage }: { stage: string }) {

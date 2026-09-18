@@ -3,13 +3,13 @@ import { cn } from "@/lib/cn";
 
 const LABEL: Record<string, string> = { PROSPECT: "Prospect", SALES: "Sales", CONTRACT: "Contract", PROJECT: "Project" };
 
-export function StageStepper({ stage, cancelled }: { stage: string; cancelled: boolean }) {
+export function StageStepper({ stage }: { stage: string }) {
   const currentIdx = ORDER.indexOf(stage as (typeof ORDER)[number]);
   return (
     <div className="flex items-center">
       {ORDER.map((s, i) => {
-        const done = i < currentIdx && !cancelled;
-        const current = i === currentIdx && !cancelled;
+        const done = i < currentIdx;
+        const current = i === currentIdx;
         const active = done || current;
         return (
           <div key={s} className="flex items-center">
@@ -31,17 +31,11 @@ export function StageStepper({ stage, cancelled }: { stage: string; cancelled: b
               <span className={cn("text-sm", current ? "font-semibold text-gink" : "text-ggrey")}>{LABEL[s]}</span>
             </div>
             {i < ORDER.length - 1 && (
-              <div className={cn("mx-3 h-px w-8 sm:w-14", i < currentIdx && !cancelled ? "bg-gblue-200" : "bg-gline")} />
+              <div className={cn("mx-3 h-px w-8 sm:w-14", i < currentIdx ? "bg-gblue-200" : "bg-gline")} />
             )}
           </div>
         );
       })}
-      {cancelled && (
-        <span className="ml-4 inline-flex items-center gap-1.5 rounded-full bg-gred-50 px-3 py-1 text-xs font-medium text-gred">
-          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>cancel</span>
-          Cancelled
-        </span>
-      )}
     </div>
   );
 }

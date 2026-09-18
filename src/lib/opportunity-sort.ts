@@ -18,14 +18,11 @@ export function parseSort(sort?: string, dir?: string): { sort: SortKey; dir: So
 }
 
 type SortableRow = {
-  number: number; title: string; stage: string; isCancelled: boolean;
+  number: number; title: string; stage: string;
   revenue: unknown; marginPct: unknown;
   account: { name: string }; accountable: { name: string }; status: { label: string } | null;
   lastModifiedAt: Date;
 };
-
-/** Effective pipeline stage as shown in the UI: cancelled overrides the stored stage. */
-export const displayStage = (r: { stage: string; isCancelled: boolean }) => (r.isCancelled ? "CANCELLED" : r.stage);
 
 export function sortOpportunities<T extends SortableRow>(rows: T[], sort: SortKey, dir: SortDir): T[] {
   const val = (r: T): string | number => {
@@ -33,7 +30,7 @@ export function sortOpportunities<T extends SortableRow>(rows: T[], sort: SortKe
       case "ref": return r.number;
       case "title": return r.title.toLowerCase();
       case "account": return r.account.name.toLowerCase();
-      case "stage": return r.isCancelled ? ORDER.length : ORDER.indexOf(r.stage as (typeof ORDER)[number]);
+      case "stage": return ORDER.indexOf(r.stage as (typeof ORDER)[number]);
       case "status": return (r.status?.label ?? "").toLowerCase();
       case "accountable": return r.accountable.name.toLowerCase();
       case "revenue": return Number(r.revenue);
@@ -61,7 +58,7 @@ export function parseFilters(q: Record<string, string | undefined>): Filters {
 export function filterOpportunities<T extends SortableRow>(rows: T[], f: Filters): T[] {
   return rows.filter(
     (r) =>
-      (!f.stage || displayStage(r) === f.stage) &&
+      (!f.stage || r.stage === f.stage) &&
       (!f.status || r.status?.label === f.status) &&
       (!f.accountable || r.accountable.name === f.accountable) &&
       (!f.account || r.account.name === f.account),

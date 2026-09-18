@@ -1,4 +1,4 @@
-import { signIn } from "@/lib/auth";
+import { isBlockedLogin, signIn } from "@/lib/auth";
 import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { redirect } from "next/navigation";
 import { Input } from "@/components/ui/Input";
@@ -14,6 +14,9 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   const { error } = await searchParams;
   async function login(formData: FormData) {
     "use server";
+    if (await isBlockedLogin(String(formData.get("email") ?? ""), String(formData.get("password") ?? ""))) {
+      redirect("/login?error=blocked");
+    }
     try {
       await signIn("credentials", {
         email: formData.get("email"),
@@ -74,7 +77,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           {error && (
             <div className="mt-6 flex items-center gap-2 rounded-md bg-gred-50 px-3 py-2.5 text-sm text-gred">
               <span className="material-symbols-outlined" style={{ fontSize: 18 }}>error</span>
-              Email or password is incorrect.
+              {error === "blocked" ? "Your account is blocked. Contact your admin." : "Email or password is incorrect."}
             </div>
           )}
 

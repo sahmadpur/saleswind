@@ -38,6 +38,9 @@ export default async function OpportunityDetail({ params }: { params: Promise<{ 
   const openTasks = tasks.filter((t) => t.status === "TODO" || t.status === "IN_PROGRESS").length;
   const labels = Object.fromEntries([...allStatuses.map((s) => [s.id, s.label]), ...users.map((u) => [u.id, u.name])]);
   const attached = new Set(o.tags.map((t) => t.tag.id));
+  // Blocked users stay in labels (history) but can't be newly picked, except the current accountable.
+  const activeUsers = users.filter((u) => !u.blockedAt);
+  const accountableOptions = users.filter((u) => !u.blockedAt || u.id === o.accountableId);
   const bind = updateOpportunityAction.bind(null, id);
   const gp = grossProfit(Number(o.revenue), Number(o.marginPct));
 
@@ -54,7 +57,7 @@ export default async function OpportunityDetail({ params }: { params: Promise<{ 
           <span className="block text-sm tabular-nums text-ggrey">{opportunityRef(o.number)}</span>
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-semibold leading-tight tracking-[-0.015em] text-gink">{o.title}</h1>
-            <Pill stage={o.isCancelled ? "CANCELLED" : o.stage} />
+            <Pill stage={o.stage} />
             {o.status && <StatusPill label={o.status.label} color={o.status.color} />}
           </div>
           <div className="flex items-center gap-2 text-sm text-ggrey">
@@ -78,9 +81,9 @@ export default async function OpportunityDetail({ params }: { params: Promise<{ 
       </div>
 
       <Card className="space-y-5">
-        <StageStepper stage={o.stage} cancelled={o.isCancelled} />
+        <StageStepper stage={o.stage} />
         <div className="border-t border-gline-2 pt-4">
-          <TransitionControls id={o.id} canAdvance={canAdvance(o.stage)} canBack={canMoveBack(o.stage)} cancelled={o.isCancelled} />
+          <TransitionControls id={o.id} canAdvance={canAdvance(o.stage)} canBack={canMoveBack(o.stage)} />
         </div>
       </Card>
 
@@ -94,7 +97,7 @@ export default async function OpportunityDetail({ params }: { params: Promise<{ 
               revenue: Number(o.revenue), marginPct: Number(o.marginPct),
             }}
             statuses={statuses.map((s) => ({ id: s.id, label: s.label }))}
-            users={users.map((u) => ({ id: u.id, label: u.name }))}
+            users={accountableOptions.map((u) => ({ id: u.id, label: u.name }))}
           />
         </Card>
         <Card>
@@ -112,7 +115,7 @@ export default async function OpportunityDetail({ params }: { params: Promise<{ 
           )}
         </h2>
         <div className="px-6 pb-4 pt-3">
-          <QuickAddTask opportunityId={o.id} currentUserId={user.id} users={users.map((u) => ({ id: u.id, label: u.name }))} />
+          <QuickAddTask opportunityId={o.id} currentUserId={user.id} users={activeUsers.map((u) => ({ id: u.id, label: u.name }))} />
         </div>
         {tasks.length > 0 && (
           <div className="border-t border-gline-2 [&_li]:px-6">
@@ -127,7 +130,7 @@ export default async function OpportunityDetail({ params }: { params: Promise<{ 
           comments={o.comments.map((c) => ({ id: c.id, body: c.body, author: c.author.name, authorId: c.authorId, when: dateTime(c.createdAt) }))}
           currentUserId={user.id}
           isElevated={user.role === "ADMIN" || user.role === "MANAGER"}
-          users={users.map((u) => ({ id: u.id, name: u.name }))}
+          users={activeUsers.map((u) => ({ id: u.id, name: u.name }))}
         />
       </Card>
       <Card>

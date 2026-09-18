@@ -6,10 +6,9 @@ import fontkit from "@pdf-lib/fontkit";
 import { PDFDocument, rgb, type PDFFont } from "pdf-lib";
 import { grossProfit } from "@/lib/domain/finance";
 import { dateTime, money, opportunityRef } from "@/lib/format";
-import { displayStage } from "@/lib/opportunity-sort";
 
 export type ExportRow = {
-  number: number; title: string; stage: string; isCancelled: boolean; revenue: unknown; marginPct: unknown;
+  number: number; title: string; stage: string; revenue: unknown; marginPct: unknown;
   account: { name: string }; accountable: { name: string }; status: { label: string } | null;
   tags?: { tag: { label: string } }[]; lastModifiedAt: Date;
 };
@@ -19,7 +18,7 @@ const titleCase = (s: string) => s.charAt(0) + s.slice(1).toLowerCase();
 function flatten(o: ExportRow) {
   const revenue = Number(o.revenue), margin = Number(o.marginPct);
   return {
-    ref: opportunityRef(o.number), title: o.title, account: o.account.name, stage: titleCase(displayStage(o)),
+    ref: opportunityRef(o.number), title: o.title, account: o.account.name, stage: titleCase(o.stage),
     status: o.status?.label ?? "", tags: (o.tags ?? []).map((t) => t.tag.label).join(", "),
     revenue, margin, gp: grossProfit(revenue, margin), accountable: o.accountable.name, modified: o.lastModifiedAt,
   };

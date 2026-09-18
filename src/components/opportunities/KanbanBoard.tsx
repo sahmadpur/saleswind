@@ -5,7 +5,7 @@ import { money, opportunityRef } from "@/lib/format";
 import { StatusPill } from "@/components/ui/StatusPill";
 
 type Row = {
-  id: string; number: number; title: string; stage: string; isCancelled: boolean;
+  id: string; number: number; title: string; stage: string;
   revenue: unknown; marginPct: unknown; account: { name: string }; status: { label: string; color: string } | null;
 };
 
@@ -17,11 +17,10 @@ const META: Record<string, { label: string; dot: string; bar: string }> = {
 };
 
 export function KanbanBoard({ rows }: { rows: Row[] }) {
-  const active = rows.filter((r) => !r.isCancelled);
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
       {ORDER.map((stage) => {
-        const items = active.filter((r) => r.stage === stage);
+        const items = rows.filter((r) => r.stage === stage);
         const m = META[stage];
         return (
           <div key={stage} className="flex flex-col rounded-lg border border-gline-2 bg-gbg">

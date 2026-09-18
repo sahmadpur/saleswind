@@ -6,10 +6,11 @@ import { Card } from "@/components/ui/Card";
 import { PageHeader } from "@/components/ui/PageHeader";
 
 export default async function NewOpportunityPage() {
-  const [accounts, users, statuses] = await Promise.all([
+  const [accounts, users, statuses, tags] = await Promise.all([
     db.account.findMany({ orderBy: { name: "asc" } }),
-    db.user.findMany({ orderBy: { name: "asc" } }),
+    db.user.findMany({ where: { blockedAt: null }, orderBy: { name: "asc" } }),
     db.status.findMany({ where: { isActive: true }, orderBy: { label: "asc" } }),
+    db.tag.findMany({ where: { isActive: true }, orderBy: { label: "asc" } }),
   ]);
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -24,6 +25,7 @@ export default async function NewOpportunityPage() {
           accounts={accounts.map((a) => ({ id: a.id, label: a.name }))}
           users={users.map((u) => ({ id: u.id, label: u.name }))}
           statuses={statuses.map((s) => ({ id: s.id, label: s.label, stage: s.stage }))}
+          tags={tags.map((t) => ({ id: t.id, label: t.label, stage: t.stage }))}
         />
       </Card>
     </div>

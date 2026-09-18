@@ -25,8 +25,8 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
 
   const [tasks, users, opportunities, openCount] = await Promise.all([
     listMyTasks(user.id, scope),
-    db.user.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } }),
-    db.opportunity.findMany({ where: { isCancelled: false }, select: { id: true, number: true, title: true }, orderBy: { number: "desc" } }),
+    db.user.findMany({ where: { blockedAt: null }, select: { id: true, name: true }, orderBy: { name: "asc" } }),
+    db.opportunity.findMany({ where: { NOT: { status: { is: { label: "Cancelled" } } } }, select: { id: true, number: true, title: true }, orderBy: { number: "desc" } }),
     countOpenTasks(user.id),
   ]);
   const items = toTaskItems(tasks, user, { showAssignee: false, showOpportunity: true });

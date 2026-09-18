@@ -28,6 +28,7 @@ model User {
   email        String   @unique
   passwordHash String
   role         Role     @default(AGENT)
+  blockedAt    DateTime?
   createdAt    DateTime @default(now())
 
   accountableOpportunities Opportunity[]  @relation("AccountableOpportunities")
@@ -88,7 +89,6 @@ model Opportunity {
   statusId         String?
   revenue          Decimal  @default(0) @db.Decimal(14, 2)
   marginPct        Decimal  @default(0) @db.Decimal(5, 2)
-  isCancelled      Boolean  @default(false)
   lastReason       String?
   createdById      String
   createdAt        DateTime @default(now())

@@ -2,7 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/session";
 import { userCreateSchema, userUpdateSchema } from "@/schemas/user";
-import { createUser, deleteUser, updateUser, UserUpdateError } from "@/services/user-service";
+import { createUser, deleteUser, setUserBlocked, updateUser, UserUpdateError } from "@/services/user-service";
 import { formValues, type FormState } from "@/lib/action-state";
 
 export async function createUserAction(_prev: unknown, formData: FormData) {
@@ -37,6 +37,18 @@ export async function updateUserAction(id: string, _prev: unknown, formData: For
     await updateUser(id, parsed.data, me.id);
   } catch (e) {
     if (e instanceof UserUpdateError) return { error: { [e.field]: [e.message] }, values };
+    throw e;
+  }
+  revalidatePath("/users");
+  return { ok: true };
+}
+
+export async function setUserBlockedAction(id: string, blocked: boolean, _prev: unknown, _fd: FormData): Promise<FormState> {
+  const me = await requireRole("users:manage");
+  try {
+    await setUserBlocked(id, blocked, me.id);
+  } catch (e) {
+    if (e instanceof UserUpdateError) return { error: { _form: [e.message] } };
     throw e;
   }
   revalidatePath("/users");

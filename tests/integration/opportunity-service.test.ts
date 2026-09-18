@@ -12,6 +12,7 @@ beforeAll(async () => {
 });
 afterAll(async () => {
   await db.activityLog.deleteMany(); await db.notification.deleteMany(); await db.opportunity.deleteMany(); await db.status.deleteMany({ where: { label: { startsWith: "Demo " } } });
+  await db.tag.deleteMany({ where: { label: { startsWith: "Demo " } } });
   await db.account.deleteMany(); await db.user.deleteMany(); await db.$disconnect();
 });
 
@@ -42,6 +43,16 @@ describe("opportunity-service: stage/status on create and inline edits", () => {
     expect(o.statusId).toBe(status.id);
     await expect(
       createOpportunity({ accountId, title: "Bad", accountableId: userId, stage: "PROSPECT", statusId: status.id, revenue: 1, marginPct: 1 }, userId),
+    ).rejects.toThrow(/does not belong/);
+  });
+
+  it("attaches tags of the chosen stage on create", async () => {
+    const tag = await db.tag.create({ data: { stage: "SALES", label: `Demo tag ${Date.now()}` } });
+    const o = await createOpportunity({ accountId, title: "Tagged", accountableId: userId, stage: "SALES", tagIds: [tag.id], revenue: 1, marginPct: 1 }, userId);
+    expect(await db.opportunityTag.count({ where: { opportunityId: o.id, tagId: tag.id } })).toBe(1);
+    expect(await db.activityLog.count({ where: { opportunityId: o.id, actionType: "tag-added" } })).toBe(1);
+    await expect(
+      createOpportunity({ accountId, title: "Bad tag", accountableId: userId, stage: "PROSPECT", tagIds: [tag.id], revenue: 1, marginPct: 1 }, userId),
     ).rejects.toThrow(/does not belong/);
   });
 

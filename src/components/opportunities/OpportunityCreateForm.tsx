@@ -9,7 +9,7 @@ import { money } from "@/lib/format";
 import type { FormState } from "@/lib/action-state";
 
 type Option = { id: string; label: string };
-type StatusOption = Option & { stage: string };
+type StageOption = Option & { stage: string };
 
 const STAGES = [["PROSPECT", "Prospect"], ["SALES", "Sales"], ["CONTRACT", "Contract"], ["PROJECT", "Project"]] as const;
 
@@ -22,14 +22,17 @@ function Labeled({ label, children }: { label: string; children: React.ReactNode
   );
 }
 
-export function OpportunityCreateForm({ action, accounts, users, statuses }: {
+export function OpportunityCreateForm({ action, accounts, users, statuses, tags }: {
   action: (prev: unknown, fd: FormData) => Promise<FormState>;
-  accounts: Option[]; users: Option[]; statuses: StatusOption[];
+  accounts: Option[]; users: Option[]; statuses: StageOption[]; tags: StageOption[];
 }) {
   const [state, formAction, pending] = useActionState(action, {} as FormState);
   const [stage, setStage] = useState(state.values?.stage ?? "PROSPECT");
   const [statusId, setStatusId] = useState(state.values?.statusId ?? "");
+  const [tagIds, setTagIds] = useState<string[]>(state.values?.tagIds ? state.values.tagIds.split(",") : []);
   const stageStatuses = statuses.filter((s) => s.stage === stage);
+  const stageTags = tags.filter((t) => t.stage === stage);
+  const toggleTag = (id: string) => setTagIds((ids) => (ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]));
   const [revenue, setRevenue] = useState(0);
   const [margin, setMargin] = useState(0);
   return (
@@ -46,7 +49,8 @@ export function OpportunityCreateForm({ action, accounts, users, statuses }: {
         <FieldError errors={state.error?.title} />
       </Labeled>
       <Labeled label="Description">
-        <Input name="description" placeholder="Short summary" defaultValue={state.values?.description} />
+        <Input name="description" placeholder="Short summary" required defaultValue={state.values?.description} />
+        <FieldError errors={state.error?.description} />
       </Labeled>
       <Labeled label="Accountable">
         <Select name="accountableId" required defaultValue={state.values?.accountableId ?? ""}>
@@ -57,19 +61,41 @@ export function OpportunityCreateForm({ action, accounts, users, statuses }: {
       </Labeled>
       <div className="grid gap-4 sm:grid-cols-2">
         <Labeled label="Stage">
-          <Select name="stage" value={stage} onChange={(e) => { setStage(e.target.value); setStatusId(""); }}>
+          <Select name="stage" value={stage} onChange={(e) => { setStage(e.target.value); setStatusId(""); setTagIds([]); }}>
             {STAGES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
           </Select>
           <FieldError errors={state.error?.stage} />
         </Labeled>
         <Labeled label="Status">
-          <Select name="statusId" value={statusId} onChange={(e) => setStatusId(e.target.value)}>
-            <option value="">No status</option>
+          <Select name="statusId" required value={statusId} onChange={(e) => setStatusId(e.target.value)}>
+            <option value="" disabled>Select status…</option>
             {stageStatuses.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
           </Select>
           <FieldError errors={state.error?.statusId} />
         </Labeled>
       </div>
+      <fieldset>
+        <legend className="mb-1.5 block text-xs font-medium text-ggrey">Tags</legend>
+        <div className="flex flex-wrap gap-2">
+          {stageTags.length === 0 && <span className="text-sm text-ggrey">No tags defined for this stage</span>}
+          {stageTags.map((t) => {
+            const on = tagIds.includes(t.id);
+            return (
+              <label
+                key={t.id}
+                className={`g-press inline-flex cursor-pointer items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${
+                  on ? "border-gblue bg-gblue-50 text-gblue" : "border-dashed border-gline text-ggrey hover:border-gblue hover:text-gblue"
+                }`}
+              >
+                <input type="checkbox" name="tagIds" value={t.id} checked={on} onChange={() => toggleTag(t.id)} className="sr-only" />
+                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>{on ? "check" : "add"}</span>
+                {t.label}
+              </label>
+            );
+          })}
+        </div>
+        <FieldError errors={state.error?.tagIds} />
+      </fieldset>
       <div className="grid gap-4 sm:grid-cols-2">
         <Labeled label="PR">
           <Input name="revenue" type="number" step="0.01" placeholder="0.00" required defaultValue={state.values?.revenue} onChange={(e) => setRevenue(Number(e.target.value))} />

@@ -21,6 +21,9 @@ export async function createOpportunity(input: OpportunityCreateInput, userId: s
     const stage = input.stage ?? "PROSPECT";
     const statusId = input.statusId || null;
     if (statusId) await assertStatusInStage(tx, statusId, stage);
+    const tagIds = [...new Set(input.tagIds ?? [])];
+    const tags = tagIds.length ? await tx.tag.findMany({ where: { id: { in: tagIds }, stage, isActive: true } }) : [];
+    if (tags.length !== tagIds.length) throw new Error("A tag does not belong to this stage");
     const o = await tx.opportunity.create({
       data: {
         accountId: input.accountId,
@@ -33,13 +36,15 @@ export async function createOpportunity(input: OpportunityCreateInput, userId: s
         marginPct: input.marginPct,
         createdById: userId,
         lastModifiedById: userId,
+        tags: { create: tags.map((t) => ({ tagId: t.id })) },
       },
       include: { status: true },
     });
     await tx.activityLog.create({ data: { opportunityId: o.id, userId, actionType: "created", fieldChanged: "stage", newValue: stage } });
+    for (const t of tags) await tx.activityLog.create({ data: { opportunityId: o.id, userId, actionType: "tag-added", newValue: t.label } });
     await audit(tx, {
       userId, action: "opportunity.create", entityType: "opportunity", entityId: o.id,
-      summary: `Created ${opportunityRef(o.number)} "${o.title}" in ${stage}${o.status ? ` / ${o.status.label}` : ""}`,
+      summary: `Created ${opportunityRef(o.number)} "${o.title}" in ${stage}${o.status ? ` / ${o.status.label}` : ""}${tags.length ? ` [${tags.map((t) => t.label).join(", ")}]` : ""}`,
     });
     // Assignment notification: tell the accountable if they didn't create it themselves
     if (o.accountableId !== userId) await notify(tx, o.accountableId, o.id, "assignment", `You were assigned "${o.title}"`);
@@ -118,44 +123,36 @@ export async function getOpportunity(id: string) {
   });
 }
 
-export type TransitionKind = "advance" | "back" | "cancel";
+export type TransitionKind = "advance" | "back";
 
-export async function transitionOpportunity(id: string, kind: TransitionKind, userId: string, reason?: string) {
+export async function transitionOpportunity(id: string, kind: TransitionKind, userId: string) {
   return db.$transaction(async (tx) => {
     const o = await tx.opportunity.findUniqueOrThrow({ where: { id } });
-    if (o.isCancelled) throw new Error("Opportunity is cancelled");
-
-    let newStage = o.stage;
-    let isCancelled: boolean = o.isCancelled;
-
+    let newStage;
     if (kind === "advance") {
       if (!canAdvance(o.stage)) throw new Error("Cannot advance past the final stage");
       newStage = nextStage(o.stage)!;
-    } else if (kind === "back") {
+    } else {
       if (!canMoveBack(o.stage)) throw new Error("Cannot move back from the first stage");
       newStage = prevStage(o.stage)!;
-    } else {
-      if (!reason) throw new Error("A reason is required to cancel");
-      isCancelled = true;
     }
 
     const updated = await tx.opportunity.update({
       where: { id },
-      data: { stage: newStage, isCancelled, statusId: kind === "cancel" ? o.statusId : null, lastReason: reason ?? null, lastModifiedAt: new Date(), lastModifiedById: userId },
+      data: { stage: newStage, statusId: null, lastReason: null, lastModifiedAt: new Date(), lastModifiedById: userId },
     });
 
     await tx.activityLog.create({
-      data: { opportunityId: id, userId, actionType: kind, fieldChanged: "stage", oldValue: o.stage, newValue: isCancelled ? "CANCELLED" : newStage },
+      data: { opportunityId: id, userId, actionType: kind, fieldChanged: "stage", oldValue: o.stage, newValue: newStage },
     });
 
     await audit(tx, {
       userId, action: `opportunity.${kind}`, entityType: "opportunity", entityId: id,
-      summary: kind === "cancel" ? `Cancelled ${opportunityRef(o.number)}: ${reason}` : `Moved ${opportunityRef(o.number)} from ${o.stage} to ${newStage}`,
+      summary: `Moved ${opportunityRef(o.number)} from ${o.stage} to ${newStage}`,
     });
 
     if (o.accountableId !== userId) {
-      const verb = kind === "cancel" ? "was cancelled" : `moved to ${newStage}`;
-      await notify(tx, o.accountableId, id, "stage", `"${o.title}" ${verb}`);
+      await notify(tx, o.accountableId, id, "stage", `"${o.title}" moved to ${newStage}`);
     }
 
     return updated;
