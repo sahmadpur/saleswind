@@ -1,4 +1,4 @@
-import { dateTime } from "@/lib/format";
+import { dateTime, shortDate } from "@/lib/format";
 
 type Entry = { id: string; actionType: string; fieldChanged: string | null; oldValue: string | null; newValue: string | null; createdAt: Date };
 
@@ -51,7 +51,7 @@ export function ActivityLogView({ entries, labels = {} }: { entries: Entry[]; la
               </div>
               <div className="pb-3 pt-1.5">
                 <p className="text-sm text-gink-2">{describe(e, labels)}</p>
-                <p className="text-xs text-ggrey-2">{dateTime(new Date(e.createdAt))}</p>
+                <p className="text-xs text-ggrey-2" title={dateTime(new Date(e.createdAt))}>{shortDate(new Date(e.createdAt))}</p>
               </div>
             </li>
           );

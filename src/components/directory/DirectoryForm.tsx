@@ -1,10 +1,11 @@
 "use client";
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { Button } from "@/components/ui/Button";
 import { FieldError } from "@/components/ui/FieldError";
 import type { FormState } from "@/lib/action-state";
+import { useCloseDialog } from "@/components/ui/EditDialogButton";
 
 type Values = { name?: string; contactName?: string; email?: string; phone?: string; website?: string; notes?: string };
 
@@ -22,6 +23,8 @@ export function DirectoryForm({ action, defaults = {}, contactLabel, namePlaceho
   defaults?: Values; contactLabel: string; namePlaceholder: string; submitLabel: string;
 }) {
   const [state, formAction, pending] = useActionState(action, {} as FormState);
+  const close = useCloseDialog();
+  useEffect(() => { if (state.ok) close(); }, [state, close]);
   const v = (k: keyof Values) => state.values?.[k] ?? defaults[k] ?? "";
   return (
     <form action={formAction} className="space-y-4">

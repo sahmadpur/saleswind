@@ -6,7 +6,7 @@ import { Icon } from "@/components/ui/Icon";
 import { MeetingsView } from "@/components/meetings/MeetingsView";
 import { SyncControls } from "@/components/meetings/SyncControls";
 import { getConnectionSynced, listMeetings, outlookConfigured, syncWindow } from "@/services/outlook-service";
-import { dateTime, opportunityRef, utcToZonedInput } from "@/lib/format";
+import { opportunityRef, shortDate, utcToZonedInput } from "@/lib/format";
 import { toMeetingItems } from "@/lib/meeting-view";
 
 const MESSAGES: Record<string, string> = {
@@ -67,7 +67,7 @@ export default async function MeetingsPage({ searchParams }: { searchParams: Pro
     <div className="space-y-5">
       <PageHeader title="Meetings" />
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <SyncControls email={connection.msEmail} lastSynced={connection.lastSyncedAt ? dateTime(connection.lastSyncedAt) : null} />
+        <SyncControls email={connection.msEmail} lastSynced={connection.lastSyncedAt ? shortDate(connection.lastSyncedAt) : null} />
         {flash && params.outlook === "connected" && <span className="text-xs text-ggreen">{flash}</span>}
       </div>
       {connection.lastError && (

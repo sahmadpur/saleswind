@@ -8,7 +8,7 @@ import { Select } from "@/components/ui/Select";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Pagination } from "@/components/ui/Pagination";
-import { dateTime, shortName } from "@/lib/format";
+import { dateTime, shortDate, shortName } from "@/lib/format";
 import { parsePage } from "@/lib/pagination";
 
 const TH = "px-3 py-2.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-gink";
@@ -92,7 +92,7 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
                 const who = r.userId ? nameOf.get(r.userId) : null;
                 return (
                   <tr key={r.id} className="border-b border-gline-2 last:border-0 hover:bg-ghover/70">
-                    <td className={`${TD} whitespace-nowrap tabular-nums text-ggrey`}>{dateTime(r.createdAt)}</td>
+                    <td className={`${TD} whitespace-nowrap tabular-nums text-ggrey`} title={dateTime(r.createdAt)}>{shortDate(r.createdAt)}</td>
                     <td className={`${TD} whitespace-nowrap text-gink-2`} title={who ?? undefined}>
                       {who ? shortName(who) : r.userId ? <span className="text-ggrey-2">Deleted user</span> : "—"}
                     </td>

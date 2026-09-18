@@ -169,7 +169,7 @@ export default async function OpportunityDetail({ params }: { params: Promise<{ 
       <Card>
         <CommentThread
           opportunityId={o.id}
-          comments={o.comments.map((c) => ({ id: c.id, body: c.body, author: c.author.name, authorId: c.authorId, when: dateTime(c.createdAt) }))}
+          comments={o.comments.map((c) => ({ id: c.id, body: c.body, author: c.author.name, authorId: c.authorId, when: shortDate(c.createdAt), whenFull: dateTime(c.createdAt) }))}
           currentUserId={user.id}
           isElevated={user.role === "ADMIN" || user.role === "MANAGER"}
           users={activeUsers.map((u) => ({ id: u.id, name: u.name }))}

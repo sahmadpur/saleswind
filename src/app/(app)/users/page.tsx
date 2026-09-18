@@ -10,7 +10,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { DeleteUserButton } from "@/components/users/DeleteUserButton";
 import { EditUserDialog } from "@/components/users/EditUserDialog";
 import { BlockUserButton } from "@/components/users/BlockUserButton";
-import { dateTime } from "@/lib/format";
+import { shortDate } from "@/lib/format";
 
 const ROLE_STYLE: Record<string, string> = {
   ADMIN: "bg-gviolet-50 text-gviolet",
@@ -91,7 +91,7 @@ export default async function UsersPage() {
                 </td>
                 <td className="px-5 py-3">
                   {u.blockedAt ? (
-                    <span className="rounded-full bg-gred-50 px-2 py-0.5 text-xs font-medium text-gred" title={`Blocked ${dateTime(u.blockedAt)}`}>Blocked</span>
+                    <span className="rounded-full bg-gred-50 px-2 py-0.5 text-xs font-medium text-gred" title={`Blocked ${shortDate(u.blockedAt)}`}>Blocked</span>
                   ) : (
                     <span className="rounded-full bg-ggreen-50 px-2 py-0.5 text-xs font-medium text-ggreen">Active</span>
                   )}

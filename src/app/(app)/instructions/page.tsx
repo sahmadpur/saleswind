@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/Card";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Markdown } from "@/components/content/Markdown";
 import { InstructionsView } from "@/components/content/InstructionsView";
-import { dateTime } from "@/lib/format";
+import { shortDate } from "@/lib/format";
 
 export default async function InstructionsPage() {
   const user = await requireUser();
@@ -34,7 +34,7 @@ export default async function InstructionsPage() {
         </InstructionsView>
         {page && body.trim() && (
           <p className="mt-6 border-t border-gline-2 pt-3 text-xs text-ggrey-2">
-            Last updated {dateTime(page.updatedAt)}{editor ? ` by ${editor.name}` : ""}
+            Last updated {shortDate(page.updatedAt)}{editor ? ` by ${editor.name}` : ""}
           </p>
         )}
       </Card>

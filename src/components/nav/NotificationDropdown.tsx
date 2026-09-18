@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { markAllReadAction } from "@/actions/notification-actions";
 
-type Item = { id: string; message: string; read: boolean; when: string; type: string; href: string | null };
+type Item = { id: string; message: string; read: boolean; when: string; whenFull?: string; type: string; href: string | null };
 
 const ICON: Record<string, string> = { mention: "alternate_email", comment: "chat_bubble", assignment: "person_add", stage: "swap_horiz", task: "task_alt" };
 
@@ -66,7 +66,7 @@ export function NotificationDropdown({ count, items }: { count: number; items: I
                   <span className="material-symbols-outlined mt-0.5 shrink-0 text-ggrey-2" style={{ fontSize: 18 }}>{ICON[n.type] ?? "notifications"}</span>
                   <div>
                     <p className={`text-sm leading-snug ${n.read ? "text-ggrey" : "text-gink"}`}>{n.message}</p>
-                    <p className="mt-0.5 text-xs text-ggrey-2">{n.when}</p>
+                    <p className="mt-0.5 text-xs text-ggrey-2" title={n.whenFull}>{n.when}</p>
                   </div>
                 </>
               );

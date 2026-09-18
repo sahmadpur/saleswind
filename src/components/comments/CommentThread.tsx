@@ -7,7 +7,7 @@ import { cn } from "@/lib/cn";
 import { shortName } from "@/lib/format";
 import { mentionToken, ROLE_MENTIONS, segments } from "@/lib/mentions";
 
-type Comment = { id: string; body: string; author: string; authorId: string; when: string };
+type Comment = { id: string; body: string; author: string; authorId: string; when: string; whenFull?: string };
 type User = { id: string; name: string; group?: boolean };
 
 const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -151,7 +151,7 @@ export function CommentThread({ opportunityId, comments, currentUserId, isElevat
               <div className="flex items-center justify-between gap-2">
                 <span className="text-sm font-medium text-gink" title={c.author}>{shortName(c.author)}</span>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-ggrey-2">{c.when}</span>
+                  <span className="text-xs text-ggrey-2" title={c.whenFull}>{c.when}</span>
                   {(c.authorId === currentUserId || isElevated) && (
                     <button
                       onClick={() => deleteCommentAction(opportunityId, c.id)}

@@ -72,10 +72,13 @@ const onDay = (items: MeetingItem[], day: string) => [
   ...items.filter((m) => !m.isAllDay && m.startLocal.slice(0, 10) <= day && day <= m.endLocal.slice(0, 10)).sort((a, b) => a.startLocal.localeCompare(b.startLocal)),
 ];
 
-function eventTone(m: MeetingItem) {
-  return m.opportunity
-    ? "border-gblue bg-gblue-50 text-gblue-dark hover:bg-gblue-100"
-    : "border-gviolet bg-gviolet-50 text-gviolet hover:brightness-95";
+/** Same green as the primary "New meeting" button. */
+const EVENT_TONE = "border-gblue-dark bg-gblue text-white hover:bg-gblue-hover";
+
+/** Small link glyph before the subject of meetings tied to an opportunity. */
+function Linked({ m }: { m: MeetingItem }) {
+  if (!m.opportunity) return null;
+  return <span className="material-symbols-outlined mr-0.5 align-[-2px] opacity-90" style={{ fontSize: 12 }} title={m.opportunity.label}>link</span>;
 }
 
 function TimeGrid({ days, items, today, nowMin, onSlot, onOpen }: {
@@ -108,8 +111,8 @@ function TimeGrid({ days, items, today, nowMin, onSlot, onOpen }: {
           {allDay.map((list, i) => (
             <div key={days[i]} className="space-y-0.5 border-l border-gline-2 p-0.5">
               {list.map((m) => (
-                <button key={m.id} type="button" onClick={() => onOpen(m)} className={cn("block w-full truncate rounded border-l-[3px] px-1.5 py-0.5 text-left text-xs font-medium", eventTone(m))}>
-                  {m.subject}
+                <button key={m.id} type="button" onClick={() => onOpen(m)} className={cn("block w-full truncate rounded border-l-[3px] px-1.5 py-0.5 text-left text-xs font-medium", EVENT_TONE, m.past && "opacity-60")}>
+                  <Linked m={m} />{m.subject}
                 </button>
               ))}
             </div>
@@ -149,10 +152,10 @@ function TimeGrid({ days, items, today, nowMin, onSlot, onOpen }: {
                     type="button"
                     title={`${s.m.time} ${s.m.subject}`}
                     onClick={(e) => { e.stopPropagation(); onOpen(s.m); }}
-                    className={cn("absolute z-10 overflow-hidden rounded border-l-[3px] px-1.5 py-0.5 text-left text-xs leading-tight shadow-g1", eventTone(s.m), s.m.past && "opacity-60")}
+                    className={cn("absolute z-10 overflow-hidden rounded border-l-[3px] px-1.5 py-0.5 text-left text-xs leading-tight shadow-g1", EVENT_TONE, s.m.past && "opacity-60")}
                     style={{ top: (s.start / 60) * HOUR + 1, height, left: `calc(${(s.col / s.cols) * 100}% + 2px)`, width: `calc(${100 / s.cols}% - 4px)` }}
                   >
-                    <span className="block truncate font-semibold">{s.m.subject}</span>
+                    <span className="block truncate font-semibold"><Linked m={s.m} />{s.m.subject}</span>
                     {height > 30 && <span className="block truncate opacity-80">{hhmm(s.start)}–{hhmm(s.end % 1440)}</span>}
                     {height > 46 && s.m.location && <span className="block truncate opacity-70">{s.m.location}</span>}
                   </button>
@@ -201,10 +204,11 @@ function MonthGrid({ anchor, items, today, onDay: pickDay, onNew, onOpen }: {
                     key={m.id}
                     type="button"
                     onClick={(e) => { e.stopPropagation(); onOpen(m); }}
-                    className={cn("block w-full truncate rounded px-1 py-px text-left text-[11px]", m.isAllDay ? cn("border-l-[3px] font-medium", eventTone(m)) : "text-gink-2 hover:bg-gline-2", m.past && "opacity-60")}
+                    className={cn("block w-full truncate rounded px-1 py-px text-left text-[11px]", m.isAllDay ? cn("border-l-[3px] font-medium", EVENT_TONE) : "text-gink-2 hover:bg-gline-2", m.past && "opacity-60")}
                   >
+                    {!m.isAllDay && <span className="mr-1 inline-block h-2 w-2 rounded-full bg-gblue align-middle" />}
                     {!m.isAllDay && <span className="mr-1 tabular-nums text-ggrey">{m.startLocal.slice(0, 10) === d ? m.startLocal.slice(11, 16) : "…"}</span>}
-                    {m.subject}
+                    <Linked m={m} />{m.subject}
                   </button>
                 ))}
                 {list.length > 3 && (

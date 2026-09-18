@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { listAccounts } from "@/services/account-service";
-import { createAccountAction } from "@/actions/account-actions";
+import { createAccountAction, updateAccountAction } from "@/actions/account-actions";
+import { EditDialogButton } from "@/components/ui/EditDialogButton";
 import { AccountForm } from "@/components/accounts/AccountForm";
 import { Card } from "@/components/ui/Card";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -50,6 +51,7 @@ export default async function AccountsPage({ searchParams }: { searchParams: Pro
                 <th className={TH}>Phone</th>
                 <th className={TH}>Website</th>
                 <th className={`${TH} text-right`}>Opportunities</th>
+                <th className={TH}><span className="sr-only">Edit</span></th>
               </tr>
             </thead>
             <tbody>
@@ -72,11 +74,24 @@ export default async function AccountsPage({ searchParams }: { searchParams: Pro
                     {a.website ? <a href={a.website} target="_blank" rel="noreferrer" className="hover:text-gblue">{a.website.replace(/^https?:\/\//, "")}</a> : "—"}
                   </td>
                   <td className={`${TD} text-right tabular-nums text-gink-2`}>{a._count.opportunities}</td>
+                  <td className={`${TD} w-10 py-1 text-right`}>
+                    <EditDialogButton title={`Edit ${a.name}`} compact>
+                      <AccountForm
+                        action={updateAccountAction.bind(null, a.id)}
+                        submitLabel="Save changes"
+                        defaults={{
+                          name: a.name, industry: a.industry ?? "", website: a.website ?? "",
+                          primaryContactName: a.primaryContactName ?? "", primaryContactEmail: a.primaryContactEmail ?? "",
+                          primaryContactPhone: a.primaryContactPhone ?? "", notes: a.notes ?? "",
+                        }}
+                      />
+                    </EditDialogButton>
+                  </td>
                 </RowLink>
               ))}
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-5 py-12 text-center text-sm text-ggrey">
+                  <td colSpan={9} className="px-5 py-12 text-center text-sm text-ggrey">
                     {q ? `No accounts match "${q}".` : "No accounts yet — click New account to add the first one."}
                   </td>
                 </tr>

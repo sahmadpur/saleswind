@@ -5,7 +5,7 @@ import ExcelJS from "exceljs";
 import fontkit from "@pdf-lib/fontkit";
 import { PDFDocument, rgb, type PDFFont } from "pdf-lib";
 import { grossProfit } from "@/lib/domain/finance";
-import { dateTime, money, opportunityRef } from "@/lib/format";
+import { money, opportunityRef, shortDate } from "@/lib/format";
 
 export type ExportRow = {
   number: number; title: string; stage: string; revenue: unknown; marginPct: unknown;
@@ -39,7 +39,7 @@ export async function opportunitiesXlsx(rows: ExportRow[]): Promise<Buffer> {
     { header: "Margin %", key: "margin", width: 10, style: { numFmt: '0.00"%"' } },
     { header: "Predicted gross profit", key: "gp", width: 20, style: { numFmt: '"$"#,##0.00' } },
     { header: "Accountable", key: "accountable", width: 20 },
-    { header: "Modified", key: "modified", width: 18, style: { numFmt: "dd.mm.yyyy hh:mm" } },
+    { header: "Modified", key: "modified", width: 18, style: { numFmt: "dd.mm.yyyy" } },
   ];
   for (const r of rows) ws.addRow(flatten(r));
   const header = ws.getRow(1);
@@ -82,7 +82,7 @@ export async function opportunitiesPdf(rows: ExportRow[], subtitle: string): Pro
     { label: "MR", w: 40, right: true, get: (r) => `${r.margin}%` },
     { label: "PGP", w: 65, right: true, get: (r) => money(r.gp) },
     { label: "Accountable", w: 80, get: (r) => r.accountable },
-    { label: "Modified", w: 96, get: (r) => dateTime(r.modified) },
+    { label: "Modified", w: 96, get: (r) => shortDate(r.modified) },
   ];
   const ink = rgb(0.094, 0.125, 0.2), grey = rgb(0.36, 0.39, 0.47), line = rgb(0.91, 0.925, 0.945);
   const data = rows.map(flatten);

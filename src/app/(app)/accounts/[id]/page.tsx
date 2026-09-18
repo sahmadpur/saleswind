@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getAccount } from "@/services/account-service";
-import { updateAccountNotesAction } from "@/actions/account-actions";
+import { updateAccountAction, updateAccountNotesAction } from "@/actions/account-actions";
+import { AccountForm } from "@/components/accounts/AccountForm";
+import { EditDialogButton } from "@/components/ui/EditDialogButton";
 import { AccountNotesForm } from "@/components/accounts/AccountNotesForm";
 import { Card, CardLabel } from "@/components/ui/Card";
 import { Pill } from "@/components/ui/Pill";
@@ -35,16 +37,29 @@ export default async function AccountDetail({ params }: { params: Promise<{ id: 
         Accounts
       </Link>
 
-      <div className="flex items-center gap-4">
-        <Avatar name={account.name} size={56} />
-        <div>
-          <h1 className="text-[1.75rem] font-normal leading-tight tracking-[-0.01em] text-gink">{account.name}</h1>
-          <p className="text-sm text-ggrey">
-            <span className="font-medium tabular-nums text-ggrey-2">{accountRef(account.number)}</span>
-            <span className="mx-1.5 text-gline">·</span>
-            {account.industry ?? "Account"}
-          </p>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <Avatar name={account.name} size={56} />
+          <div>
+            <h1 className="text-[1.75rem] font-normal leading-tight tracking-[-0.01em] text-gink">{account.name}</h1>
+            <p className="text-sm text-ggrey">
+              <span className="font-medium tabular-nums text-ggrey-2">{accountRef(account.number)}</span>
+              <span className="mx-1.5 text-gline">·</span>
+              {account.industry ?? "Account"}
+            </p>
+          </div>
         </div>
+        <EditDialogButton title="Edit account">
+          <AccountForm
+            action={updateAccountAction.bind(null, account.id)}
+            submitLabel="Save changes"
+            defaults={{
+              name: account.name, industry: account.industry ?? "", website: account.website ?? "",
+              primaryContactName: account.primaryContactName ?? "", primaryContactEmail: account.primaryContactEmail ?? "",
+              primaryContactPhone: account.primaryContactPhone ?? "", notes: account.notes ?? "",
+            }}
+          />
+        </EditDialogButton>
       </div>
 
       <Card>
@@ -54,6 +69,7 @@ export default async function AccountDetail({ params }: { params: Promise<{ id: 
           <Field icon="language" label="Website" value={account.website ?? "—"} />
           <Field icon="person" label="Contact" value={account.primaryContactName ?? "—"} />
           <Field icon="mail" label="Email" value={account.primaryContactEmail ?? "—"} />
+          <Field icon="call" label="Phone" value={account.primaryContactPhone ?? "—"} />
         </dl>
       </Card>
 

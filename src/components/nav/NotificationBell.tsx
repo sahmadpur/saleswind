@@ -1,10 +1,10 @@
 import { requireUser } from "@/lib/session";
 import { listNotifications, unreadCount } from "@/services/notification-service";
-import { dateTime } from "@/lib/format";
+import { dateTime, shortDate } from "@/lib/format";
 import { NotificationDropdown } from "@/components/nav/NotificationDropdown";
 
 export async function NotificationBell() {
   const user = await requireUser();
   const [items, count] = await Promise.all([listNotifications(user.id), unreadCount(user.id)]);
-  return <NotificationDropdown count={count} items={items.map((n) => ({ id: n.id, message: n.message, read: !!n.readAt, when: dateTime(n.createdAt), type: n.type, href: n.opportunityId ? `/opportunities/${n.opportunityId}` : null }))} />;
+  return <NotificationDropdown count={count} items={items.map((n) => ({ id: n.id, message: n.message, read: !!n.readAt, when: shortDate(n.createdAt), whenFull: dateTime(n.createdAt), type: n.type, href: n.opportunityId ? `/opportunities/${n.opportunityId}` : null }))} />;
 }

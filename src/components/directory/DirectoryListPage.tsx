@@ -1,8 +1,9 @@
 import Link from "next/link";
 import type { DirectoryKind } from "@prisma/client";
 import { listDirectory } from "@/services/directory-service";
-import { createDirectoryEntryAction } from "@/actions/directory-actions";
+import { createDirectoryEntryAction, updateDirectoryEntryAction } from "@/actions/directory-actions";
 import { DirectoryForm } from "@/components/directory/DirectoryForm";
+import { EditDialogButton } from "@/components/ui/EditDialogButton";
 import { Card } from "@/components/ui/Card";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Avatar } from "@/components/ui/Avatar";
@@ -55,6 +56,7 @@ export async function DirectoryListPage({ kind, params }: { kind: DirectoryKind;
                 <th className={TH}>Email</th>
                 <th className={TH}>Phone</th>
                 <th className={TH}>Website</th>
+                <th className={TH}><span className="sr-only">Edit</span></th>
               </tr>
             </thead>
             <tbody>
@@ -73,11 +75,22 @@ export async function DirectoryListPage({ kind, params }: { kind: DirectoryKind;
                   <td className={`${TD} text-gink-2`}>
                     {e.website ? <a href={e.website} target="_blank" rel="noreferrer" className="hover:text-gblue">{e.website.replace(/^https?:\/\//, "")}</a> : "—"}
                   </td>
+                  <td className={`${TD} w-10 py-1 text-right`}>
+                    <EditDialogButton title={`Edit ${e.name}`} compact>
+                      <DirectoryForm
+                        action={updateDirectoryEntryAction.bind(null, e.id)}
+                        defaults={{ name: e.name, contactName: e.contactName ?? "", email: e.email ?? "", phone: e.phone ?? "", website: e.website ?? "", notes: e.notes ?? "" }}
+                        contactLabel={cfg.contactLabel}
+                        namePlaceholder={cfg.namePlaceholder}
+                        submitLabel="Save changes"
+                      />
+                    </EditDialogButton>
+                  </td>
                 </RowLink>
               ))}
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-5 py-12 text-center text-sm text-ggrey">
+                  <td colSpan={7} className="px-5 py-12 text-center text-sm text-ggrey">
                     {q ? `No ${cfg.title.toLowerCase()} match "${q}".` : `No ${cfg.title.toLowerCase()} yet — click New ${cfg.singular} to add the first one.`}
                   </td>
                 </tr>

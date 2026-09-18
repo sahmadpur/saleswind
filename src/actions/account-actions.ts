@@ -21,6 +21,7 @@ export async function updateAccountAction(id: string, _prev: unknown, formData: 
   const parsed = accountSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors, values: formValues(formData) };
   await updateAccount(id, parsed.data, user.id);
+  revalidatePath("/accounts");
   revalidatePath(`/accounts/${id}`);
   return { ok: true };
 }
