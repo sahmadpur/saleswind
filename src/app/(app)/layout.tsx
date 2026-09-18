@@ -1,6 +1,7 @@
 import { requireUser } from "@/lib/session";
 import { AppShell } from "@/components/nav/AppShell";
 import { NotificationBell } from "@/components/nav/NotificationBell";
+import { outlookConfigured } from "@/services/outlook-service";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const user = await requireUser();
@@ -10,6 +11,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       userName={user.name ?? user.email ?? "Account"}
       userEmail={user.email ?? ""}
       bell={<NotificationBell />}
+      meetings={outlookConfigured()}
     >
       {children}
     </AppShell>

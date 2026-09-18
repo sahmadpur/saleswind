@@ -3,7 +3,7 @@ import { can, type Action } from "@/lib/domain/permissions";
 import { ShellLayout } from "@/components/nav/ShellLayout";
 import { AccountMenu } from "@/components/nav/AccountMenu";
 
-type NavItem = { href: string; label: string; icon: string; action: Action | null };
+type NavItem = { href: string; label: string; icon: string; action: Action | null; feature?: "meetings" };
 
 const NAV: { label: string; items: NavItem[] }[] = [
   {
@@ -12,6 +12,7 @@ const NAV: { label: string; items: NavItem[] }[] = [
       { href: "/opportunities", label: "Opportunities", icon: "monitoring", action: null },
       { href: "/accounts", label: "Accounts", icon: "domain", action: null },
       { href: "/tasks", label: "Tasks", icon: "task_alt", action: null },
+      { href: "/meetings", label: "Meetings", icon: "event", action: null, feature: "meetings" },
       { href: "/reports", label: "Reports", icon: "bar_chart", action: "reports:view" },
     ],
   },
@@ -40,7 +41,9 @@ export function AppShell({
   userEmail,
   children,
   bell,
+  meetings = false,
 }: {
+  meetings?: boolean;
   role: Role;
   userName: string;
   userEmail: string;
@@ -50,7 +53,7 @@ export function AppShell({
   const groups = NAV.map((g) => ({
     label: g.label,
     items: g.items
-      .filter((i) => !i.action || can(role, i.action))
+      .filter((i) => (!i.action || can(role, i.action)) && (i.feature !== "meetings" || meetings))
       .map(({ href, label, icon }) => ({ href, label, icon })),
   })).filter((g) => g.items.length > 0);
 

@@ -15,12 +15,15 @@ import { QuickAddTask } from "@/components/tasks/QuickAddTask";
 import { TaskList } from "@/components/tasks/TaskList";
 import { listOpportunityTasks } from "@/services/task-service";
 import { toTaskItems } from "@/lib/task-view";
+import { getConnection, listOpportunityMeetings, outlookConfigured } from "@/services/outlook-service";
+import { MeetingDialogButton } from "@/components/meetings/MeetingDialog";
+import { newMeetingDraft } from "@/lib/meeting-view";
 import { Card, CardLabel } from "@/components/ui/Card";
 import { Pill } from "@/components/ui/Pill";
 import { StatusPill } from "@/components/ui/StatusPill";
 import { Avatar } from "@/components/ui/Avatar";
 import { grossProfit } from "@/lib/domain/finance";
-import { money, opportunityRef, dateTime } from "@/lib/format";
+import { money, opportunityRef, dateTime, shortDate, timeOfDay } from "@/lib/format";
 
 export default async function OpportunityDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -35,6 +38,8 @@ export default async function OpportunityDetail({ params }: { params: Promise<{ 
     db.status.findMany({ select: { id: true, label: true } }),
     listOpportunityTasks(id),
   ]);
+  const meetingsOn = outlookConfigured();
+  const [meetings, connection] = meetingsOn ? await Promise.all([listOpportunityMeetings(id), getConnection(user.id)]) : [[], null];
   const openTasks = tasks.filter((t) => t.status === "TODO" || t.status === "IN_PROGRESS").length;
   const labels = Object.fromEntries([...allStatuses.map((s) => [s.id, s.label]), ...users.map((u) => [u.id, u.name])]);
   const attached = new Set(o.tags.map((t) => t.tag.id));
@@ -123,6 +128,43 @@ export default async function OpportunityDetail({ params }: { params: Promise<{ 
           </div>
         )}
       </Card>
+
+      {meetingsOn && (
+        <Card className="overflow-hidden p-0">
+          <div className="flex items-center justify-between gap-3 px-6 pt-5">
+            <h2 className="flex items-center gap-2 text-sm font-medium text-gink">
+              <span className="material-symbols-outlined text-ggrey" style={{ fontSize: 20 }}>event</span>
+              Meetings
+            </h2>
+            {connection ? (
+              <MeetingDialogButton
+                draft={newMeetingDraft(o.id)}
+                opportunities={[{ id: o.id, label: `${opportunityRef(o.number)} ${o.title}` }]}
+                label="Schedule"
+                variant="outline"
+              />
+            ) : (
+              <Link href="/meetings" className="text-xs text-gblue hover:underline">Connect Outlook to schedule</Link>
+            )}
+          </div>
+          {meetings.length === 0 ? (
+            <p className="px-6 pb-5 pt-3 text-sm text-ggrey">No meetings linked yet.</p>
+          ) : (
+            <ul className="mt-3 divide-y divide-gline-2 border-t border-gline-2">
+              {meetings.map((m) => (
+                <li key={m.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 px-6 py-3 text-sm">
+                  <span className="w-40 shrink-0 tabular-nums text-gink-2">{shortDate(m.start)} {m.isAllDay ? "" : timeOfDay(m.start)}</span>
+                  <span className="min-w-0 flex-1 font-medium text-gink">{m.subject}</span>
+                  <span className="text-xs text-ggrey">{m.user.name}</span>
+                  {m.joinUrl && m.end > new Date() && (
+                    <a href={m.joinUrl} target="_blank" rel="noreferrer" className="text-xs font-medium text-gviolet hover:underline">Join</a>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+      )}
 
       <Card>
         <CommentThread

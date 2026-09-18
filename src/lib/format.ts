@@ -56,3 +56,24 @@ export function shortName(name: string): string {
   if (parts.length < 2) return parts[0] ?? "";
   return `${parts[0]} ${parts[parts.length - 1][0].toUpperCase()}.`;
 }
+
+/**
+ * Wall-clock "YYYY-MM-DDTHH:mm" in the app time zone → the UTC instant.
+ * Used for datetime-local inputs, which carry no zone.
+ */
+export function zonedToUtc(local: string, zone = timeZone()): Date {
+  const [d, t = "00:00"] = local.split("T");
+  const [y, mo, da] = d.split("-").map(Number);
+  const [h, mi] = t.split(":").map(Number);
+  const guess = Date.UTC(y, mo - 1, da, h, mi);
+  // Offset of the zone at that moment, found by formatting the guess back into the zone.
+  const p = parts(new Date(guess), true, zone);
+  const asZone = Date.UTC(Number(p.year), Number(p.month) - 1, Number(p.day), Number(p.hour), Number(p.minute));
+  return new Date(guess - (asZone - guess));
+}
+
+/** UTC instant → "YYYY-MM-DDTHH:mm" in the app time zone, for datetime-local inputs. */
+export function utcToZonedInput(d: Date, zone = timeZone()): string {
+  const p = parts(d, true, zone);
+  return `${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}`;
+}

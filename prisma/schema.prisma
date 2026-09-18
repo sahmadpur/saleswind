@@ -37,6 +37,50 @@ model User {
   assignedTasks            Task[]             @relation("TaskAssignee")
   createdTasks             Task[]             @relation("TaskCreator")
   pushSubscriptions        PushSubscription[]
+  outlookConnection        OutlookConnection?
+  meetings                 Meeting[]
+}
+
+// A user's link to their Microsoft 365 calendar. Tokens are encrypted at rest (src/lib/crypto.ts).
+model OutlookConnection {
+  userId          String    @id
+  msEmail         String
+  accessTokenEnc  String
+  refreshTokenEnc String
+  expiresAt       DateTime
+  lastSyncedAt    DateTime?
+  lastError       String?
+  createdAt       DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// An Outlook calendar event mirrored for one user, optionally linked to an opportunity.
+model Meeting {
+  id             String   @id @default(cuid())
+  userId         String
+  outlookEventId String
+  subject        String
+  start          DateTime
+  end            DateTime
+  isAllDay       Boolean  @default(false)
+  location       String?
+  joinUrl        String?
+  webLink        String?
+  organizer      String?
+  isOrganizer    Boolean  @default(false)
+  attendees      Json     @default("[]")
+  bodyPreview    String?
+  opportunityId  String?
+  createdInApp   Boolean  @default(false)
+  updatedAt      DateTime @updatedAt
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  opportunity Opportunity? @relation(fields: [opportunityId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, outlookEventId])
+  @@index([userId, start])
+  @@index([opportunityId])
 }
 
 // A browser that opted in to Web Push notifications (one row per device/browser).
@@ -119,6 +163,7 @@ model Opportunity {
   activities    ActivityLog[]
   notifications Notification[]
   tasks         Task[]
+  meetings      Meeting[]
 }
 
 model OpportunityTag {
