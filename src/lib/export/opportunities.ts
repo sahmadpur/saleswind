@@ -39,7 +39,7 @@ export async function opportunitiesXlsx(rows: ExportRow[]): Promise<Buffer> {
     { header: "Margin %", key: "margin", width: 10, style: { numFmt: '0.00"%"' } },
     { header: "Predicted gross profit", key: "gp", width: 20, style: { numFmt: '"$"#,##0.00' } },
     { header: "Accountable", key: "accountable", width: 20 },
-    { header: "Modified", key: "modified", width: 18, style: { numFmt: "dd mmm yyyy hh:mm" } },
+    { header: "Modified", key: "modified", width: 18, style: { numFmt: "dd.mm.yyyy hh:mm" } },
   ];
   for (const r of rows) ws.addRow(flatten(r));
   const header = ws.getRow(1);

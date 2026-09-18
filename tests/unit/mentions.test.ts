@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { mentionToken, parseMentions, plainText, segments } from "@/lib/mentions";
+import { isRoleMention, mentionToken, parseMentions, plainText, segments } from "@/lib/mentions";
 
 describe("mentions", () => {
   const body = `Hi ${mentionToken("Ruslan Sultanov", "u1")} and ${mentionToken("Maya", "u2")}, cc ${mentionToken("Ruslan Sultanov", "u1")}`;
@@ -11,6 +11,11 @@ describe("mentions", () => {
     expect(segments("a @[B C](x1) d")).toEqual([
       { type: "text", text: "a " }, { type: "mention", name: "B C", userId: "x1" }, { type: "text", text: " d" },
     ]);
+  });
+  it("parses group mentions like any other token", () => {
+    expect(parseMentions(`ping ${mentionToken("Admins", "role-ADMIN")}`)).toEqual(["role-ADMIN"]);
+    expect(isRoleMention("role-ADMIN")).toBe(true);
+    expect(isRoleMention("u1")).toBe(false);
   });
   it("strips brackets from names and renders plain text", () => {
     expect(mentionToken("We[ird]", "id")).toBe("@[Weird](id)");

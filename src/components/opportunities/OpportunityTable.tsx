@@ -10,7 +10,7 @@ import { TagCell } from "@/components/opportunities/TagCell";
 import { updateOpportunityFieldAction } from "@/actions/opportunity-actions";
 import type { EditableField } from "@/schemas/opportunity";
 import { grossProfit } from "@/lib/domain/finance";
-import { money, shortDate, opportunityRef, shortName, dateTime } from "@/lib/format";
+import { money, shortDate, opportunityRef, shortName, dateTime, timeOfDay } from "@/lib/format";
 import { type SortDir, type SortKey } from "@/lib/opportunity-sort";
 
 type Row = {
@@ -109,7 +109,7 @@ function BodyRow({ o, edit }: { o: Row; edit: EditOptions | null }) {
       </td>
       <td className={`${TD} whitespace-nowrap leading-4 text-ggrey-2`} title={dateTime(new Date(o.lastModifiedAt))}>
         {shortDate(new Date(o.lastModifiedAt))}
-        <span className="block text-[11px] text-ggrey-2/80">{dateTime(new Date(o.lastModifiedAt)).split(", ")[1]}</span>
+        <span className="block text-[11px] text-ggrey-2/80">{timeOfDay(new Date(o.lastModifiedAt))}</span>
       </td>
     </RowLink>
   );

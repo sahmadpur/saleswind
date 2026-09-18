@@ -23,19 +23,35 @@ enum Stage {
 }
 
 model User {
-  id           String   @id @default(cuid())
+  id           String    @id @default(cuid())
   name         String
-  email        String   @unique
+  email        String    @unique
   passwordHash String
-  role         Role     @default(AGENT)
+  role         Role      @default(AGENT)
   blockedAt    DateTime?
-  createdAt    DateTime @default(now())
+  createdAt    DateTime  @default(now())
 
-  accountableOpportunities Opportunity[]  @relation("AccountableOpportunities")
+  accountableOpportunities Opportunity[]      @relation("AccountableOpportunities")
   comments                 Comment[]
   notifications            Notification[]
-  assignedTasks            Task[]         @relation("TaskAssignee")
-  createdTasks             Task[]         @relation("TaskCreator")
+  assignedTasks            Task[]             @relation("TaskAssignee")
+  createdTasks             Task[]             @relation("TaskCreator")
+  pushSubscriptions        PushSubscription[]
+}
+
+// A browser that opted in to Web Push notifications (one row per device/browser).
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model Account {

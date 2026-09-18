@@ -1,5 +1,6 @@
 import { grossProfit } from "@/lib/domain/finance";
 import { ORDER } from "@/lib/domain/lifecycle";
+import { opportunityRef } from "@/lib/format";
 
 export type SortKey = "ref" | "title" | "account" | "stage" | "status" | "revenue" | "margin" | "gp" | "accountable" | "modified";
 export type SortDir = "asc" | "desc";
@@ -18,7 +19,7 @@ export function parseSort(sort?: string, dir?: string): { sort: SortKey; dir: So
 }
 
 type SortableRow = {
-  number: number; title: string; stage: string;
+  number: number; title: string; stage: string; description?: string | null; tags?: { tag: { label: string } }[];
   revenue: unknown; marginPct: unknown;
   account: { name: string }; accountable: { name: string }; status: { label: string } | null;
   lastModifiedAt: Date;
@@ -46,8 +47,24 @@ export function sortOpportunities<T extends SortableRow>(rows: T[], sort: SortKe
   });
 }
 
-export const FILTER_KEYS = ["stage", "status", "accountable", "account"] as const;
+/** Filters shown as selects; `q` is the free-text search. */
+export const SELECT_FILTER_KEYS = ["stage", "status", "accountable", "account"] as const;
+export const FILTER_KEYS = [...SELECT_FILTER_KEYS, "q"] as const;
 export type Filters = Partial<Record<(typeof FILTER_KEYS)[number], string>>;
+
+/** Lower-case and strip accents so "Əli" matches "əli" and "cafe" matches "café". */
+const fold = (s: string) => s.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
+
+/** Every whitespace-separated term must appear somewhere in the row (ref, title, description, account, stage, status, tags, accountable). */
+function matchesSearch(r: SortableRow, q: string): boolean {
+  const terms = fold(q).split(/\s+/).filter(Boolean);
+  if (terms.length === 0) return true;
+  const hay = fold([
+    opportunityRef(r.number), String(r.number), r.title, r.description ?? "", r.account.name, r.stage,
+    r.status?.label ?? "", ...(r.tags ?? []).map((t) => t.tag.label), r.accountable.name,
+  ].join(" \u0000 "));
+  return terms.every((t) => hay.includes(t));
+}
 
 export function parseFilters(q: Record<string, string | undefined>): Filters {
   const f: Filters = {};
@@ -61,6 +78,7 @@ export function filterOpportunities<T extends SortableRow>(rows: T[], f: Filters
       (!f.stage || r.stage === f.stage) &&
       (!f.status || r.status?.label === f.status) &&
       (!f.accountable || r.accountable.name === f.accountable) &&
-      (!f.account || r.account.name === f.account),
+      (!f.account || r.account.name === f.account) &&
+      (!f.q || matchesSearch(r, f.q)),
   );
 }

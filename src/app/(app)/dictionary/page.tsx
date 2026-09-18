@@ -1,4 +1,5 @@
-import { requireRole } from "@/lib/session";
+import { requireUser } from "@/lib/session";
+import { can } from "@/lib/domain/permissions";
 import { listVocabularies } from "@/services/dictionary-service";
 import { addStatusAction, addTagAction, deleteDefinitionAction, deleteTagAction, toggleTagAction, upsertDefinitionAction } from "@/actions/dictionary-actions";
 import { Card, CardLabel } from "@/components/ui/Card";
@@ -6,6 +7,8 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StatusChip } from "@/components/dictionary/StatusChip";
+import { StatusPill } from "@/components/ui/StatusPill";
+import { Chip } from "@/components/ui/Chip";
 import { DictionaryDeleteButton } from "@/components/dictionary/DictionaryDeleteButton";
 
 const STAGES = ["PROSPECT", "SALES", "CONTRACT", "PROJECT"] as const;
@@ -27,8 +30,13 @@ function StageLabel({ stage }: { stage: string }) {
 }
 
 export default async function DictionaryPage() {
-  await requireRole("dictionary:manage");
-  const { statuses, tags, definitions } = await listVocabularies();
+  const user = await requireUser();
+  // Everyone can read the dictionary; only admins change it (the actions enforce this too).
+  const canManage = can(user.role, "dictionary:manage");
+  const all = await listVocabularies();
+  const statuses = canManage ? all.statuses : all.statuses.filter((s) => s.isActive);
+  const tags = canManage ? all.tags : all.tags.filter((t) => t.isActive);
+  const { definitions } = all;
   return (
     <div className="space-y-8">
       <PageHeader title="Dictionary" />
@@ -40,10 +48,12 @@ export default async function DictionaryPage() {
             <div key={s}>
               <StageLabel stage={s} />
               <div className="flex flex-wrap items-center gap-2">
-                {statuses.filter((x) => x.stage === s).map((x) => (
-                  <StatusChip key={x.id} id={x.id} label={x.label} color={x.color} isActive={x.isActive} />
-                ))}
-                <form action={addStatusAction} className="flex items-center gap-1.5">
+                {statuses.filter((x) => x.stage === s).map((x) =>
+                  canManage
+                    ? <StatusChip key={x.id} id={x.id} label={x.label} color={x.color} isActive={x.isActive} />
+                    : <StatusPill key={x.id} label={x.label} color={x.color} />,
+                )}
+                {canManage && <form action={addStatusAction} className="flex items-center gap-1.5">
                   <input type="hidden" name="stage" value={s} />
                   <input
                     name="label"
@@ -51,7 +61,7 @@ export default async function DictionaryPage() {
                     className="h-8 w-32 rounded-md border border-gline bg-gsurface px-2.5 text-xs outline-none transition-colors hover:border-ggrey-2 focus:border-gblue focus:ring-2 focus:ring-gblue/25"
                   />
                   <Button type="submit" variant="ghost" className="h-8 px-3">Add</Button>
-                </form>
+                </form>}
               </div>
             </div>
           ))}
@@ -65,7 +75,7 @@ export default async function DictionaryPage() {
             <div key={s}>
               <StageLabel stage={s} />
               <div className="flex flex-wrap items-center gap-2">
-                {tags.filter((x) => x.stage === s).map((x) => (
+                {tags.filter((x) => x.stage === s).map((x) => !canManage ? <Chip key={x.id} label={x.label} /> : (
                   <div
                     key={x.id}
                     className={`inline-flex items-center rounded-md border text-xs font-medium ${
@@ -93,7 +103,7 @@ export default async function DictionaryPage() {
                     />
                   </div>
                 ))}
-                <form action={addTagAction} className="flex items-center gap-1.5">
+                {canManage && <form action={addTagAction} className="flex items-center gap-1.5">
                   <input type="hidden" name="stage" value={s} />
                   <input
                     name="label"
@@ -101,7 +111,7 @@ export default async function DictionaryPage() {
                     className="h-8 w-32 rounded-md border border-gline bg-gsurface px-2.5 text-xs outline-none transition-colors hover:border-ggrey-2 focus:border-gblue focus:ring-2 focus:ring-gblue/25"
                   />
                   <Button type="submit" variant="ghost" className="h-8 px-3">Add</Button>
-                </form>
+                </form>}
               </div>
             </div>
           ))}
@@ -117,21 +127,23 @@ export default async function DictionaryPage() {
                 <span className="font-medium text-gink">{d.term}</span>
                 <span className="text-ggrey"> — {d.definition}</span>
               </span>
-              <DictionaryDeleteButton
-                action={deleteDefinitionAction.bind(null, d.id)}
-                label={d.term}
-                confirmText={`Delete definition "${d.term}"?`}
-                className="shrink-0 rounded text-ggrey hover:bg-ghover"
-              />
+              {canManage && (
+                <DictionaryDeleteButton
+                  action={deleteDefinitionAction.bind(null, d.id)}
+                  label={d.term}
+                  confirmText={`Delete definition "${d.term}"?`}
+                  className="shrink-0 rounded text-ggrey hover:bg-ghover"
+                />
+              )}
             </li>
           ))}
           {definitions.length === 0 && <li className="py-2.5 text-sm text-ggrey">No definitions yet.</li>}
         </ul>
-        <form action={upsertDefinitionAction} className="flex flex-col gap-3 sm:flex-row">
+        {canManage && <form action={upsertDefinitionAction} className="flex flex-col gap-3 sm:flex-row">
           <Input name="term" placeholder="Term" className="sm:w-48" />
           <Input name="definition" placeholder="Definition" className="flex-1" />
           <Button type="submit">Save</Button>
-        </form>
+        </form>}
       </Card>
     </div>
   );

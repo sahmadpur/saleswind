@@ -25,3 +25,11 @@ export function segments(body: string): Segment[] {
 
 /** Body with mention tokens rendered as "@Name", for notifications and exports. */
 export const plainText = (body: string) => body.replace(MENTION, "@$1");
+
+/** Group mentions: `@[Admins](role-ADMIN)` notifies every active user with that role. */
+export const ROLE_MENTIONS = [
+  { id: "role-ADMIN", name: "Admins", role: "ADMIN" },
+  { id: "role-MANAGER", name: "Managers", role: "MANAGER" },
+] as const;
+
+export const isRoleMention = (id: string) => ROLE_MENTIONS.some((r) => r.id === id);

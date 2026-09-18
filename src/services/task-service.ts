@@ -67,12 +67,14 @@ export type TaskScope = "board" | "open" | "done" | "cancelled";
 /** Board keeps finished columns short: done/cancelled tasks drop off after this many days. */
 export const BOARD_FINISHED_DAYS = 30;
 
-export async function listMyTasks(userId: string, scope: TaskScope) {
+/** Tasks for one assignee, or the whole team when `assigneeId` is null. */
+export async function listTasks(scope: TaskScope, assigneeId: string | null) {
   const since = new Date(Date.now() - BOARD_FINISHED_DAYS * 86_400_000);
+  const who: Prisma.TaskWhereInput = assigneeId ? { assigneeId } : {};
   const where: Prisma.TaskWhereInput =
     scope === "board"
-      ? { assigneeId: userId, OR: [{ status: { in: ["TODO", "IN_PROGRESS"] } }, { status: { in: ["DONE", "CANCELLED"] }, updatedAt: { gte: since } }] }
-      : { assigneeId: userId, status: scope === "open" ? { in: ["TODO", "IN_PROGRESS"] } : scope === "done" ? "DONE" : "CANCELLED" };
+      ? { ...who, OR: [{ status: { in: ["TODO", "IN_PROGRESS"] } }, { status: { in: ["DONE", "CANCELLED"] }, updatedAt: { gte: since } }] }
+      : { ...who, status: scope === "open" ? { in: ["TODO", "IN_PROGRESS"] } : scope === "done" ? "DONE" : "CANCELLED" };
   return db.task.findMany({
     where,
     // Open work: soonest due first, undated last. Finished: most recent first.
@@ -91,4 +93,5 @@ export async function listOpportunityTasks(opportunityId: string) {
   });
 }
 
-export const countOpenTasks = (userId: string) => db.task.count({ where: { assigneeId: userId, status: { in: ["TODO", "IN_PROGRESS"] } } });
+export const countOpenTasks = (assigneeId: string | null) =>
+  db.task.count({ where: { ...(assigneeId ? { assigneeId } : {}), status: { in: ["TODO", "IN_PROGRESS"] } } });

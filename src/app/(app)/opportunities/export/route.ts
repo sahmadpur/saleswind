@@ -15,7 +15,7 @@ export async function GET(req: Request) {
   const stamp = new Date().toISOString().slice(0, 10);
 
   if (params.format === "pdf") {
-    const applied = Object.entries(filters).map(([k, v]) => `${k}: ${v}`).join(" · ");
+    const applied = Object.entries(filters).map(([k, v]) => `${k === "q" ? "search" : k}: ${v}`).join(" · ");
     const subtitle = `Generated ${dateTime(new Date())} · ${rows.length} opportunities${applied ? ` · ${applied}` : ""}`;
     const bytes = await opportunitiesPdf(rows, subtitle);
     return new NextResponse(new Uint8Array(bytes), {

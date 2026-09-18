@@ -40,6 +40,10 @@ services:
       # secure cookies (the app runs behind Cloudflare->Traefik over http).
       AUTH_URL: https://${APP_HOST}
       APP_TIMEZONE: ${APP_TIMEZONE:-Asia/Baku}
+      # Web Push (optional; the Settings toggle hides itself when unset).
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+      VAPID_SUBJECT: ${VAPID_SUBJECT:-}
       NODE_ENV: production
     networks:
       - default            # reach the db

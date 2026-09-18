@@ -11,7 +11,7 @@ const NAV: { label: string; items: NavItem[] }[] = [
     items: [
       { href: "/opportunities", label: "Opportunities", icon: "monitoring", action: null },
       { href: "/accounts", label: "Accounts", icon: "domain", action: null },
-      { href: "/tasks", label: "My tasks", icon: "task_alt", action: null },
+      { href: "/tasks", label: "Tasks", icon: "task_alt", action: null },
       { href: "/reports", label: "Reports", icon: "bar_chart", action: "reports:view" },
     ],
   },
@@ -26,7 +26,7 @@ const NAV: { label: string; items: NavItem[] }[] = [
   {
     label: "Manage",
     items: [
-      { href: "/dictionary", label: "Dictionary", icon: "menu_book", action: "dictionary:manage" },
+      { href: "/dictionary", label: "Dictionary", icon: "menu_book", action: null },
       { href: "/instructions", label: "Instructions", icon: "help", action: null },
       { href: "/users", label: "Users", icon: "group", action: "users:manage" },
       { href: "/audit", label: "Audit log", icon: "policy", action: "audit:view" },

@@ -20,7 +20,7 @@ import { filterOpportunities, parseFilters, parseSort, sortOpportunities } from 
 const distinct = (xs: (string | undefined)[]) => [...new Set(xs.filter((x): x is string => !!x))].sort();
 
 const EXPORT_LINK =
-  "g-press inline-flex h-9 items-center gap-1.5 rounded-md border border-gline bg-gsurface px-3 text-sm font-medium text-gink transition-colors hover:bg-ghover [&_.material-symbols-outlined]:text-[18px]";
+  "g-press inline-flex h-9 w-9 items-center justify-center rounded-md border border-gline bg-gsurface text-gink transition-colors hover:bg-ghover [&_.material-symbols-outlined]:text-[18px]";
 
 export default async function OpportunitiesPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const params = await searchParams;
@@ -69,13 +69,11 @@ export default async function OpportunitiesPage({ searchParams }: { searchParams
           <>
             {!isKanban && (
               <>
-                <a href={`/opportunities/export?format=xlsx&${exportQuery}`} className={EXPORT_LINK}>
+                <a href={`/opportunities/export?format=xlsx&${exportQuery}`} className={EXPORT_LINK} title="Export to Excel" aria-label="Export to Excel">
                   <Icon name="table_view" />
-                  Excel
                 </a>
-                <a href={`/opportunities/export?format=pdf&${exportQuery}`} className={EXPORT_LINK}>
+                <a href={`/opportunities/export?format=pdf&${exportQuery}`} className={EXPORT_LINK} title="Export to PDF" aria-label="Export to PDF">
                   <Icon name="picture_as_pdf" />
-                  PDF
                 </a>
               </>
             )}

@@ -5,10 +5,10 @@ import { Button } from "@/components/ui/Button";
 import { Avatar } from "@/components/ui/Avatar";
 import { cn } from "@/lib/cn";
 import { shortName } from "@/lib/format";
-import { mentionToken, segments } from "@/lib/mentions";
+import { mentionToken, ROLE_MENTIONS, segments } from "@/lib/mentions";
 
 type Comment = { id: string; body: string; author: string; authorId: string; when: string };
-type User = { id: string; name: string };
+type User = { id: string; name: string; group?: boolean };
 
 const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
@@ -112,8 +112,15 @@ function Composer({ opportunityId, users }: { opportunityId: string; users: User
                 onMouseDown={(e) => { e.preventDefault(); pick(u); }}
                 className={cn("flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-gink", i === active ? "bg-ghover" : "hover:bg-ghover")}
               >
-                <Avatar name={u.name} size={22} />
+                {u.group ? (
+                  <span className="grid h-[22px] w-[22px] place-items-center rounded-full bg-gviolet-50 text-gviolet">
+                    <span className="material-symbols-outlined" style={{ fontSize: 14 }}>groups</span>
+                  </span>
+                ) : (
+                  <Avatar name={u.name} size={22} />
+                )}
                 {u.name}
+                {u.group && <span className="ml-auto text-xs text-ggrey">everyone</span>}
               </button>
             </li>
           ))}
@@ -165,7 +172,10 @@ export function CommentThread({ opportunityId, comments, currentUserId, isElevat
         )}
       </div>
 
-      <Composer opportunityId={opportunityId} users={users.filter((u) => u.id !== currentUserId)} />
+      <Composer
+        opportunityId={opportunityId}
+        users={[...ROLE_MENTIONS.map((r) => ({ id: r.id, name: r.name, group: true })), ...users.filter((u) => u.id !== currentUserId)]}
+      />
     </div>
   );
 }

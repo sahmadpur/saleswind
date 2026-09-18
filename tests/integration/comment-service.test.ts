@@ -56,4 +56,11 @@ describe("comment-service: mentions", () => {
     expect(notes.map((n) => [n.userId, n.type]).sort()).toEqual([[adminUserId, "mention"], [otherUserId, "mention"]].sort());
     expect(notes[0].message).toMatch(/^T mentioned you on OPP-\d{4} "Mentions"$/);
   });
+
+  it("expands @Admins to every active admin", async () => {
+    const o = await createOpportunity({ accountId, title: "Group", accountableId: userId, revenue: 1, marginPct: 1 }, userId);
+    await addComment(o.id, `Help ${mentionToken("Admins", "role-ADMIN")}`, userId);
+    const note = await db.notification.findFirst({ where: { opportunityId: o.id, userId: adminUserId } });
+    expect(note?.message).toMatch(/^T mentioned Admins on OPP-\d{4} "Group"$/);
+  });
 });

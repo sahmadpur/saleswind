@@ -13,32 +13,36 @@ export function money(n: number): string {
 // Server-side only: client components receive pre-formatted strings.
 const timeZone = () => process.env.APP_TIMEZONE || "Asia/Baku";
 
-function parts(d: Date, withTime: boolean): Record<string, string> {
+function parts(d: Date, withTime: boolean, zone = timeZone()): Record<string, string> {
   const fmt = new Intl.DateTimeFormat("en-US", {
-    day: "numeric", month: "short", year: "numeric", timeZone: timeZone(),
+    day: "2-digit", month: "2-digit", year: "numeric", timeZone: zone,
     ...(withTime ? { hour: "2-digit", minute: "2-digit", hourCycle: "h23" } : {}),
   } as Intl.DateTimeFormatOptions);
   return Object.fromEntries(fmt.formatToParts(d).map((p) => [p.type, p.value]));
 }
 
-/** Exact date, e.g. "17 Sep 2026". */
+/** Exact date, e.g. "17.09.2026". */
 export function shortDate(d: Date): string {
   const p = parts(d, false);
-  return `${p.day} ${p.month} ${p.year}`;
+  return `${p.day}.${p.month}.${p.year}`;
 }
 
-/** Exact timestamp, e.g. "17 Sep 2026, 14:05". */
+/** Exact timestamp, e.g. "17.09.2026 14:05". */
 export function dateTime(d: Date): string {
   const p = parts(d, true);
-  return `${p.day} ${p.month} ${p.year}, ${p.hour}:${p.minute}`;
+  return `${p.day}.${p.month}.${p.year} ${p.hour}:${p.minute}`;
 }
 
-/** A date-only value (stored as UTC midnight), e.g. a due date → "17 Sep 2026". */
+/** Time of day only, e.g. "14:05". */
+export function timeOfDay(d: Date): string {
+  const p = parts(d, true);
+  return `${p.hour}:${p.minute}`;
+}
+
+/** A date-only value (stored as UTC midnight), e.g. a due date → "17.09.2026". */
 export function dateOnly(d: Date): string {
-  const p = Object.fromEntries(
-    new Intl.DateTimeFormat("en-US", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).formatToParts(d).map((x) => [x.type, x.value]),
-  );
-  return `${p.day} ${p.month} ${p.year}`;
+  const p = parts(d, false, "UTC");
+  return `${p.day}.${p.month}.${p.year}`;
 }
 
 /** Today's date as "YYYY-MM-DD" in the app time zone. */

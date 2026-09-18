@@ -38,6 +38,17 @@ describe("filterOpportunities", () => {
     expect(filterOpportunities(rows, { stage: "SALES" }).map((r) => r.number)).toEqual([2]);
     expect(filterOpportunities(rows, { stage: "PROJECT" }).map((r) => r.number)).toEqual([3]);
   });
+  it("searches every word across fields, ignoring case and accents", () => {
+    const rs = [
+      row(1, { title: "Printer rollout", description: "Café fleet", account: { name: "Acme" }, tags: [{ tag: { label: "Demo" } }] }),
+      row(2, { title: "Printer lease", account: { name: "Beta" } }),
+    ];
+    expect(filterOpportunities(rs, { q: "printer" }).map((r) => r.number)).toEqual([1, 2]);
+    expect(filterOpportunities(rs, { q: "  PRINTER   acme " }).map((r) => r.number)).toEqual([1]);
+    expect(filterOpportunities(rs, { q: "cafe demo" }).map((r) => r.number)).toEqual([1]);
+    expect(filterOpportunities(rs, { q: "opp-0002" }).map((r) => r.number)).toEqual([2]);
+    expect(filterOpportunities(rs, { q: "printer zzz" })).toHaveLength(0);
+  });
   it("filters by status, accountable, account and combines them", () => {
     expect(filterOpportunities(rows, { status: "Lead" }).map((r) => r.number)).toEqual([1, 3]);
     expect(filterOpportunities(rows, { accountable: "Bob" }).map((r) => r.number)).toEqual([2]);
