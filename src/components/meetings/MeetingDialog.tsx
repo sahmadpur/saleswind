@@ -78,7 +78,16 @@ function MeetingForm({ draft, opportunities, onDone }: { draft: MeetingDraft; op
   );
 }
 
-/** Button that opens the create/edit meeting form. Saving writes to Outlook first, so invites go out from the user's mailbox. */
+/** Controlled create/edit dialog; `draft` null means closed. Saving writes to Outlook first, so invites go out from the user's mailbox. */
+export function MeetingDialog({ draft, opportunities, onClose }: { draft: MeetingDraft | null; opportunities: Option[]; onClose: () => void }) {
+  return (
+    <Dialog open={!!draft} onClose={onClose} title={draft?.id ? "Edit meeting" : "New meeting"} size="lg">
+      {draft && <MeetingForm draft={draft} opportunities={opportunities} onDone={onClose} />}
+    </Dialog>
+  );
+}
+
+/** Button that opens the create/edit meeting form. */
 export function MeetingDialogButton({ draft, opportunities, label, icon = "add", variant = "primary" }: {
   draft: MeetingDraft; opportunities: Option[]; label: string; icon?: string; variant?: "primary" | "outline" | "ghost";
 }) {
@@ -89,9 +98,7 @@ export function MeetingDialogButton({ draft, opportunities, label, icon = "add",
         <Icon name={icon} />
         {label}
       </Button>
-      <Dialog open={open} onClose={() => setOpen(false)} title={draft.id ? "Edit meeting" : "New meeting"} size="lg">
-        {open && <MeetingForm draft={draft} opportunities={opportunities} onDone={() => setOpen(false)} />}
-      </Dialog>
+      <MeetingDialog draft={open ? draft : null} opportunities={opportunities} onClose={() => setOpen(false)} />
     </>
   );
 }

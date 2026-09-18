@@ -11,6 +11,8 @@ export type MeetingItem = {
   attendees: { name: string | null; email: string | null }[];
   opportunity: { id: string; label: string } | null;
   draft: MeetingDraft;
+  /** Calendar placement in the app zone: "YYYY-MM-DDTHH:mm". All-day events use dates only ("YYYY-MM-DD", end exclusive). */
+  startLocal: string; endLocal: string;
 };
 type Option = { id: string; label: string };
 

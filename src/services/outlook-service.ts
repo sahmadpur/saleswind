@@ -10,8 +10,9 @@ import { audit } from "@/services/audit-service";
 
 const SCOPES = "offline_access User.Read Calendars.ReadWrite";
 const GRAPH = "https://graph.microsoft.com/v1.0";
-const SYNC_PAST_DAYS = 30;
-const SYNC_FUTURE_DAYS = 90;
+/** Calendar window mirrored from Outlook. */
+export const SYNC_PAST_DAYS = 60;
+export const SYNC_FUTURE_DAYS = 180;
 /** Meetings page re-syncs on load when the last sync is older than this. */
 export const SYNC_STALE_MS = 5 * 60_000;
 
@@ -175,8 +176,7 @@ export async function syncMeetings(userId: string) {
     if (e instanceof OutlookError) return { error: e.message };
     throw e;
   }
-  const from = new Date(Date.now() - SYNC_PAST_DAYS * 86_400_000);
-  const to = new Date(Date.now() + SYNC_FUTURE_DAYS * 86_400_000);
+  const { from, to } = syncWindow();
   const events: GraphEvent[] = [];
   try {
     let next: string | undefined =
@@ -209,6 +209,11 @@ export async function syncMeetings(userId: string) {
     await tx.outlookConnection.update({ where: { userId }, data: { lastSyncedAt: new Date(), lastError: null } });
   }, { timeout: 30_000 });
   return { count: events.length };
+}
+
+/** The date range mirrored from Outlook, relative to now. */
+export function syncWindow(now = Date.now()) {
+  return { from: new Date(now - SYNC_PAST_DAYS * 86_400_000), to: new Date(now + SYNC_FUTURE_DAYS * 86_400_000) };
 }
 
 export type MeetingInput = {

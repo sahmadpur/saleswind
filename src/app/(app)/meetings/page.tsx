@@ -1,14 +1,13 @@
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/session";
-import { Card, CardLabel } from "@/components/ui/Card";
+import { Card } from "@/components/ui/Card";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Icon } from "@/components/ui/Icon";
-import { MeetingList } from "@/components/meetings/MeetingList";
-import { MeetingDialogButton } from "@/components/meetings/MeetingDialog";
+import { MeetingsView } from "@/components/meetings/MeetingsView";
 import { SyncControls } from "@/components/meetings/SyncControls";
-import { getConnectionSynced, listMeetings, outlookConfigured } from "@/services/outlook-service";
-import { dateTime, opportunityRef } from "@/lib/format";
-import { newMeetingDraft, toMeetingItems } from "@/lib/meeting-view";
+import { getConnectionSynced, listMeetings, outlookConfigured, syncWindow } from "@/services/outlook-service";
+import { dateTime, opportunityRef, utcToZonedInput } from "@/lib/format";
+import { toMeetingItems } from "@/lib/meeting-view";
 
 const MESSAGES: Record<string, string> = {
   connected: "Outlook connected.",
@@ -61,17 +60,12 @@ export default async function MeetingsPage({ searchParams }: { searchParams: Pro
     db.opportunity.findMany({ select: { id: true, number: true, title: true }, orderBy: { number: "desc" } }),
   ]);
   const now = new Date();
-  const items = toMeetingItems(rows, now);
-  const upcoming = items.filter((m) => !m.past);
-  const past = items.filter((m) => m.past).reverse();
+  const range = syncWindow(now.getTime());
   const opportunities = opps.map((o) => ({ id: o.id, label: `${opportunityRef(o.number)} ${o.title}` }));
 
   return (
     <div className="space-y-5">
-      <PageHeader
-        title="Meetings"
-        actions={<MeetingDialogButton draft={newMeetingDraft("", now)} opportunities={opportunities} label="New meeting" />}
-      />
+      <PageHeader title="Meetings" />
       <div className="flex flex-wrap items-center justify-between gap-2">
         <SyncControls email={connection.msEmail} lastSynced={connection.lastSyncedAt ? dateTime(connection.lastSyncedAt) : null} />
         {flash && params.outlook === "connected" && <span className="text-xs text-ggreen">{flash}</span>}
@@ -82,14 +76,13 @@ export default async function MeetingsPage({ searchParams }: { searchParams: Pro
           <a href="/api/outlook/connect" className="font-medium underline">Reconnect</a>
         </div>
       )}
-      <Card className="overflow-hidden p-0">
-        <div className="px-5 py-4"><CardLabel>Upcoming</CardLabel></div>
-        <MeetingList meetings={upcoming} opportunities={opportunities} empty="No upcoming meetings in the next 90 days." />
-      </Card>
-      <Card className="overflow-hidden p-0">
-        <div className="px-5 py-4"><CardLabel>Past 30 days</CardLabel></div>
-        <MeetingList meetings={past} opportunities={opportunities} empty="No meetings in the last 30 days." />
-      </Card>
+      <MeetingsView
+        meetings={toMeetingItems(rows, now)}
+        opportunities={opportunities}
+        nowLocal={utcToZonedInput(now)}
+        windowStart={utcToZonedInput(range.from).slice(0, 10)}
+        windowEnd={utcToZonedInput(range.to).slice(0, 10)}
+      />
     </div>
   );
 }

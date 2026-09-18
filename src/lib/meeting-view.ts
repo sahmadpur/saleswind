@@ -28,6 +28,8 @@ export function toMeetingItems(rows: Row[], now = new Date()): MeetingItem[] {
       isOrganizer: m.isOrganizer,
       attendees,
       opportunity: m.opportunity ? { id: m.opportunity.id, label: `${opportunityRef(m.opportunity.number)} ${m.opportunity.title}` } : null,
+      startLocal: m.isAllDay ? m.start.toISOString().slice(0, 10) : utcToZonedInput(m.start),
+      endLocal: m.isAllDay ? m.end.toISOString().slice(0, 10) : utcToZonedInput(m.end),
       draft: {
         id: m.id, subject: m.subject, start: utcToZonedInput(m.start), end: utcToZonedInput(m.end), location: m.location ?? "",
         attendees: attendees.map((a) => a.email).filter(Boolean).join(", "), online: !!m.joinUrl, opportunityId: m.opportunityId ?? "",
