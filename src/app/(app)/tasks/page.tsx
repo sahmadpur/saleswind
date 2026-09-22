@@ -34,6 +34,9 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
     countOpenTasks(assigneeId),
   ]);
   const items = toTaskItems(tasks, user, { showAssignee: assigneeId !== user.id, showOpportunity: true });
+  const userOptions = users.map((u) => ({ id: u.id, label: u.name }));
+  const opportunityOptions = opportunities.map((o) => ({ id: o.id, label: `${opportunityRef(o.number)} ${o.title}` }));
+  const edit = { users: userOptions, opportunities: opportunityOptions };
   const whoQuery = who === "all" ? "" : `who=${encodeURIComponent(who)}`;
   const withWho = (base: string) => (whoQuery ? `${base}${base.includes("?") ? "&" : "?"}${whoQuery}` : base);
 
@@ -60,8 +63,8 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
       <Card className="p-4">
         <QuickAddTask
           currentUserId={user.id}
-          users={users.map((u) => ({ id: u.id, label: u.name }))}
-          opportunities={opportunities.map((o) => ({ id: o.id, label: `${opportunityRef(o.number)} ${o.title}` }))}
+          users={userOptions}
+          opportunities={opportunityOptions}
         />
       </Card>
 
@@ -75,12 +78,12 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
             }))}
           />
           <Card className="overflow-hidden p-0">
-            <TaskList tasks={items} empty={tab.empty} />
+            <TaskList tasks={items} empty={tab.empty} edit={edit} />
           </Card>
         </div>
       ) : (
         <>
-          <TaskBoard tasks={items} />
+          <TaskBoard tasks={items} edit={edit} />
           <p className="text-xs text-ggrey-2">Done and cancelled tasks leave the board after {BOARD_FINISHED_DAYS} days; find them in List view.</p>
         </>
       )}

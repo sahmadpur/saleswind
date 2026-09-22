@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { db } from "@/lib/db";
-import { createTask, deleteTask, listTasks, listOpportunityTasks, setTaskStatus } from "@/services/task-service";
+import { createTask, deleteTask, listTasks, listOpportunityTasks, setTaskStatus, updateTask } from "@/services/task-service";
 
 let me: string, other: string, oppId: string;
 
@@ -65,5 +65,34 @@ describe("task-service", () => {
     expect((await listTasks("open", other)).map((x) => x.id)).toEqual([t.id]);
     await deleteTask(t.id, me, false);
     expect(await db.task.count({ where: { id: t.id } })).toBe(0);
+  });
+
+  it("edits title, due date, assignee and opportunity, and notifies the new assignee", async () => {
+    const t = await createTask({ title: "Before" }, me);
+    const { task } = await updateTask(
+      t.id,
+      { title: "After", dueDate: "2027-03-04", assigneeId: other, opportunityId: oppId },
+      me,
+      false,
+    );
+    expect(task.title).toBe("After");
+    expect(task.dueDate?.toISOString()).toBe("2027-03-04T00:00:00.000Z");
+    expect(task.assigneeId).toBe(other);
+    expect(task.opportunityId).toBe(oppId);
+    expect(await db.notification.count({ where: { userId: other, message: { contains: '"After"' } } })).toBe(1);
+
+    // Clearing the date and the opportunity link stores nulls, not empty strings.
+    const cleared = await updateTask(t.id, { title: "After", dueDate: "", assigneeId: other, opportunityId: "" }, me, false);
+    expect(cleared.task.dueDate).toBeNull();
+    expect(cleared.task.opportunityId).toBeNull();
+  });
+
+  it("lets only assignee, creator or an elevated user edit", async () => {
+    const t = await createTask({ title: "Guarded", assigneeId: other }, me);
+    const stranger = (await db.user.create({ data: { name: "S2", email: `s2${Date.now()}@x.com`, passwordHash: "x", role: "AGENT" } })).id;
+    const input = { title: "Hijacked", dueDate: "", assigneeId: other, opportunityId: "" };
+    await expect(updateTask(t.id, input, stranger, false)).rejects.toThrow("Forbidden");
+    // The same stranger as a manager or admin goes through.
+    expect((await updateTask(t.id, input, stranger, true)).task.title).toBe("Hijacked");
   });
 });

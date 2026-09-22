@@ -15,29 +15,32 @@ import { Pagination } from "@/components/ui/Pagination";
 import { ResetColumnWidths } from "@/components/ui/ColResizer";
 import { ORDER } from "@/lib/domain/lifecycle";
 import { PAGE_SIZES, paginate, parsePage } from "@/lib/pagination";
-import { filterOpportunities, parseFilters, parseSort, sortOpportunities } from "@/lib/opportunity-sort";
+import { filterOpportunities, filtersToQuery, hasActiveFilters, parseFilters, parseSort, sortOpportunities } from "@/lib/opportunity-sort";
+import { distinct, param, type QueryParams } from "@/lib/table";
+import { shortName } from "@/lib/format";
 
-const distinct = (xs: (string | undefined)[]) => [...new Set(xs.filter((x): x is string => !!x))].sort();
+const asOptions = (values: string[]) => values.map((v) => ({ value: v, label: v }));
 
 const EXPORT_LINK =
   "g-press inline-flex h-9 w-9 items-center justify-center rounded-md border border-gline bg-gsurface text-gink transition-colors hover:bg-ghover [&_.material-symbols-outlined]:text-[18px]";
 
-export default async function OpportunitiesPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
+export default async function OpportunitiesPage({ searchParams }: { searchParams: Promise<QueryParams> }) {
   const params = await searchParams;
   const [rows, user] = await Promise.all([listOpportunities(), getCurrentUser()]);
-  const isKanban = params.view === "kanban";
-  const { sort, dir } = parseSort(params.sort, params.dir);
+  const isKanban = param(params, "view") === "kanban";
+  const { sort, dir } = parseSort(param(params, "sort"), param(params, "dir"));
   const filters = parseFilters(params);
-  const { page: requestedPage, size } = parsePage(params);
+  const { page: requestedPage, size } = parsePage({ page: param(params, "page"), size: param(params, "size") });
   const sorted = sortOpportunities(filterOpportunities(rows, filters), sort, dir);
   const { rows: pageRows, page } = paginate(sorted, requestedPage, size);
   // Current query minus `view` and `page`, so sort links and filter changes preserve each other and restart at page 1.
-  const query: Record<string, string> = { sort, dir, ...filters, ...(size !== PAGE_SIZES[0] && { size: String(size) }) };
+  const query = filtersToQuery(filters, { sort, dir, size: size !== PAGE_SIZES[0] ? String(size) : undefined });
   const options = {
-    stage: [...ORDER],
-    status: distinct(rows.map((r) => r.status?.label)),
-    accountable: distinct(rows.map((r) => r.accountable.name)),
-    account: distinct(rows.map((r) => r.account.name)),
+    stage: ORDER.map((s) => ({ value: s, label: s.charAt(0) + s.slice(1).toLowerCase() })),
+    status: asOptions(distinct(rows.map((r) => r.status?.label))),
+    // Filter values are full names (that's what rows carry); labels are shortened to keep the dropdown narrow.
+    accountable: distinct(rows.map((r) => r.accountable.name)).map((v) => ({ value: v, label: shortName(v) })),
+    account: asOptions(distinct(rows.map((r) => r.account.name))),
   };
 
   let edit: EditOptions | null = null;
@@ -59,7 +62,10 @@ export default async function OpportunitiesPage({ searchParams }: { searchParams
     const assignable = users.filter((u) => !u.blockedAt || accountable.has(u.id));
     edit = { users: assignable.map((u) => ({ value: u.id, label: u.name })), statusesByStage, tagsByStage };
   }
-  const exportQuery = new URLSearchParams({ sort, dir, ...filters });
+  const exportQuery = filtersToQuery(filters, { sort, dir });
+
+  const tableQuery = new URLSearchParams(query);
+  tableQuery.set("view", "table");
 
   return (
     <div className="space-y-5">
@@ -98,8 +104,8 @@ export default async function OpportunitiesPage({ searchParams }: { searchParams
       ) : (
         <>
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <FilterBar filters={filters} options={options} query={{ ...query, view: "table" }} />
-            <ResetColumnWidths className="inline-flex h-9 items-center gap-1.5 rounded-md px-3 text-sm font-medium text-gblue transition-colors hover:bg-gblue-50 disabled:cursor-default disabled:text-ggrey-2 disabled:hover:bg-transparent" />
+            <FilterBar filters={filters} options={options} query={{ sort, dir, view: "table", ...(size !== PAGE_SIZES[0] && { size: String(size) }) }} />
+            <ResetColumnWidths scope="opportunities" className="inline-flex h-9 items-center gap-1.5 rounded-md px-3 text-sm font-medium text-gblue transition-colors hover:bg-gblue-50 disabled:cursor-default disabled:text-ggrey-2 disabled:hover:bg-transparent" />
           </div>
           <Card className="overflow-hidden p-0">
             <OpportunityTable
@@ -107,10 +113,10 @@ export default async function OpportunitiesPage({ searchParams }: { searchParams
               sort={sort}
               dir={dir}
               query={query}
-              filtered={Object.keys(filters).length > 0}
+              filtered={hasActiveFilters(filters)}
               edit={edit}
               footer={
-                <Pagination pathname="/opportunities" query={{ ...query, view: "table" }} page={page} size={size} total={sorted.length} sizes={PAGE_SIZES} />
+                <Pagination pathname="/opportunities" query={tableQuery} page={page} size={size} total={sorted.length} sizes={PAGE_SIZES} />
               }
             />
           </Card>

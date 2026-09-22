@@ -1,28 +1,49 @@
 import { requireRole } from "@/lib/session";
 import { listUsers } from "@/services/user-service";
-import { createUserAction, deleteUserAction, setUserBlockedAction, updateUserAction } from "@/actions/user-actions";
+import { createUserAction } from "@/actions/user-actions";
 import { Card, CardLabel } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { Avatar } from "@/components/ui/Avatar";
-import { DeleteUserButton } from "@/components/users/DeleteUserButton";
-import { EditUserDialog } from "@/components/users/EditUserDialog";
-import { BlockUserButton } from "@/components/users/BlockUserButton";
-import { shortDate } from "@/lib/format";
+import { Pagination } from "@/components/ui/Pagination";
+import { ResetColumnWidths } from "@/components/ui/ColResizer";
+import { TableFilterBar } from "@/components/ui/TableFilterBar";
+import { UserTable, USERS_SCOPE, ROLE_OPTIONS, type UserRow } from "@/components/users/UserTable";
+import { PAGE_SIZES, paginate, parsePage } from "@/lib/pagination";
+import { USER_SORT } from "@/lib/list-sort";
+import { applyFilters, haystack, matchesSearch, param, parseListSort, parseMultiFilters, sortList, type QueryParams } from "@/lib/table";
 
-const ROLE_STYLE: Record<string, string> = {
-  ADMIN: "bg-gviolet-50 text-gviolet",
-  MANAGER: "bg-gsales-50 text-gsales",
-  AGENT: "bg-ggreen-50 text-ggreen",
-};
+const FILTER_KEYS = ["role", "status"] as const;
+const STATUS_OPTIONS = [{ value: "active", label: "Active" }, { value: "blocked", label: "Blocked" }];
+const RESET = "inline-flex h-9 items-center gap-1.5 rounded-md px-3 text-sm font-medium text-gblue transition-colors hover:bg-gblue-50 disabled:cursor-default disabled:text-ggrey-2 disabled:hover:bg-transparent";
 
-const TH = "px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.06em] text-gink";
+const searchable = (u: UserRow) => haystack([u.name, u.email, u.role]);
 
-export default async function UsersPage() {
+export default async function UsersPage({ searchParams }: { searchParams: Promise<QueryParams> }) {
+  const params = await searchParams;
   const me = await requireRole("users:manage");
-  const users = await listUsers();
+  const all = await listUsers();
+
+  const q = param(params, "q")?.trim() || undefined;
+  const filters = parseMultiFilters(params, FILTER_KEYS);
+  const { sort, dir } = parseListSort(USER_SORT, param(params, "sort"), param(params, "dir"));
+  const { page: requested, size } = parsePage({ page: param(params, "page"), size: param(params, "size") });
+
+  const narrowed = applyFilters(all, filters, { role: (u) => u.role, status: (u) => (u.blockedAt ? "blocked" : "active") });
+  const matched = q ? narrowed.filter((u) => matchesSearch(searchable(u), q)) : narrowed;
+  const sorted = sortList(matched, USER_SORT, sort, dir);
+  const { rows, page } = paginate(sorted, requested, size);
+
+  const query = new URLSearchParams();
+  for (const k of FILTER_KEYS) for (const v of filters[k]) query.append(k, v);
+  if (q) query.set("q", q);
+  query.set("sort", sort);
+  query.set("dir", dir);
+  if (size !== PAGE_SIZES[0]) query.set("size", String(size));
+
+  const filtered = !!q || FILTER_KEYS.some((k) => filters[k].length > 0);
+
   return (
     <div className="space-y-8">
       <PageHeader title="Users" />
@@ -59,54 +80,36 @@ export default async function UsersPage() {
         </form>
       </Card>
 
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <TableFilterBar
+          pathname="/users"
+          q={q ?? ""}
+          searchLabel="Search users"
+          searchPlaceholder="Search name, email…"
+          filters={filters}
+          defs={[
+            { key: "role", label: "Role", allLabel: "All roles", options: ROLE_OPTIONS },
+            { key: "status", label: "Status", allLabel: "All statuses", options: STATUS_OPTIONS },
+          ]}
+          keep={{ sort, dir, ...(size !== PAGE_SIZES[0] && { size: String(size) }) }}
+        />
+        <ResetColumnWidths scope={USERS_SCOPE} className={RESET} />
+      </div>
+
       <Card className="overflow-hidden p-0">
         <div className="flex items-center justify-between px-5 py-4">
           <CardLabel>Team</CardLabel>
-          <span className="rounded-full bg-ghover px-2.5 py-0.5 text-xs font-medium text-ggrey">{users.length}</span>
+          <span className="rounded-full bg-ghover px-2.5 py-0.5 text-xs font-medium text-ggrey">{sorted.length}</span>
         </div>
-        <table className="w-full text-sm">
-          <thead className="border-y-2 border-gline bg-gbg text-left">
-            <tr>
-              <th className={TH}>Name</th>
-              <th className={TH}>Email</th>
-              <th className={TH}>Role</th>
-              <th className={TH}>Status</th>
-              <th className={TH}><span className="sr-only">Actions</span></th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((u) => (
-              <tr key={u.id} className={`border-b border-gline-2 transition-colors last:border-0 hover:bg-ghover/70 ${u.blockedAt ? "bg-gbg" : ""}`}>
-                <td className="px-5 py-3">
-                  <span className="flex items-center gap-3 font-medium text-gink">
-                    <Avatar name={u.name ?? u.email ?? "?"} size={28} />
-                    {u.name}
-                  </span>
-                </td>
-                <td className="px-5 py-3 text-gink-2">{u.email}</td>
-                <td className="px-5 py-3">
-                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${ROLE_STYLE[u.role] ?? "bg-ghover text-ggrey"}`}>
-                    {u.role.toLowerCase()}
-                  </span>
-                </td>
-                <td className="px-5 py-3">
-                  {u.blockedAt ? (
-                    <span className="rounded-full bg-gred-50 px-2 py-0.5 text-xs font-medium text-gred" title={`Blocked ${shortDate(u.blockedAt)}`}>Blocked</span>
-                  ) : (
-                    <span className="rounded-full bg-ggreen-50 px-2 py-0.5 text-xs font-medium text-ggreen">Active</span>
-                  )}
-                </td>
-                <td className="px-5 py-3">
-                  <div className="flex items-center justify-end gap-1">
-                    <EditUserDialog action={updateUserAction.bind(null, u.id)} user={{ name: u.name, email: u.email, role: u.role }} isSelf={u.id === me.id} />
-                    {u.id !== me.id && <BlockUserButton action={setUserBlockedAction.bind(null, u.id, !u.blockedAt)} name={u.name} blocked={!!u.blockedAt} />}
-                    {u.id !== me.id && <DeleteUserButton action={deleteUserAction.bind(null, u.id)} name={u.name} />}
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <UserTable
+          rows={rows}
+          sort={sort}
+          dir={dir}
+          query={query}
+          filtered={filtered}
+          meId={me.id}
+          footer={sorted.length > 0 ? <Pagination pathname="/users" query={query} page={page} size={size} total={sorted.length} sizes={PAGE_SIZES} /> : undefined}
+        />
       </Card>
     </div>
   );

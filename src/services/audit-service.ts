@@ -31,20 +31,32 @@ export async function audit(tx: Tx, entry: AuditEntry) {
 
 export const AUDIT_PAGE_SIZE = 50;
 
-export type AuditFilters = { userId?: string; action?: string; entityType?: string; from?: string; to?: string };
+/** Multi-value filters: an empty array means "all". Dates stay single-valued. */
+export type AuditFilters = { userId?: string[]; action?: string[]; entityType?: string[]; from?: string; to?: string };
 
-export async function listAudit(filters: AuditFilters, page: number) {
+export type AuditSortKey = "time" | "user" | "action" | "entity";
+/** The log is paginated in the database, so sorting has to be an orderBy, not an in-memory sort. */
+const ORDER_BY: Record<AuditSortKey, (dir: Prisma.SortOrder) => Prisma.AuditLogOrderByWithRelationInput[]> = {
+  time: (dir) => [{ createdAt: dir }, { id: dir }],
+  user: (dir) => [{ userId: dir }, { createdAt: "desc" }],
+  action: (dir) => [{ action: dir }, { createdAt: "desc" }],
+  entity: (dir) => [{ entityType: dir }, { createdAt: "desc" }],
+};
+
+const someOf = (v?: string[]) => (v && v.length > 0 ? v : undefined);
+
+export async function listAudit(filters: AuditFilters, page: number, size = AUDIT_PAGE_SIZE, sort: AuditSortKey = "time", dir: Prisma.SortOrder = "desc") {
   const createdAt: Prisma.DateTimeFilter = {};
   if (filters.from) createdAt.gte = new Date(`${filters.from}T00:00:00Z`);
   if (filters.to) createdAt.lt = new Date(new Date(`${filters.to}T00:00:00Z`).getTime() + 86_400_000);
   const where: Prisma.AuditLogWhereInput = {
-    ...(filters.userId && { userId: filters.userId }),
-    ...(filters.action && { action: filters.action }),
-    ...(filters.entityType && { entityType: filters.entityType }),
+    ...(someOf(filters.userId) && { userId: { in: filters.userId } }),
+    ...(someOf(filters.action) && { action: { in: filters.action } }),
+    ...(someOf(filters.entityType) && { entityType: { in: filters.entityType } }),
     ...((filters.from || filters.to) && { createdAt }),
   };
   const [rows, total, actions, entityTypes] = await Promise.all([
-    db.auditLog.findMany({ where, orderBy: [{ createdAt: "desc" }, { id: "desc" }], skip: (page - 1) * AUDIT_PAGE_SIZE, take: AUDIT_PAGE_SIZE }),
+    db.auditLog.findMany({ where, orderBy: ORDER_BY[sort](dir), skip: (page - 1) * size, take: size }),
     db.auditLog.count({ where }),
     db.auditLog.findMany({ distinct: ["action"], select: { action: true }, orderBy: { action: "asc" } }),
     db.auditLog.findMany({ distinct: ["entityType"], select: { entityType: true }, where: { entityType: { not: null } }, orderBy: { entityType: "asc" } }),

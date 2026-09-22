@@ -14,3 +14,22 @@ export const accountSchema = z.object({
 });
 
 export type AccountInput = z.infer<typeof accountSchema>;
+
+/** One cell edited inline in the accounts table. */
+export const accountFieldSchema = z.discriminatedUnion("field", [
+  z.object({ field: z.literal("name"), value: z.string().trim().min(1, "Name is required") }),
+  z.object({ field: z.literal("industry"), value: z.string().trim() }),
+  z.object({ field: z.literal("primaryContactName"), value: z.string().trim() }),
+  z.object({ field: z.literal("primaryContactEmail"), value: z.union([z.literal(""), z.string().email("Enter a valid email")]) }),
+  z.object({ field: z.literal("primaryContactPhone"), value: z.string().trim() }),
+  z.object({
+    field: z.literal("website"),
+    value: z.preprocess(
+      (v) => (typeof v === "string" && v && !/^https?:\/\//i.test(v) ? `https://${v}` : v),
+      z.union([z.literal(""), z.string().url("Enter a valid website")]),
+    ),
+  }),
+]);
+
+export type AccountFieldInput = z.infer<typeof accountFieldSchema>;
+export type AccountField = AccountFieldInput["field"];

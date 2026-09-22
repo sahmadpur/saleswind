@@ -7,14 +7,20 @@ const BTN = "grid h-8 min-w-8 place-items-center rounded-md px-2 text-[13px] tab
 /** Footer pager for URL-driven tables: range summary, page links and optional page-size links. */
 export function Pagination({ pathname, query, page, size, total, sizes }: {
   pathname: string;
-  query: Record<string, string>;
+  /** Carried across page links; repeated keys (multiselect filters) are preserved. */
+  query: URLSearchParams | Record<string, string>;
   page: number;
   size: number;
   total: number;
   sizes?: readonly number[];
 }) {
   const pageCount = Math.max(1, Math.ceil(total / size));
-  const href = (p: number, s = size) => ({ pathname, query: { ...query, page: String(p), size: String(s) } });
+  const href = (p: number, s = size) => {
+    const qs = new URLSearchParams(query);
+    qs.set("page", String(p));
+    qs.set("size", String(s));
+    return `${pathname}?${qs}`;
+  };
   const from = total === 0 ? 0 : (page - 1) * size + 1;
   const to = Math.min(page * size, total);
 

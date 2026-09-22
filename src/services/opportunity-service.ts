@@ -6,7 +6,7 @@ import { notify } from "@/services/notification-service";
 import { audit } from "@/services/audit-service";
 import { opportunityRef } from "@/lib/format";
 import { ORDER, nextStage, prevStage, canAdvance, canMoveBack } from "@/lib/domain/lifecycle";
-import type { OpportunityCreateInput, OpportunityFieldInput, OpportunityUpdateInput } from "@/schemas/opportunity";
+import { MAX_TAGS, MIN_TAGS, type OpportunityCreateInput, type OpportunityFieldInput, type OpportunityUpdateInput } from "@/schemas/opportunity";
 
 type Tx = Prisma.TransactionClient;
 
@@ -24,6 +24,7 @@ export async function createOpportunity(input: OpportunityCreateInput, userId: s
     const tagIds = [...new Set(input.tagIds ?? [])];
     const tags = tagIds.length ? await tx.tag.findMany({ where: { id: { in: tagIds }, stage, isActive: true } }) : [];
     if (tags.length !== tagIds.length) throw new Error("A tag does not belong to this stage");
+    if (tagIds.length > MAX_TAGS) throw new Error(`An opportunity can have at most ${MAX_TAGS} tags`);
     const o = await tx.opportunity.create({
       data: {
         accountId: input.accountId,
@@ -36,6 +37,7 @@ export async function createOpportunity(input: OpportunityCreateInput, userId: s
         marginPct: input.marginPct,
         createdById: userId,
         lastModifiedById: userId,
+        statusChangedAt: new Date(),
         tags: { create: tags.map((t) => ({ tagId: t.id })) },
       },
       include: { status: true },
@@ -67,9 +69,11 @@ async function applyChanges(id: string, patch: Partial<Editable>, userId: string
     if (changes.length === 0) return before;
     if (after.statusId && after.statusId !== before.statusId) await assertStatusInStage(tx, after.statusId, before.stage);
 
+    const now = new Date();
     const updated = await tx.opportunity.update({
       where: { id },
-      data: { ...after, lastModifiedAt: new Date(), lastModifiedById: userId },
+      // statusChangedAt is what the dashboard buckets by month, so only a real status change moves it.
+      data: { ...after, lastModifiedAt: now, lastModifiedById: userId, ...(after.statusId !== before.statusId && { statusChangedAt: now }) },
     });
     for (const c of changes) {
       await tx.activityLog.create({ data: { opportunityId: id, userId, actionType: "updated", ...c } });
@@ -141,7 +145,8 @@ export async function setOpportunityStage(id: string, newStage: Stage, userId: s
 
     const updated = await tx.opportunity.update({
       where: { id },
-      data: { stage: newStage, statusId: null, lastReason: null, lastModifiedAt: new Date(), lastModifiedById: userId },
+      // The stage move clears the status, which counts as a status change.
+      data: { stage: newStage, statusId: null, lastReason: null, lastModifiedAt: new Date(), statusChangedAt: new Date(), lastModifiedById: userId },
     });
 
     await tx.activityLog.create({
@@ -163,6 +168,8 @@ export async function setOpportunityStage(id: string, newStage: Stage, userId: s
 
 export async function attachTag(opportunityId: string, tagId: string, userId: string) {
   await db.$transaction(async (tx) => {
+    const count = await tx.opportunityTag.count({ where: { opportunityId } });
+    if (count >= MAX_TAGS) throw new Error(`An opportunity can have at most ${MAX_TAGS} tags`);
     await tx.opportunityTag.create({ data: { opportunityId, tagId } });
     const tag = await tx.tag.findUniqueOrThrow({ where: { id: tagId } });
     await tx.activityLog.create({ data: { opportunityId, userId, actionType: "tag-added", newValue: tag.label } });
@@ -173,6 +180,8 @@ export async function attachTag(opportunityId: string, tagId: string, userId: st
 
 export async function detachTag(opportunityId: string, tagId: string, userId: string) {
   await db.$transaction(async (tx) => {
+    const count = await tx.opportunityTag.count({ where: { opportunityId } });
+    if (count <= MIN_TAGS) throw new Error(`An opportunity must keep at least ${MIN_TAGS} tag`);
     await tx.opportunityTag.delete({ where: { opportunityId_tagId: { opportunityId, tagId } } });
     const tag = await tx.tag.findUniqueOrThrow({ where: { id: tagId } });
     await tx.activityLog.create({ data: { opportunityId, userId, actionType: "tag-removed", oldValue: tag.label } });

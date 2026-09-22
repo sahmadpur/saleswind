@@ -8,3 +8,10 @@ export const taskCreateSchema = z.object({
 });
 
 export type TaskCreateInput = z.infer<typeof taskCreateSchema>;
+
+/** Editing an existing task. Status moves through its own action, so it isn't here. */
+export const taskUpdateSchema = taskCreateSchema.extend({
+  assigneeId: z.string().min(1, "Pick an assignee"),
+});
+
+export type TaskUpdateInput = z.infer<typeof taskUpdateSchema>;

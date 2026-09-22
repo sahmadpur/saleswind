@@ -139,21 +139,23 @@ model Tag {
 }
 
 model Opportunity {
-  id               String   @id @default(cuid())
-  number           Int      @unique @default(autoincrement())
+  id               String    @id @default(cuid())
+  number           Int       @unique @default(autoincrement())
   accountId        String
   title            String
   description      String?
   accountableId    String
-  stage            Stage    @default(PROSPECT)
+  stage            Stage     @default(PROSPECT)
   statusId         String?
-  revenue          Decimal  @default(0) @db.Decimal(14, 2)
-  marginPct        Decimal  @default(0) @db.Decimal(5, 2)
+  revenue          Decimal   @default(0) @db.Decimal(14, 2)
+  marginPct        Decimal   @default(0) @db.Decimal(5, 2)
   lastReason       String?
   createdById      String
-  createdAt        DateTime @default(now())
-  lastModifiedAt   DateTime @default(now())
+  createdAt        DateTime  @default(now())
+  lastModifiedAt   DateTime  @default(now())
   lastModifiedById String
+  // When the status last changed — what the dashboard buckets by month.
+  statusChangedAt  DateTime?
 
   account       Account          @relation(fields: [accountId], references: [id])
   accountable   User             @relation("AccountableOpportunities", fields: [accountableId], references: [id])
@@ -164,6 +166,11 @@ model Opportunity {
   notifications Notification[]
   tasks         Task[]
   meetings      Meeting[]
+
+  @@index([stage])
+  @@index([statusId])
+  @@index([accountableId])
+  @@index([statusChangedAt])
 }
 
 model OpportunityTag {

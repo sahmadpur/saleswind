@@ -4,7 +4,9 @@ import { useEffect, useOptimistic, useRef, useState, useTransition } from "react
 import { deleteTaskAction, setTaskStatusAction } from "@/actions/task-actions";
 import { cn } from "@/lib/cn";
 import { TASK_STATUS, TASK_STATUSES, type TaskStatusValue } from "@/lib/task-status";
-import type { TaskItem } from "@/components/tasks/TaskList";
+import { EditDialogButton } from "@/components/ui/EditDialogButton";
+import { TaskForm } from "@/components/tasks/TaskDialog";
+import type { TaskEditOptions, TaskItem } from "@/components/tasks/TaskList";
 
 
 function CardMenu({ task, onMove }: { task: TaskItem; onMove: (s: TaskStatusValue) => void }) {
@@ -58,7 +60,7 @@ function CardMenu({ task, onMove }: { task: TaskItem; onMove: (s: TaskStatusValu
   );
 }
 
-function Card({ task, onMove, onDragStart }: { task: TaskItem; onMove: (s: TaskStatusValue) => void; onDragStart: () => void }) {
+function Card({ task, onMove, onDragStart, edit }: { task: TaskItem; onMove: (s: TaskStatusValue) => void; onDragStart: () => void; edit?: TaskEditOptions }) {
   const finished = task.status === "DONE" || task.status === "CANCELLED";
   return (
     <div
@@ -74,7 +76,14 @@ function Card({ task, onMove, onDragStart }: { task: TaskItem; onMove: (s: TaskS
     >
       <div className="flex items-start justify-between gap-2">
         <p className={cn("min-w-0 text-sm font-medium text-gink", finished && "text-ggrey line-through")}>{task.title}</p>
-        {task.canEdit && <CardMenu task={task} onMove={onMove} />}
+        <div className="flex shrink-0 items-center">
+          {task.canEdit && edit && (
+            <EditDialogButton title={`Edit "${task.title}"`} compact>
+              <TaskForm id={task.id} draft={task.draft} users={edit.users} opportunities={edit.opportunities} />
+            </EditDialogButton>
+          )}
+          {task.canEdit && <CardMenu task={task} onMove={onMove} />}
+        </div>
       </div>
       {(task.due || task.opportunity) && (
         <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ggrey">
@@ -97,7 +106,7 @@ function Card({ task, onMove, onDragStart }: { task: TaskItem; onMove: (s: TaskS
 }
 
 /** Kanban of the user's tasks. Cards move by drag and drop or via each card's menu; moves are optimistic. */
-export function TaskBoard({ tasks }: { tasks: TaskItem[] }) {
+export function TaskBoard({ tasks, edit }: { tasks: TaskItem[]; edit?: TaskEditOptions }) {
   const [optimistic, move] = useOptimistic(tasks, (state, { id, status }: { id: string; status: TaskStatusValue }) =>
     state.map((t) => (t.id === id ? { ...t, status, done: status === "DONE" } : t)),
   );
@@ -154,7 +163,7 @@ export function TaskBoard({ tasks }: { tasks: TaskItem[] }) {
                 )}
                 {items.map((t) => (
                   <div key={t.id} onDragEnd={() => { dragging.current = null; setOver(null); }}>
-                    <Card task={t} onMove={(s) => moveTo(t.id, s)} onDragStart={() => { dragging.current = t.id; }} />
+                    <Card task={t} onMove={(s) => moveTo(t.id, s)} onDragStart={() => { dragging.current = t.id; }} edit={edit} />
                   </div>
                 ))}
               </div>

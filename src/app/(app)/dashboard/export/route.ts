@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { PDFDocument, StandardFonts } from "pdf-lib";
 import { requireRole } from "@/lib/session";
-import { opportunitiesForExport, pipelineSummary } from "@/services/report-service";
+import { opportunitiesForExport, pipelineSummary } from "@/services/dashboard-service";
 import { opportunitiesXlsx } from "@/lib/export/opportunities";
 
 export async function GET(req: Request) {
-  await requireRole("reports:view");
+  await requireRole("dashboard:view");
   const format = new URL(req.url).searchParams.get("format") ?? "xlsx";
   const opps = await opportunitiesForExport();
 

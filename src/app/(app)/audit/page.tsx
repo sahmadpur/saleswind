@@ -1,19 +1,25 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { requireRole } from "@/lib/session";
-import { listAudit, AUDIT_PAGE_SIZE, type AuditFilters } from "@/services/audit-service";
+import { listAudit, type AuditFilters, type AuditSortKey } from "@/services/audit-service";
 import { Card } from "@/components/ui/Card";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { Select } from "@/components/ui/Select";
-import { Input } from "@/components/ui/Input";
-import { Button } from "@/components/ui/Button";
 import { Pagination } from "@/components/ui/Pagination";
+import { SortableTH } from "@/components/ui/SortableTH";
+import { ColResizer, RestoreColumnWidths, ResetColumnWidths } from "@/components/ui/ColResizer";
+import { TableFilterBar } from "@/components/ui/TableFilterBar";
 import { dateTime, shortDate, shortName } from "@/lib/format";
-import { parsePage } from "@/lib/pagination";
+import { PAGE_SIZES, parsePage } from "@/lib/pagination";
+import { param, parseMultiFilters, parseSort, type QueryParams, type SortDir } from "@/lib/table";
 
-const TH = "px-3 py-2.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-gink";
+const SCOPE = "audit";
+const TH = "relative px-3 py-2.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-gink";
 const TD = "px-3 py-2 align-top";
-const FILTER_KEYS = ["userId", "action", "entityType", "from", "to"] as const;
+const RESET = "inline-flex h-9 items-center gap-1.5 rounded-md px-3 text-sm font-medium text-gblue transition-colors hover:bg-gblue-50 disabled:cursor-default disabled:text-ggrey-2 disabled:hover:bg-transparent";
+
+const SELECT_KEYS = ["userId", "action", "entityType"] as const;
+const SORT_KEYS: AuditSortKey[] = ["time", "user", "action", "entity"];
+const DEFAULT_DIR: Record<AuditSortKey, SortDir> = { time: "desc", user: "asc", action: "asc", entity: "asc" };
 
 /** Where an audited entity lives in the app, if it has a page. */
 function entityHref(type: string | null, id: string | null): string | null {
@@ -32,58 +38,64 @@ function entityHref(type: string | null, id: string | null): string | null {
   }
 }
 
-export default async function AuditPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
+export default async function AuditPage({ searchParams }: { searchParams: Promise<QueryParams> }) {
   await requireRole("audit:view");
   const params = await searchParams;
-  const filters: AuditFilters = {};
-  for (const k of FILTER_KEYS) if (params[k]) filters[k] = params[k];
-  const { page } = parsePage(params, [AUDIT_PAGE_SIZE]);
+  const selects = parseMultiFilters(params, SELECT_KEYS);
+  const from = param(params, "from");
+  const to = param(params, "to");
+  const filters: AuditFilters = { ...selects, from, to };
+  const { sort, dir } = parseSort(SORT_KEYS, DEFAULT_DIR, "time", param(params, "sort"), param(params, "dir"));
+  const { page, size } = parsePage({ page: param(params, "page"), size: param(params, "size") });
 
   const [{ rows, total, actions, entityTypes }, users] = await Promise.all([
-    listAudit(filters, page),
+    listAudit(filters, page, size, sort, dir),
     db.user.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } }),
   ]);
   const nameOf = new Map(users.map((u) => [u.id, u.name]));
+
+  const query = new URLSearchParams();
+  for (const k of SELECT_KEYS) for (const v of selects[k]) query.append(k, v);
+  if (from) query.set("from", from);
+  if (to) query.set("to", to);
+  query.set("sort", sort);
+  query.set("dir", dir);
+  if (size !== PAGE_SIZES[0]) query.set("size", String(size));
+
+  const filtered = !!from || !!to || SELECT_KEYS.some((k) => selects[k].length > 0);
+  const sortable = { sort, dir, defaultDir: DEFAULT_DIR, pathname: "/audit", extraQuery: query, className: TH, children: <ColResizer /> };
 
   return (
     <div className="space-y-5">
       <PageHeader title="Audit log" />
 
-      <form method="get" className="flex flex-wrap items-end gap-2">
-        <Select name="userId" defaultValue={filters.userId ?? ""} aria-label="User" className="h-9 text-[13px]" style={{ width: "auto" }}>
-          <option value="">All users</option>
-          {users.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
-        </Select>
-        <Select name="action" defaultValue={filters.action ?? ""} aria-label="Action" className="h-9 text-[13px]" style={{ width: "auto" }}>
-          <option value="">All actions</option>
-          {actions.map((a) => <option key={a} value={a}>{a}</option>)}
-        </Select>
-        <Select name="entityType" defaultValue={filters.entityType ?? ""} aria-label="Entity" className="h-9 text-[13px]" style={{ width: "auto" }}>
-          <option value="">All entities</option>
-          {entityTypes.map((e) => <option key={e} value={e}>{e}</option>)}
-        </Select>
-        <label className="flex items-center gap-1.5 text-xs text-ggrey">
-          From <Input type="date" name="from" defaultValue={filters.from} className="h-9 text-[13px]" style={{ width: "auto" }} />
-        </label>
-        <label className="flex items-center gap-1.5 text-xs text-ggrey">
-          To <Input type="date" name="to" defaultValue={filters.to} className="h-9 text-[13px]" style={{ width: "auto" }} />
-        </label>
-        <Button type="submit" variant="outline">Apply</Button>
-        {Object.keys(filters).length > 0 && (
-          <Link href="/audit" className="inline-flex h-9 items-center px-3 text-sm font-medium text-gblue hover:underline">Clear</Link>
-        )}
-      </form>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <TableFilterBar
+          pathname="/audit"
+          filters={selects}
+          defs={[
+            { key: "userId", label: "User", allLabel: "All users", options: users.map((u) => ({ value: u.id, label: u.name })) },
+            { key: "action", label: "Action", allLabel: "All actions", options: actions.map((a) => ({ value: a, label: a })) },
+            { key: "entityType", label: "Entity", allLabel: "All entities", options: entityTypes.map((e) => ({ value: e, label: e })) },
+          ]}
+          dates={{ from, to }}
+          keep={{ sort, dir, ...(size !== PAGE_SIZES[0] && { size: String(size) }) }}
+        />
+        <ResetColumnWidths scope={SCOPE} className={RESET} />
+      </div>
 
       <Card className="overflow-hidden p-0">
         <div className="overflow-x-auto">
-          <table className="w-full text-[13px] leading-5">
+          <RestoreColumnWidths scope={SCOPE} />
+          <table data-resizable={SCOPE} className="w-full text-[13px] leading-5">
             <thead className="border-b-2 border-gline bg-gbg text-left">
               <tr>
-                <th className={`${TH} w-40`}>Time</th>
-                <th className={`${TH} w-32`}>User</th>
-                <th className={`${TH} w-44`}>Action</th>
-                <th className={TH}>Summary</th>
-                <th className={`${TH} w-32`}>IP</th>
+                <SortableTH label="Time" sortKey="time" {...sortable} />
+                <SortableTH label="User" sortKey="user" {...sortable} />
+                <SortableTH label="Action" sortKey="action" {...sortable} />
+                <SortableTH label="Entity" sortKey="entity" {...sortable} />
+                <th data-col="Summary" className={TH}>Summary<ColResizer /></th>
+                <th data-col="IP" className={TH}>IP<ColResizer /></th>
               </tr>
             </thead>
             <tbody>
@@ -101,6 +113,7 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
                         {r.action}
                       </span>
                     </td>
+                    <td className={`${TD} whitespace-nowrap text-ggrey-2`}>{r.entityType ?? "—"}</td>
                     <td className={`${TD} text-gink-2`}>
                       {href ? <Link href={href} className="hover:text-gblue hover:underline">{r.summary}</Link> : r.summary}
                     </td>
@@ -109,12 +122,16 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
                 );
               })}
               {rows.length === 0 && (
-                <tr><td colSpan={5} className="px-5 py-12 text-center text-sm text-ggrey">No audit entries match.</td></tr>
+                <tr>
+                  <td colSpan={6} className="px-5 py-12 text-center text-sm text-ggrey">
+                    {filtered ? "No audit entries match these filters." : "Nothing has been logged yet."}
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>
         </div>
-        <Pagination pathname="/audit" query={filters as Record<string, string>} page={page} size={AUDIT_PAGE_SIZE} total={total} />
+        <Pagination pathname="/audit" query={query} page={page} size={size} total={total} sizes={PAGE_SIZES} />
       </Card>
     </div>
   );

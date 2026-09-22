@@ -16,7 +16,7 @@ export type MeetingItem = {
 };
 type Option = { id: string; label: string };
 
-function Row({ m, opportunities }: { m: MeetingItem; opportunities: Option[] }) {
+function Row({ m, opportunities, readOnly }: { m: MeetingItem; opportunities: Option[]; readOnly?: boolean }) {
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const run = (fn: () => Promise<{ error?: string }>) => start(async () => { const r = await fn(); setError(r.error ?? null); });
@@ -43,25 +43,29 @@ function Row({ m, opportunities }: { m: MeetingItem; opportunities: Option[] }) 
         {error && <p role="alert" className="text-xs text-gred">{error}</p>}
       </div>
       <div className="flex shrink-0 items-center gap-1.5">
-        <select
-          aria-label="Linked opportunity"
-          value={m.opportunity?.id ?? ""}
-          disabled={pending}
-          onChange={(e) => run(() => linkMeetingAction(m.id, e.target.value))}
-          className="h-8 max-w-52 rounded-md border border-gline bg-gsurface px-2 text-xs text-gink-2 outline-none hover:border-ggrey-2 focus:border-gblue"
-        >
-          <option value="">No opportunity</option>
-          {opportunities.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
-        </select>
+        {readOnly ? (
+          m.opportunity && <span className="max-w-52 truncate text-xs text-ggrey" title={m.opportunity.label}>{m.opportunity.label}</span>
+        ) : (
+          <select
+            aria-label="Linked opportunity"
+            value={m.opportunity?.id ?? ""}
+            disabled={pending}
+            onChange={(e) => run(() => linkMeetingAction(m.id, e.target.value))}
+            className="h-8 max-w-52 rounded-md border border-gline bg-gsurface px-2 text-xs text-gink-2 outline-none hover:border-ggrey-2 focus:border-gblue"
+          >
+            <option value="">No opportunity</option>
+            {opportunities.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
+          </select>
+        )}
         {m.opportunity && (
           <Link href={`/opportunities/${m.opportunity.id}`} title={m.opportunity.label} className="grid h-8 w-8 place-items-center rounded-md text-ggrey hover:bg-ghover hover:text-gblue">
             <span className="material-symbols-outlined" style={{ fontSize: 18 }}>open_in_new</span>
           </Link>
         )}
-        {m.isOrganizer && !m.past && (
+        {!readOnly && m.isOrganizer && !m.past && (
           <MeetingDialogButton draft={m.draft} opportunities={opportunities} label="" icon="edit" variant="ghost" />
         )}
-        {!m.past && (
+        {!readOnly && !m.past && (
           <button
             type="button"
             title={m.isOrganizer ? "Cancel meeting (notifies attendees)" : "Remove from my calendar"}
@@ -83,7 +87,7 @@ function Row({ m, opportunities }: { m: MeetingItem; opportunities: Option[] }) 
 }
 
 /** Meetings grouped by day (dates pre-formatted on the server). */
-export function MeetingList({ meetings, opportunities, empty }: { meetings: MeetingItem[]; opportunities: Option[]; empty: string }) {
+export function MeetingList({ meetings, opportunities, empty, readOnly }: { meetings: MeetingItem[]; opportunities: Option[]; empty: string; readOnly?: boolean }) {
   if (meetings.length === 0) return <p className="px-5 py-10 text-center text-sm text-ggrey">{empty}</p>;
   const days: { day: string; items: MeetingItem[] }[] = [];
   for (const m of meetings) {
@@ -97,7 +101,7 @@ export function MeetingList({ meetings, opportunities, empty }: { meetings: Meet
         <section key={d.day}>
           <h3 className="border-y border-gline-2 bg-gbg px-5 py-2 text-xs font-semibold uppercase tracking-[0.06em] text-ggrey first:border-t-0">{d.day}</h3>
           <ul className="divide-y divide-gline-2">
-            {d.items.map((m) => <Row key={m.id} m={m} opportunities={opportunities} />)}
+            {d.items.map((m) => <Row key={m.id} m={m} opportunities={opportunities} readOnly={readOnly} />)}
           </ul>
         </section>
       ))}

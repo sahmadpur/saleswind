@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { db } from "@/lib/db";
-import { createOpportunity, updateOpportunity, updateOpportunityField } from "@/services/opportunity-service";
+import { createOpportunity, setOpportunityStage, updateOpportunity, updateOpportunityField } from "@/services/opportunity-service";
 
 let userId: string, accountId: string;
 
@@ -67,5 +67,25 @@ describe("opportunity-service: stage/status on create and inline edits", () => {
     // Clearing the status is allowed; no-op edits log nothing
     await updateOpportunityField(o.id, { field: "statusId", value: "" }, userId);
     expect(await db.activityLog.count({ where: { opportunityId: o.id, actionType: "updated" } })).toBe(1);
+  });
+
+  it("moves statusChangedAt only when the status itself changes", async () => {
+    const status = await db.status.create({ data: { stage: "PROSPECT", label: `Demo st ${Date.now()}` } });
+    const o = await createOpportunity({ accountId, title: "Stamped", accountableId: userId, revenue: 10, marginPct: 5 }, userId);
+    const created = (await db.opportunity.findUniqueOrThrow({ where: { id: o.id } })).statusChangedAt;
+    expect(created).toBeInstanceOf(Date);
+
+    // An unrelated field must leave the stamp alone.
+    await updateOpportunityField(o.id, { field: "title", value: "Stamped again" }, userId);
+    expect((await db.opportunity.findUniqueOrThrow({ where: { id: o.id } })).statusChangedAt?.getTime()).toBe(created?.getTime());
+
+    await updateOpportunityField(o.id, { field: "statusId", value: status.id }, userId);
+    const afterStatus = (await db.opportunity.findUniqueOrThrow({ where: { id: o.id } })).statusChangedAt;
+    expect(afterStatus!.getTime()).toBeGreaterThan(created!.getTime());
+
+    // Advancing a stage clears the status, which counts as a change.
+    await setOpportunityStage(o.id, "SALES", userId);
+    const afterStage = (await db.opportunity.findUniqueOrThrow({ where: { id: o.id } })).statusChangedAt;
+    expect(afterStage!.getTime()).toBeGreaterThanOrEqual(afterStatus!.getTime());
   });
 });

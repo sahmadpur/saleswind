@@ -5,13 +5,13 @@ import { StatusPill } from "@/components/ui/StatusPill";
 import { RowLink } from "@/components/ui/RowLink";
 import { SortableTH } from "@/components/ui/SortableTH";
 import { ColResizer, RestoreColumnWidths } from "@/components/ui/ColResizer";
-import { EditableCell } from "@/components/opportunities/EditableCell";
+import { EditableCell } from "@/components/ui/EditableCell";
 import { TagCell } from "@/components/opportunities/TagCell";
 import { updateOpportunityFieldAction } from "@/actions/opportunity-actions";
 import type { EditableField } from "@/schemas/opportunity";
 import { grossProfit } from "@/lib/domain/finance";
 import { money, shortDate, opportunityRef, shortName, dateTime } from "@/lib/format";
-import { type SortDir, type SortKey } from "@/lib/opportunity-sort";
+import { DEFAULT_DIR, type SortDir, type SortKey } from "@/lib/opportunity-sort";
 
 type Row = {
   id: string; number: number; title: string; stage: string;
@@ -115,7 +115,7 @@ function BodyRow({ o, edit }: { o: Row; edit: EditOptions | null }) {
 }
 
 export function OpportunityTable({ rows, sort, dir, query, filtered, edit, footer }: {
-  rows: Row[]; sort: SortKey; dir: SortDir; query: Record<string, string>; filtered: boolean;
+  rows: Row[]; sort: SortKey; dir: SortDir; query: URLSearchParams; filtered: boolean;
   edit: EditOptions | null; footer?: React.ReactNode;
 }) {
   if (rows.length === 0) {
@@ -129,12 +129,14 @@ export function OpportunityTable({ rows, sort, dir, query, filtered, edit, foote
       </div>
     );
   }
-  const sortable = { sort, dir, pathname: "/opportunities", extraQuery: { ...query, view: "table" }, className: TH, children: <ColResizer /> };
+  const extraQuery = new URLSearchParams(query);
+  extraQuery.set("view", "table");
+  const sortable = { sort, dir, defaultDir: DEFAULT_DIR, pathname: "/opportunities", extraQuery, className: TH, children: <ColResizer /> };
   return (
     <>
       <div className="overflow-x-auto">
-        <RestoreColumnWidths />
-        <table data-resizable className="w-full text-[13px] leading-5 tabular-nums">
+        <RestoreColumnWidths scope="opportunities" />
+        <table data-resizable="opportunities" className="w-full text-[13px] leading-5 tabular-nums">
           <thead className="border-b-2 border-gline bg-gbg text-left">
             <tr>
               <SortableTH label="ID" sortKey="ref" {...sortable} />

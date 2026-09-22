@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { db } from "@/lib/db";
 import { createOpportunity } from "@/services/opportunity-service";
-import { pipelineSummary } from "@/services/report-service";
+import { pipelineSummary } from "@/services/dashboard-service";
 
 let userId: string, accountId: string;
 
@@ -15,7 +15,7 @@ afterAll(async () => {
   await db.activityLog.deleteMany(); await db.opportunity.deleteMany(); await db.account.deleteMany(); await db.user.deleteMany(); await db.$disconnect();
 });
 
-describe("report-service", () => {
+describe("dashboard-service", () => {
   it("summarizes pipeline by stage with revenue and gross profit", async () => {
     const summary = await pipelineSummary();
     const prospect = summary.find((s) => s.stage === "PROSPECT");

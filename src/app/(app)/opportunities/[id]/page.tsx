@@ -23,7 +23,7 @@ import { Pill } from "@/components/ui/Pill";
 import { StatusPill } from "@/components/ui/StatusPill";
 import { Avatar } from "@/components/ui/Avatar";
 import { grossProfit } from "@/lib/domain/finance";
-import { money, opportunityRef, dateTime, shortDate, timeOfDay } from "@/lib/format";
+import { accountRef, money, opportunityRef, dateTime, shortDate, timeOfDay } from "@/lib/format";
 
 export default async function OpportunityDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -60,17 +60,45 @@ export default async function OpportunityDetail({ params }: { params: Promise<{ 
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="space-y-2">
           <span className="block text-sm tabular-nums text-ggrey">{opportunityRef(o.number)}</span>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-2xl font-semibold leading-tight tracking-[-0.015em] text-gink">{o.title}</h1>
+            <Link
+              href={`/accounts/${o.accountId}`}
+              title={`Open ${o.account.name}`}
+              className="inline-flex items-center gap-1.5 rounded-md border border-gline bg-gsurface px-2.5 py-1 text-sm text-gink-2 transition-colors hover:border-gblue hover:bg-gblue-50 hover:text-gblue"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>domain</span>
+              <span className="tabular-nums text-ggrey">{accountRef(o.account.number)}</span>
+              <span className="font-medium">{o.account.name}</span>
+            </Link>
             <Pill stage={o.stage} />
             {o.status && <StatusPill label={o.status.label} color={o.status.color} />}
           </div>
-          <div className="flex items-center gap-2 text-sm text-ggrey">
-            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>domain</span>
-            {o.account.name}
-            <span className="text-gline">·</span>
+          <div className="flex flex-wrap items-center gap-2 text-sm text-ggrey">
             <Avatar name={o.accountable.name} size={20} />
             {o.accountable.name}
+            {o.account.industry && (
+              <>
+                <span className="text-gline">·</span>
+                {o.account.industry}
+              </>
+            )}
+            {o.account.primaryContactName && (
+              <>
+                <span className="text-gline">·</span>
+                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>person</span>
+                {o.account.primaryContactEmail ? (
+                  <a href={`mailto:${o.account.primaryContactEmail}`} className="transition-colors hover:text-gblue">{o.account.primaryContactName}</a>
+                ) : o.account.primaryContactName}
+              </>
+            )}
+            {o.account.primaryContactPhone && (
+              <>
+                <span className="text-gline">·</span>
+                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>call</span>
+                {o.account.primaryContactPhone}
+              </>
+            )}
           </div>
         </div>
         <div className="flex gap-6 rounded-lg border border-gline-2 bg-gsurface px-5 py-3">
@@ -124,7 +152,12 @@ export default async function OpportunityDetail({ params }: { params: Promise<{ 
         </div>
         {tasks.length > 0 && (
           <div className="border-t border-gline-2 [&_li]:px-6">
-            <TaskList tasks={toTaskItems(tasks, user, { showAssignee: true, showOpportunity: false })} empty="" />
+            <TaskList
+              tasks={toTaskItems(tasks, user, { showAssignee: true, showOpportunity: false })}
+              empty=""
+              // No opportunity picker here: a task added on this page stays on it.
+              edit={{ users: activeUsers.map((u) => ({ id: u.id, label: u.name })) }}
+            />
           </div>
         )}
       </Card>

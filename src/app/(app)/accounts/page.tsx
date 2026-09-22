@@ -1,27 +1,52 @@
-import Link from "next/link";
+import { getCurrentUser } from "@/lib/session";
+import { can } from "@/lib/domain/permissions";
 import { listAccounts } from "@/services/account-service";
-import { createAccountAction, updateAccountAction } from "@/actions/account-actions";
-import { EditDialogButton } from "@/components/ui/EditDialogButton";
+import { createAccountAction } from "@/actions/account-actions";
 import { AccountForm } from "@/components/accounts/AccountForm";
+import { AccountTable, ACCOUNTS_SCOPE, type AccountRow } from "@/components/accounts/AccountTable";
+import { TableFilterBar } from "@/components/ui/TableFilterBar";
 import { Card } from "@/components/ui/Card";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { Avatar } from "@/components/ui/Avatar";
-import { Input } from "@/components/ui/Input";
-import { RowLink } from "@/components/ui/RowLink";
 import { Pagination } from "@/components/ui/Pagination";
+import { ResetColumnWidths } from "@/components/ui/ColResizer";
 import { CreateDialogButton } from "@/components/ui/CreateDialogButton";
 import { accountRef } from "@/lib/format";
 import { PAGE_SIZES, paginate, parsePage } from "@/lib/pagination";
+import { ACCOUNT_SORT } from "@/lib/list-sort";
+import {
+  applyFilters, distinct, haystack, matchesSearch, param, parseListSort, parseMultiFilters,
+  sortList, type QueryParams,
+} from "@/lib/table";
 
-const TH = "px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-gink";
-const TD = "px-4 py-2";
+const FILTER_KEYS = ["industry"] as const;
+const RESET = "inline-flex h-9 items-center gap-1.5 rounded-md px-3 text-sm font-medium text-gblue transition-colors hover:bg-gblue-50 disabled:cursor-default disabled:text-ggrey-2 disabled:hover:bg-transparent";
 
-export default async function AccountsPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
+const searchable = (a: AccountRow) =>
+  haystack([accountRef(a.number), a.name, a.industry, a.primaryContactName, a.primaryContactEmail, a.primaryContactPhone, a.website]);
+
+export default async function AccountsPage({ searchParams }: { searchParams: Promise<QueryParams> }) {
   const params = await searchParams;
-  const q = params.q?.trim() || undefined;
-  const all = await listAccounts(q);
-  const { page: requested, size } = parsePage(params);
-  const { rows, page } = paginate(all, requested, size);
+  const [all, user] = await Promise.all([listAccounts(), getCurrentUser()]);
+  const canEdit = !!user && can(user.role, "account:write");
+
+  const q = param(params, "q")?.trim() || undefined;
+  const filters = parseMultiFilters(params, FILTER_KEYS);
+  const { sort, dir } = parseListSort(ACCOUNT_SORT, param(params, "sort"), param(params, "dir"));
+  const { page: requested, size } = parsePage({ page: param(params, "page"), size: param(params, "size") });
+
+  const narrowed = applyFilters(all, filters, { industry: (a) => a.industry ?? "" });
+  const matched = q ? narrowed.filter((a) => matchesSearch(searchable(a), q)) : narrowed;
+  const sorted = sortList(matched, ACCOUNT_SORT, sort, dir);
+  const { rows, page } = paginate(sorted, requested, size);
+
+  const query = new URLSearchParams();
+  for (const v of filters.industry) query.append("industry", v);
+  if (q) query.set("q", q);
+  query.set("sort", sort);
+  query.set("dir", dir);
+  if (size !== PAGE_SIZES[0]) query.set("size", String(size));
+
+  const filtered = !!q || filters.industry.length > 0;
 
   return (
     <div className="space-y-5">
@@ -34,74 +59,29 @@ export default async function AccountsPage({ searchParams }: { searchParams: Pro
         }
       />
 
-      <form method="get" className="w-full sm:w-80">
-        <Input name="q" type="search" placeholder="Search name, industry, contact…" defaultValue={q} className="h-9 text-[13px]" />
-      </form>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <TableFilterBar
+          pathname="/accounts"
+          q={q ?? ""}
+          searchLabel="Search accounts"
+          searchPlaceholder="Search name, industry, contact…"
+          filters={filters}
+          defs={[{ key: "industry", label: "Industry", allLabel: "All industries", options: distinct(all.map((a) => a.industry)).map((v) => ({ value: v, label: v })) }]}
+          keep={{ sort, dir, ...(size !== PAGE_SIZES[0] && { size: String(size) }) }}
+        />
+        <ResetColumnWidths scope={ACCOUNTS_SCOPE} className={RESET} />
+      </div>
 
       <Card className="overflow-hidden p-0">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="border-b-2 border-gline bg-gbg text-left">
-              <tr>
-                <th className={TH}>ID</th>
-                <th className={TH}>Name</th>
-                <th className={TH}>Industry</th>
-                <th className={TH}>Contact</th>
-                <th className={TH}>Email</th>
-                <th className={TH}>Phone</th>
-                <th className={TH}>Website</th>
-                <th className={`${TH} text-right`}>Opportunities</th>
-                <th className={TH}><span className="sr-only">Edit</span></th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((a) => (
-                <RowLink key={a.id} href={`/accounts/${a.id}`} className="border-b border-gline-2 transition-colors last:border-0 hover:bg-ghover/70">
-                  <td className={`${TD} whitespace-nowrap font-medium tabular-nums text-ggrey-2`}>{accountRef(a.number)}</td>
-                  <td className={TD}>
-                    <Link href={`/accounts/${a.id}`} className="flex items-center gap-3 whitespace-nowrap font-medium text-gink hover:text-gblue">
-                      <Avatar name={a.name} size={24} />
-                      {a.name}
-                    </Link>
-                  </td>
-                  <td className={`${TD} text-gink-2`}>{a.industry ?? "—"}</td>
-                  <td className={`${TD} whitespace-nowrap text-gink-2`}>{a.primaryContactName ?? "—"}</td>
-                  <td className={`${TD} text-gink-2`}>
-                    {a.primaryContactEmail ? <a href={`mailto:${a.primaryContactEmail}`} className="hover:text-gblue">{a.primaryContactEmail}</a> : "—"}
-                  </td>
-                  <td className={`${TD} whitespace-nowrap text-gink-2`}>{a.primaryContactPhone ?? "—"}</td>
-                  <td className={`${TD} text-gink-2`}>
-                    {a.website ? <a href={a.website} target="_blank" rel="noreferrer" className="hover:text-gblue">{a.website.replace(/^https?:\/\//, "")}</a> : "—"}
-                  </td>
-                  <td className={`${TD} text-right tabular-nums text-gink-2`}>{a._count.opportunities}</td>
-                  <td className={`${TD} w-10 py-1 text-right`}>
-                    <EditDialogButton title={`Edit ${a.name}`} compact>
-                      <AccountForm
-                        action={updateAccountAction.bind(null, a.id)}
-                        submitLabel="Save changes"
-                        defaults={{
-                          name: a.name, industry: a.industry ?? "", website: a.website ?? "",
-                          primaryContactName: a.primaryContactName ?? "", primaryContactEmail: a.primaryContactEmail ?? "",
-                          primaryContactPhone: a.primaryContactPhone ?? "", notes: a.notes ?? "",
-                        }}
-                      />
-                    </EditDialogButton>
-                  </td>
-                </RowLink>
-              ))}
-              {rows.length === 0 && (
-                <tr>
-                  <td colSpan={9} className="px-5 py-12 text-center text-sm text-ggrey">
-                    {q ? `No accounts match "${q}".` : "No accounts yet — click New account to add the first one."}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-        {all.length > 0 && (
-          <Pagination pathname="/accounts" query={q ? { q } : {}} page={page} size={size} total={all.length} sizes={PAGE_SIZES} />
-        )}
+        <AccountTable
+          rows={rows}
+          sort={sort}
+          dir={dir}
+          query={query}
+          filtered={filtered}
+          canEdit={canEdit}
+          footer={sorted.length > 0 ? <Pagination pathname="/accounts" query={query} page={page} size={size} total={sorted.length} sizes={PAGE_SIZES} /> : undefined}
+        />
       </Card>
     </div>
   );

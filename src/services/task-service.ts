@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { TASK_STATUS } from "@/lib/task-status";
 import { audit } from "@/services/audit-service";
 import { notify } from "@/services/notification-service";
-import type { TaskCreateInput } from "@/schemas/task";
+import type { TaskCreateInput, TaskUpdateInput } from "@/schemas/task";
 
 const include = {
   assignee: { select: { id: true, name: true } },
@@ -37,6 +37,38 @@ async function loadEditable(id: string, userId: string, elevated: boolean) {
   const t = await db.task.findUniqueOrThrow({ where: { id } });
   if (!elevated && t.assigneeId !== userId && t.createdById !== userId) throw new Error("Forbidden");
   return t;
+}
+
+/** Edit a task's title, due date, assignee or linked opportunity. Same permission as moving it. */
+export async function updateTask(id: string, input: TaskUpdateInput, userId: string, elevated: boolean) {
+  const before = await loadEditable(id, userId, elevated);
+  const dueDate = input.dueDate ? new Date(`${input.dueDate}T00:00:00Z`) : null;
+  const opportunityId = input.opportunityId || null;
+  return db.$transaction(async (tx) => {
+    const t = await tx.task.update({
+      where: { id },
+      data: { title: input.title, dueDate, assigneeId: input.assigneeId, opportunityId },
+      include,
+    });
+    const changed = [
+      before.title !== t.title && "title",
+      before.dueDate?.getTime() !== t.dueDate?.getTime() && "due date",
+      before.assigneeId !== t.assigneeId && "assignee",
+      before.opportunityId !== t.opportunityId && "opportunity",
+    ].filter((c): c is string => !!c);
+    if (changed.length > 0) {
+      await audit(tx, {
+        userId, action: "task.update", entityType: t.opportunityId ? "opportunity" : "task", entityId: t.opportunityId ?? t.id,
+        summary: `Updated task "${t.title}" (${changed.join(", ")})`,
+      });
+    }
+    // Tell the new assignee, the same way creating a task for someone else does.
+    if (before.assigneeId !== t.assigneeId && t.assigneeId !== userId) {
+      const actor = await tx.user.findUniqueOrThrow({ where: { id: userId }, select: { name: true } });
+      await notify(tx, t.assigneeId, t.opportunityId, "task", `${actor.name} assigned you a task: "${t.title}"`);
+    }
+    return { task: t, before };
+  });
 }
 
 /** Move a task to a status. `doneAt` records when it was completed and is cleared otherwise. */

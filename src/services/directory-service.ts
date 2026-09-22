@@ -3,7 +3,7 @@ import { Prisma, type DirectoryKind } from "@prisma/client";
 import { db } from "@/lib/db";
 import { audit } from "@/services/audit-service";
 import { directoryRef } from "@/lib/directory";
-import type { DirectoryInput } from "@/schemas/directory";
+import type { DirectoryFieldInput, DirectoryInput } from "@/schemas/directory";
 
 const clean = (input: DirectoryInput) => ({
   name: input.name,
@@ -35,6 +35,19 @@ export async function updateDirectoryEntry(id: string, input: DirectoryInput, us
   return db.$transaction(async (tx) => {
     const e = await tx.directoryEntry.update({ where: { id }, data: clean(input) });
     await audit(tx, { userId, action: "directory.update", entityType: e.kind.toLowerCase(), entityId: id, summary: `Updated ${directoryRef(e.kind, e.number)} "${e.name}"`, details: input });
+    return e;
+  });
+}
+
+/** Inline single-cell edit from a directory table. Blank optional fields are stored as null. */
+export async function updateDirectoryField(id: string, input: DirectoryFieldInput, userId: string) {
+  return db.$transaction(async (tx) => {
+    const value = input.field === "name" ? input.value : input.value || null;
+    const e = await tx.directoryEntry.update({ where: { id }, data: { [input.field]: value } });
+    await audit(tx, {
+      userId, action: "directory.update", entityType: e.kind.toLowerCase(), entityId: id,
+      summary: `Updated ${input.field} of ${directoryRef(e.kind, e.number)} "${e.name}"`, details: { [input.field]: input.value },
+    });
     return e;
   });
 }

@@ -1,17 +1,19 @@
 import type { SessionUser } from "@/lib/session";
+import { isElevated } from "@/lib/domain/permissions";
 import { dateOnly, opportunityRef, shortName, todayIso } from "@/lib/format";
 import type { TaskItem } from "@/components/tasks/TaskList";
 import type { TaskStatusValue } from "@/lib/task-status";
 
 type TaskRow = {
   id: string; title: string; status: TaskStatusValue; dueDate: Date | null; doneAt: Date | null; assigneeId: string; createdById: string;
+  opportunityId: string | null;
   assignee: { name: string }; opportunity: { id: string; number: number; title: string } | null;
 };
 
 /** Server-side shaping of tasks for the client list (dates pre-formatted in the app zone). */
 export function toTaskItems(rows: TaskRow[], user: SessionUser, opts: { showAssignee: boolean; showOpportunity: boolean }): TaskItem[] {
   const today = todayIso();
-  const elevated = user.role === "ADMIN" || user.role === "MANAGER";
+  const elevated = isElevated(user.role);
   return rows.map((t) => {
     const dueIso = t.dueDate?.toISOString().slice(0, 10);
     return {
@@ -20,6 +22,8 @@ export function toTaskItems(rows: TaskRow[], user: SessionUser, opts: { showAssi
       status: t.status,
       done: t.status === "DONE",
       canEdit: elevated || t.assigneeId === user.id || t.createdById === user.id,
+      // Raw values for the edit dialog, which needs ids and an ISO date rather than display text.
+      draft: { title: t.title, dueDate: dueIso ?? "", assigneeId: t.assigneeId, opportunityId: t.opportunityId ?? "" },
       due: t.dueDate ? dateOnly(t.dueDate) : null,
       dueState: !dueIso ? null : dueIso < today ? "overdue" : dueIso === today ? "today" : null,
       assignee: opts.showAssignee ? shortName(t.assignee.name) : null,

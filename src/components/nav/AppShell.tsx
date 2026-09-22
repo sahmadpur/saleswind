@@ -9,11 +9,11 @@ const NAV: { label: string; items: NavItem[] }[] = [
   {
     label: "Pipeline",
     items: [
+      { href: "/dashboard", label: "Dashboard", icon: "dashboard", action: "dashboard:view" },
       { href: "/opportunities", label: "Opportunities", icon: "monitoring", action: null },
       { href: "/accounts", label: "Accounts", icon: "domain", action: null },
       { href: "/tasks", label: "Tasks", icon: "task_alt", action: null },
       { href: "/meetings", label: "Meetings", icon: "event", action: null, feature: "meetings" },
-      { href: "/reports", label: "Reports", icon: "bar_chart", action: "reports:view" },
     ],
   },
   {

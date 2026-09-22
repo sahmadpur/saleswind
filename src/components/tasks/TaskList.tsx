@@ -2,16 +2,23 @@
 import Link from "next/link";
 import { useOptimistic, useTransition } from "react";
 import { deleteTaskAction, setTaskDoneAction } from "@/actions/task-actions";
+import { EditDialogButton } from "@/components/ui/EditDialogButton";
+import { TaskForm, type TaskDraft } from "@/components/tasks/TaskDialog";
 import { cn } from "@/lib/cn";
 import { TASK_STATUS, type TaskStatusValue } from "@/lib/task-status";
 
+type Option = { id: string; label: string };
+/** Everything the edit dialog needs; omit to render a read-only list. */
+export type TaskEditOptions = { users: Option[]; opportunities?: Option[] };
+
 export type TaskItem = {
   id: string; title: string; status: TaskStatusValue; done: boolean; canEdit: boolean;
+  draft: TaskDraft;
   due: string | null; dueState: "overdue" | "today" | null;
   assignee: string | null; opportunity: { href: string; label: string } | null;
 };
 
-function Row({ t }: { t: TaskItem }) {
+function Row({ t, edit }: { t: TaskItem; edit?: TaskEditOptions }) {
   const [pending, start] = useTransition();
   const [done, setDone] = useOptimistic(t.done);
   const finished = done || t.status === "CANCELLED";
@@ -53,6 +60,13 @@ function Row({ t }: { t: TaskItem }) {
           )}
         </div>
       </div>
+      {t.canEdit && edit && (
+        <div className="shrink-0 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
+          <EditDialogButton title={`Edit "${t.title}"`} compact>
+            <TaskForm id={t.id} draft={t.draft} users={edit.users} opportunities={edit.opportunities} />
+          </EditDialogButton>
+        </div>
+      )}
       {t.canEdit && (
         <button
           type="button"
@@ -67,7 +81,7 @@ function Row({ t }: { t: TaskItem }) {
   );
 }
 
-export function TaskList({ tasks, empty }: { tasks: TaskItem[]; empty: string }) {
+export function TaskList({ tasks, empty, edit }: { tasks: TaskItem[]; empty: string; edit?: TaskEditOptions }) {
   if (tasks.length === 0) return <p className="px-4 py-8 text-center text-sm text-ggrey">{empty}</p>;
-  return <ul className="divide-y divide-gline-2">{tasks.map((t) => <Row key={t.id} t={t} />)}</ul>;
+  return <ul className="divide-y divide-gline-2">{tasks.map((t) => <Row key={t.id} t={t} edit={edit} />)}</ul>;
 }

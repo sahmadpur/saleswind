@@ -1,8 +1,8 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/session";
-import { userCreateSchema, userUpdateSchema } from "@/schemas/user";
-import { createUser, deleteUser, setUserBlocked, updateUser, UserUpdateError } from "@/services/user-service";
+import { userCreateSchema, userFieldSchema, userUpdateSchema, type UserField } from "@/schemas/user";
+import { createUser, deleteUser, getUser, setUserBlocked, updateUser, UserUpdateError } from "@/services/user-service";
 import { formValues, type FormState } from "@/lib/action-state";
 
 export async function createUserAction(_prev: unknown, formData: FormData) {
@@ -41,6 +41,25 @@ export async function updateUserAction(id: string, _prev: unknown, formData: For
   }
   revalidatePath("/users");
   return { ok: true };
+}
+
+/**
+ * Inline cell edit from the users table. Reuses updateUser so the self-role and
+ * last-admin guards still apply; returns the error instead of throwing so the cell shows it.
+ */
+export async function updateUserFieldAction(id: string, field: UserField, value: string): Promise<{ error?: string }> {
+  const me = await requireRole("users:manage");
+  const parsed = userFieldSchema.safeParse({ field, value });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid value" };
+  const current = await getUser(id);
+  try {
+    await updateUser(id, { name: current.name, email: current.email, role: current.role, [parsed.data.field]: parsed.data.value }, me.id);
+  } catch (e) {
+    if (e instanceof UserUpdateError) return { error: e.message };
+    return { error: "Could not save" };
+  }
+  revalidatePath("/users");
+  return {};
 }
 
 export async function setUserBlockedAction(id: string, blocked: boolean, _prev: unknown, _fd: FormData): Promise<FormState> {

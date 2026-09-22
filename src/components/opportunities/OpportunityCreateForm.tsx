@@ -7,6 +7,7 @@ import { FieldError } from "@/components/ui/FieldError";
 import { grossProfit } from "@/lib/domain/finance";
 import { money } from "@/lib/format";
 import type { FormState } from "@/lib/action-state";
+import { MAX_TAGS, MIN_TAGS } from "@/schemas/opportunity";
 
 type Option = { id: string; label: string };
 type StageOption = Option & { stage: string };
@@ -32,7 +33,9 @@ export function OpportunityCreateForm({ action, accounts, users, statuses, tags 
   const [tagIds, setTagIds] = useState<string[]>(state.values?.tagIds ? state.values.tagIds.split(",") : []);
   const stageStatuses = statuses.filter((s) => s.stage === stage);
   const stageTags = tags.filter((t) => t.stage === stage);
-  const toggleTag = (id: string) => setTagIds((ids) => (ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]));
+  // Stage-scoped tags, capped at MAX_TAGS; picking a new one past the cap is simply refused.
+  const toggleTag = (id: string) =>
+    setTagIds((ids) => (ids.includes(id) ? ids.filter((x) => x !== id) : ids.length >= MAX_TAGS ? ids : [...ids, id]));
   const [revenue, setRevenue] = useState(0);
   const [margin, setMargin] = useState(0);
   return (
@@ -75,19 +78,25 @@ export function OpportunityCreateForm({ action, accounts, users, statuses, tags 
         </Labeled>
       </div>
       <fieldset>
-        <legend className="mb-1.5 block text-xs font-medium text-ggrey">Tags</legend>
+        <legend className="mb-1.5 block text-xs font-medium text-ggrey">
+          Tags <span className="font-normal tabular-nums">({tagIds.length}/{MAX_TAGS}, at least {MIN_TAGS})</span>
+        </legend>
         <div className="flex flex-wrap gap-2">
           {stageTags.length === 0 && <span className="text-sm text-ggrey">No tags defined for this stage</span>}
           {stageTags.map((t) => {
             const on = tagIds.includes(t.id);
+            const locked = !on && tagIds.length >= MAX_TAGS;
             return (
               <label
                 key={t.id}
-                className={`g-press inline-flex cursor-pointer items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${
-                  on ? "border-gblue bg-gblue-50 text-gblue" : "border-dashed border-gline text-ggrey hover:border-gblue hover:text-gblue"
+                title={locked ? `At most ${MAX_TAGS} tags` : undefined}
+                className={`g-press inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${
+                  on ? "cursor-pointer border-gblue bg-gblue-50 text-gblue"
+                  : locked ? "cursor-not-allowed border-dashed border-gline-2 text-ggrey-2"
+                  : "cursor-pointer border-dashed border-gline text-ggrey hover:border-gblue hover:text-gblue"
                 }`}
               >
-                <input type="checkbox" name="tagIds" value={t.id} checked={on} onChange={() => toggleTag(t.id)} className="sr-only" />
+                <input type="checkbox" name="tagIds" value={t.id} checked={on} disabled={locked} onChange={() => toggleTag(t.id)} className="sr-only" />
                 <span className="material-symbols-outlined" style={{ fontSize: 14 }}>{on ? "check" : "add"}</span>
                 {t.label}
               </label>

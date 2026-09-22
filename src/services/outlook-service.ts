@@ -285,6 +285,15 @@ export async function linkMeeting(userId: string, id: string, opportunityId: str
   return db.meeting.update({ where: { id }, data: { opportunityId } });
 }
 
+/** Everyone with a connected calendar — the pool an admin or manager can look at. */
+export async function listConnectedUsers() {
+  const rows = await db.outlookConnection.findMany({
+    select: { user: { select: { id: true, name: true } } },
+    orderBy: { user: { name: "asc" } },
+  });
+  return rows.map((r) => r.user);
+}
+
 export async function listMeetings(userId: string) {
   return db.meeting.findMany({
     where: { userId },

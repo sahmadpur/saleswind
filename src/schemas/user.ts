@@ -27,3 +27,11 @@ export const passwordChangeSchema = z
     path: ["confirm"],
   });
 export type PasswordChangeInput = z.infer<typeof passwordChangeSchema>;
+
+/** One cell edited inline in the users table. Email and password stay behind the full dialog. */
+export const userFieldSchema = z.discriminatedUnion("field", [
+  z.object({ field: z.literal("name"), value: z.string().trim().min(1, "Name is required") }),
+  z.object({ field: z.literal("role"), value: z.enum(["ADMIN", "MANAGER", "AGENT"]) }),
+]);
+export type UserFieldInput = z.infer<typeof userFieldSchema>;
+export type UserField = UserFieldInput["field"];

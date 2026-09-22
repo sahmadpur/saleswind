@@ -20,13 +20,13 @@ const db = new PrismaClient({ adapter });
 const STATUSES: Record<Stage, string[]> = {
   PROSPECT: ["Not Started", "Cancelled", "In Progress"],
   SALES: ["In Progress", "Cancelled", "Lost", "Pending"],
-  CONTRACT: ["In Progress", "Cancelled", "Delayed", "Pending"],
-  PROJECT: ["In Progress", "Cancelled"],
+  CONTRACT: ["In Progress", "Cancelled", "Delayed", "Pending", "Implemented"],
+  PROJECT: ["In Progress", "Cancelled", "Implemented"],
 };
 
 // Default colour per status label (admins can change them in the Dictionary).
 const STATUS_COLOR: Record<string, string> = {
-  "Not Started": "grey", "In Progress": "blue", Pending: "amber", Delayed: "amber", Cancelled: "red", Lost: "red",
+  "Not Started": "grey", "In Progress": "blue", Pending: "amber", Delayed: "amber", Cancelled: "red", Lost: "red", Implemented: "green",
 };
 
 const TAGS: Record<Stage, string[]> = {

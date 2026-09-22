@@ -1,24 +1,33 @@
 import Link from "next/link";
 import { cn } from "@/lib/cn";
-import { DEFAULT_DIR, type SortDir, type SortKey } from "@/lib/opportunity-sort";
+import type { SortDir } from "@/lib/table";
 
-export function SortableTH({ label, sortKey, sort, dir, pathname, extraQuery, align, className, children }: {
+/**
+ * Column header that sorts by linking, so sorting needs no client JS.
+ * `data-col` is what ties the column to its saved width in ColResizer.
+ */
+export function SortableTH<K extends string>({ label, sortKey, sort, dir, defaultDir, pathname, extraQuery, align, className, children }: {
   label: string;
-  sortKey: SortKey;
-  sort: SortKey;
+  sortKey: K;
+  sort: K;
   dir: SortDir;
+  defaultDir: Record<K, SortDir>;
   pathname: string;
-  extraQuery?: Record<string, string>;
+  /** Filters and view state to carry across; repeated keys are preserved. */
+  extraQuery?: URLSearchParams | Record<string, string>;
   align?: "right";
   className?: string;
   children?: React.ReactNode;
 }) {
   const active = sort === sortKey;
-  const nextDir = active ? (dir === "asc" ? "desc" : "asc") : DEFAULT_DIR[sortKey];
+  const nextDir = active ? (dir === "asc" ? "desc" : "asc") : defaultDir[sortKey];
+  const qs = new URLSearchParams(extraQuery);
+  qs.set("sort", sortKey);
+  qs.set("dir", nextDir);
   return (
     <th data-col={label} className={cn(className, align === "right" && "text-right")}>
       <Link
-        href={{ pathname, query: { ...extraQuery, sort: sortKey, dir: nextDir } }}
+        href={`${pathname}?${qs}`}
         className={cn("inline-flex items-center gap-0.5 align-middle transition-colors hover:text-gink", active && "text-gink")}
       >
         {label}

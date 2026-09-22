@@ -225,8 +225,10 @@ function MonthGrid({ anchor, items, today, onDay: pickDay, onNew, onOpen }: {
   );
 }
 
-export function MeetingsView({ meetings, opportunities, nowLocal, windowStart, windowEnd }: {
+export function MeetingsView({ meetings, opportunities, nowLocal, windowStart, windowEnd, readOnly }: {
   meetings: MeetingItem[]; opportunities: Option[]; nowLocal: string; windowStart: string; windowEnd: string;
+  /** Someone else's calendar: show it, but offer no way to change it. */
+  readOnly?: boolean;
 }) {
   const today = nowLocal.slice(0, 10);
   const [view, setView] = useState<View>("week");
@@ -261,6 +263,7 @@ export function MeetingsView({ meetings, opportunities, nowLocal, windowStart, w
     : `${dm(days[0])} – ${dmy(days[6])}`;
 
   const newAt = (day: string, min: number) => {
+    if (readOnly) return;
     const end = Math.min(min + 60, 24 * 60 - 1);
     setDraft({ subject: "", start: `${day}T${hhmm(min)}`, end: `${day}T${hhmm(end)}`, location: "", attendees: "", online: true, opportunityId: "" });
   };
@@ -273,10 +276,12 @@ export function MeetingsView({ meetings, opportunities, nowLocal, windowStart, w
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
-        <Button onClick={() => newAt(today, nextHour())}>
-          <Icon name="add" />
-          New meeting
-        </Button>
+        {!readOnly && (
+          <Button onClick={() => newAt(today, nextHour())}>
+            <Icon name="add" />
+            New meeting
+          </Button>
+        )}
         {view !== "list" && (
           <>
             <Button variant="outline" onClick={() => setAnchor(today)}>Today</Button>
@@ -324,9 +329,9 @@ export function MeetingsView({ meetings, opportunities, nowLocal, windowStart, w
         ) : view === "list" ? (
           <div>
             <div className="border-b border-gline-2 px-5 py-3 text-xs font-semibold uppercase tracking-[0.06em] text-ggrey">Upcoming</div>
-            <MeetingList meetings={upcoming} opportunities={opportunities} empty="No upcoming meetings." />
+            <MeetingList meetings={upcoming} opportunities={opportunities} empty="No upcoming meetings." readOnly={readOnly} />
             <div className="border-y border-gline-2 px-5 py-3 text-xs font-semibold uppercase tracking-[0.06em] text-ggrey">Past</div>
-            <MeetingList meetings={past} opportunities={opportunities} empty="No past meetings." />
+            <MeetingList meetings={past} opportunities={opportunities} empty="No past meetings." readOnly={readOnly} />
           </div>
         ) : (
           <TimeGrid days={days} items={meetings} today={today} nowMin={minutes(nowLocal)} onSlot={newAt} onOpen={(m) => setOpenId(m.id)} />
@@ -340,10 +345,11 @@ export function MeetingsView({ meetings, opportunities, nowLocal, windowStart, w
             opportunities={opportunities}
             onClose={() => setOpenId(null)}
             onEdit={(d) => { setOpenId(null); setDraft(d); }}
+            readOnly={readOnly}
           />
         )}
       </Dialog>
-      <MeetingDialog draft={draft} opportunities={opportunities} onClose={() => setDraft(null)} />
+      {!readOnly && <MeetingDialog draft={draft} opportunities={opportunities} onClose={() => setDraft(null)} />}
     </div>
   );
 }

@@ -2,7 +2,7 @@ import "server-only";
 import { db } from "@/lib/db";
 import { audit } from "@/services/audit-service";
 import { accountRef } from "@/lib/format";
-import type { AccountInput } from "@/schemas/account";
+import type { AccountFieldInput, AccountInput } from "@/schemas/account";
 
 export async function createAccount(input: AccountInput, userId: string) {
   return db.$transaction(async (tx) => {
@@ -28,6 +28,19 @@ export async function updateAccount(id: string, input: AccountInput, userId: str
   return db.$transaction(async (tx) => {
     const a = await tx.account.update({ where: { id }, data: { ...input, website: input.website || null, primaryContactEmail: input.primaryContactEmail || null } });
     await audit(tx, { userId, action: "account.update", entityType: "account", entityId: id, summary: `Updated ${accountRef(a.number)} "${a.name}"`, details: input });
+    return a;
+  });
+}
+
+/** Inline single-cell edit from the accounts table. Blank optional fields are stored as null. */
+export async function updateAccountField(id: string, input: AccountFieldInput, userId: string) {
+  return db.$transaction(async (tx) => {
+    const value = input.field === "name" ? input.value : input.value || null;
+    const a = await tx.account.update({ where: { id }, data: { [input.field]: value } });
+    await audit(tx, {
+      userId, action: "account.update", entityType: "account", entityId: id,
+      summary: `Updated ${input.field} of ${accountRef(a.number)} "${a.name}"`, details: { [input.field]: input.value },
+    });
     return a;
   });
 }

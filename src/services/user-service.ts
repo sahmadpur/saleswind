@@ -107,6 +107,10 @@ export async function deleteUser(id: string, actorId: string | null) {
   });
 }
 
+export async function getUser(id: string) {
+  return db.user.findUniqueOrThrow({ where: { id }, select: { id: true, name: true, email: true, role: true } });
+}
+
 export async function listUsers() {
   return db.user.findMany({ orderBy: { createdAt: "desc" }, select: { id: true, name: true, email: true, role: true, blockedAt: true, createdAt: true } });
 }

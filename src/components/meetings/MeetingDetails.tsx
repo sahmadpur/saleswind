@@ -10,8 +10,8 @@ import type { MeetingDraft } from "@/components/meetings/MeetingDialog";
 type Option = { id: string; label: string };
 
 /** Event popup content for the calendar: details, opportunity link, edit (organizer) and cancel. */
-export function MeetingDetails({ m, opportunities, onEdit, onClose }: {
-  m: MeetingItem; opportunities: Option[]; onEdit: (d: MeetingDraft) => void; onClose: () => void;
+export function MeetingDetails({ m, opportunities, onEdit, onClose, readOnly }: {
+  m: MeetingItem; opportunities: Option[]; onEdit: (d: MeetingDraft) => void; onClose: () => void; readOnly?: boolean;
 }) {
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -44,6 +44,9 @@ export function MeetingDetails({ m, opportunities, onEdit, onClose }: {
       <label className="block">
         <span className="mb-1.5 block text-xs font-medium text-ggrey">Opportunity</span>
         <div className="flex items-center gap-2">
+          {readOnly ? (
+            <span className="flex-1 text-sm text-gink-2">{m.opportunity?.label ?? "No opportunity"}</span>
+          ) : (
           <select
             value={m.opportunity?.id ?? ""}
             disabled={pending}
@@ -53,6 +56,7 @@ export function MeetingDetails({ m, opportunities, onEdit, onClose }: {
             <option value="">No opportunity</option>
             {opportunities.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
           </select>
+          )}
           {m.opportunity && (
             <Link href={`/opportunities/${m.opportunity.id}`} className="text-sm text-gblue hover:underline">Open</Link>
           )}
@@ -72,7 +76,7 @@ export function MeetingDetails({ m, opportunities, onEdit, onClose }: {
             <Icon name="videocam" /> Join
           </a>
         )}
-        {!m.past && (
+        {!readOnly && !m.past && (
           <Button
             variant="ghost"
             className="text-gred hover:bg-gred-50"
@@ -87,7 +91,7 @@ export function MeetingDetails({ m, opportunities, onEdit, onClose }: {
             {m.isOrganizer ? "Cancel meeting" : "Remove"}
           </Button>
         )}
-        {m.isOrganizer && !m.past && (
+        {!readOnly && m.isOrganizer && !m.past && (
           <Button variant="outline" disabled={pending} onClick={() => onEdit(m.draft)}>
             <Icon name="edit" />
             Edit

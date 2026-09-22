@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/Button";
 const FEATURES = [
   { icon: "monitoring", title: "Pipeline", body: "Move deals from prospect to project." },
   { icon: "domain", title: "Accounts", body: "Every company and contact in one place." },
-  { icon: "bar_chart", title: "Reports", body: "Predicted revenue and gross profit, live." },
+  { icon: "dashboard", title: "Dashboard", body: "Predicted revenue and gross profit, live." },
 ];
 
 const ERRORS: Record<string, string> = {
@@ -72,7 +72,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           </ul>
         </div>
 
-        <p className="text-xs text-white/40">Saleswind — sales pipeline, accounts and reporting.</p>
+        <p className="text-xs text-white/40">Saleswind — sales pipeline, accounts and dashboards.</p>
       </section>
 
       {/* Form panel */}

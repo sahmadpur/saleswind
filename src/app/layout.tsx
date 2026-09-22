@@ -10,7 +10,7 @@ const plex = IBM_Plex_Sans({
 
 export const metadata: Metadata = {
   title: "Saleswind",
-  description: "Saleswind — sales pipeline, accounts and reporting",
+  description: "Saleswind — sales pipeline, accounts and dashboards",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

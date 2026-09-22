@@ -20,11 +20,11 @@ describe("audit-service", () => {
     const o = await createOpportunity({ accountId, title: "Audited", accountableId: userId, revenue: 1, marginPct: 1 }, userId);
     await transitionOpportunity(o.id, "advance", userId);
 
-    const all = await listAudit({ userId }, 1);
+    const all = await listAudit({ userId: [userId] }, 1);
     expect(all.rows.map((r) => r.action)).toEqual(["opportunity.advance", "opportunity.create"]);
     expect(all.rows[1].entityId).toBe(o.id);
 
-    const onlyCreate = await listAudit({ userId, action: "opportunity.create" }, 1);
+    const onlyCreate = await listAudit({ userId: [userId], action: ["opportunity.create"] }, 1);
     expect(onlyCreate.total).toBe(1);
   });
 });
