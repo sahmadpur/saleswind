@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getAccount } from "@/services/account-service";
-import { updateAccountAction, updateAccountNotesAction } from "@/actions/account-actions";
+import { deleteAccountAction, updateAccountAction, updateAccountNotesAction } from "@/actions/account-actions";
+import { requireUser } from "@/lib/session";
+import { can } from "@/lib/domain/permissions";
+import { DeleteButton } from "@/components/ui/DeleteButton";
 import { AccountForm } from "@/components/accounts/AccountForm";
 import { EditDialogButton } from "@/components/ui/EditDialogButton";
 import { AccountNotesForm } from "@/components/accounts/AccountNotesForm";
@@ -28,6 +31,7 @@ function Field({ icon, label, value }: { icon: string; label: string; value: str
 
 export default async function AccountDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const user = await requireUser();
   const account = await getAccount(id);
   if (!account) notFound();
   return (
@@ -49,17 +53,26 @@ export default async function AccountDetail({ params }: { params: Promise<{ id: 
             </p>
           </div>
         </div>
-        <EditDialogButton title="Edit account">
-          <AccountForm
-            action={updateAccountAction.bind(null, account.id)}
-            submitLabel="Save changes"
-            defaults={{
-              name: account.name, industry: account.industry ?? "", website: account.website ?? "",
-              primaryContactName: account.primaryContactName ?? "", primaryContactEmail: account.primaryContactEmail ?? "",
-              primaryContactPhone: account.primaryContactPhone ?? "", notes: account.notes ?? "",
-            }}
-          />
-        </EditDialogButton>
+        <div className="flex flex-wrap items-center gap-2">
+          <EditDialogButton title="Edit account">
+            <AccountForm
+              action={updateAccountAction.bind(null, account.id)}
+              submitLabel="Save changes"
+              defaults={{
+                name: account.name, industry: account.industry ?? "", website: account.website ?? "",
+                primaryContactName: account.primaryContactName ?? "", primaryContactEmail: account.primaryContactEmail ?? "",
+                primaryContactPhone: account.primaryContactPhone ?? "", notes: account.notes ?? "",
+              }}
+            />
+          </EditDialogButton>
+          {can(user.role, "account:delete") && (
+            <DeleteButton
+              action={deleteAccountAction.bind(null, account.id)}
+              name={accountRef(account.number)}
+              prompt={`Delete ${accountRef(account.number)} "${account.name}"?${account.opportunities.length ? ` Its ${account.opportunities.length} ${account.opportunities.length === 1 ? "opportunity" : "opportunities"} and their comments, tasks and history go with it.` : ""} This cannot be undone.`}
+            />
+          )}
+        </div>
       </div>
 
       <Card>

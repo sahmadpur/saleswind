@@ -35,6 +35,36 @@ describe("user-service", () => {
     await db.account.delete({ where: { id: account.id } });
     await db.user.delete({ where: { id: u.id } });
   });
+
+  it("force-deletes a busy user, moving their opportunities and tasks to the actor and dropping their comments", async () => {
+    const admin = await createUser({ name: "Admin", email: `fa${Date.now()}@x.com`, password: "password1", role: "ADMIN" }, null);
+    const u = await createUser({ name: "Leaver", email: `fl${Date.now()}@x.com`, password: "password1", role: "AGENT" }, null);
+    const account = await db.account.create({ data: { name: `Acc ${Date.now()}`, createdById: u.id } });
+    const opp = await db.opportunity.create({
+      data: { title: "Deal", accountId: account.id, accountableId: u.id, createdById: u.id, lastModifiedById: u.id },
+    });
+    const task = await db.task.create({ data: { title: "Todo", assigneeId: u.id, createdById: u.id } });
+    const comment = await db.comment.create({ data: { opportunityId: opp.id, authorId: u.id, body: "hi" } });
+
+    await expect(deleteUser(u.id, null, { force: true })).rejects.toThrow(/reassign/);
+    const counts = await deleteUser(u.id, admin.id, { force: true });
+    expect(counts).toEqual({ opportunities: 1, comments: 1, tasks: 1 });
+
+    expect(await db.user.findUnique({ where: { id: u.id } })).toBeNull();
+    expect((await db.opportunity.findUniqueOrThrow({ where: { id: opp.id } })).accountableId).toBe(admin.id);
+    const t = await db.task.findUniqueOrThrow({ where: { id: task.id } });
+    expect([t.assigneeId, t.createdById]).toEqual([admin.id, admin.id]);
+    expect(await db.comment.findUnique({ where: { id: comment.id } })).toBeNull();
+    const log = await db.auditLog.findFirstOrThrow({ where: { action: "user.delete", entityId: u.id } });
+    expect(log.userId).toBe(admin.id);
+    expect(log.details).toMatchObject({ reassignedTo: admin.id, opportunities: 1, tasks: 1, comments: 1 });
+
+    await db.task.delete({ where: { id: task.id } });
+    await db.opportunity.delete({ where: { id: opp.id } });
+    await db.account.delete({ where: { id: account.id } });
+    await db.auditLog.deleteMany({ where: { entityId: u.id } });
+    await db.user.delete({ where: { id: admin.id } });
+  });
 });
 
 describe("user-service: updateUser", () => {

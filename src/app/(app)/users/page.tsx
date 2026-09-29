@@ -23,7 +23,10 @@ const searchable = (u: UserRow) => haystack([u.name, u.email, u.role]);
 export default async function UsersPage({ searchParams }: { searchParams: Promise<QueryParams> }) {
   const params = await searchParams;
   const me = await requireRole("users:manage");
-  const all = await listUsers();
+  const all = (await listUsers()).map(({ _count, ...u }) => ({
+    ...u,
+    counts: { opportunities: _count.accountableOpportunities, tasks: _count.assignedTasks + _count.createdTasks, comments: _count.comments },
+  }));
 
   const q = param(params, "q")?.trim() || undefined;
   const filters = parseMultiFilters(params, FILTER_KEYS);

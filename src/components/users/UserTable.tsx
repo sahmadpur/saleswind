@@ -12,7 +12,8 @@ import { USER_SORT, type UserSortKey } from "@/lib/list-sort";
 import { shortDate } from "@/lib/format";
 import type { SortDir } from "@/lib/table";
 
-export type UserRow = { id: string; name: string; email: string; role: Role; blockedAt: Date | null; createdAt: Date };
+export type UserCounts = { opportunities: number; tasks: number; comments: number };
+export type UserRow = { id: string; name: string; email: string; role: Role; blockedAt: Date | null; createdAt: Date; counts: UserCounts };
 
 export const USERS_SCOPE = "users";
 
@@ -66,7 +67,7 @@ function BodyRow({ u, meId }: { u: UserRow; meId: string }) {
         <div className="flex items-center justify-end gap-1">
           <EditUserDialog action={updateUserAction.bind(null, u.id)} user={{ name: u.name, email: u.email, role: u.role }} isSelf={u.id === meId} />
           {u.id !== meId && <BlockUserButton action={setUserBlockedAction.bind(null, u.id, !u.blockedAt)} name={u.name} blocked={!!u.blockedAt} />}
-          {u.id !== meId && <DeleteUserButton action={deleteUserAction.bind(null, u.id)} name={u.name} />}
+          {u.id !== meId && <DeleteUserButton action={deleteUserAction.bind(null, u.id)} name={u.name} counts={u.counts} />}
         </div>
       </td>
     </tr>

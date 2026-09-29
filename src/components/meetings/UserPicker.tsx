@@ -2,7 +2,7 @@
 import { useRouter } from "next/navigation";
 import { Select } from "@/components/ui/Select";
 
-/** Whose calendar an admin or manager is looking at. Kept in the URL as `user`; viewing is read-only. */
+/** Whose calendar an admin or manager is looking at. Kept in the URL as `user` ("all" merges every calendar); viewing is read-only. */
 export function UserPicker({ value, meId, users }: {
   value: string; meId: string; users: { id: string; name: string }[];
 }) {
@@ -15,6 +15,7 @@ export function UserPicker({ value, meId, users }: {
       className="h-9 min-w-48 text-[13px]"
       style={{ width: "auto" }}
     >
+      <option value="all">All calendars</option>
       {users.map((u) => <option key={u.id} value={u.id}>{u.id === meId ? "My calendar" : u.name}</option>)}
     </Select>
   );

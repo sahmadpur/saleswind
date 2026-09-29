@@ -40,7 +40,7 @@ export function StatusChip({ id, label, color, isActive }: { id: string; label: 
       <DictionaryDeleteButton
         action={() => deleteStatusAction(id)}
         label={label}
-        confirmText={`Delete status "${label}"?`}
+        confirmText={`Delete status "${label}"? Opportunities using it will be left without a status.`}
         className="rounded-r-md hover:bg-black/5"
       />
       {open && (

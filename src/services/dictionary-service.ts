@@ -57,14 +57,22 @@ export async function renameTag(id: string, label: string, userId: string) {
     return t;
   });
 }
-/** Refuses while opportunities use the status: status is required, so deactivate it instead. */
+/** Opportunities still on the status are left without one (logged on each), then the status goes. */
 export async function deleteStatus(id: string, userId: string) {
   return db.$transaction(async (tx) => {
     const s = await tx.status.findUniqueOrThrow({ where: { id } });
-    const used = await tx.opportunity.count({ where: { statusId: id } });
-    if (used > 0) throw new Error(`"${s.label}" is used by ${used} ${used === 1 ? "opportunity" : "opportunities"}. Change their status or deactivate it instead.`);
+    const using = await tx.opportunity.findMany({ where: { statusId: id }, select: { id: true } });
+    for (const o of using) {
+      await tx.activityLog.create({ data: { opportunityId: o.id, userId, actionType: "updated", fieldChanged: "status", oldValue: s.label, newValue: null } });
+    }
+    if (using.length) {
+      await tx.opportunity.updateMany({ where: { statusId: id }, data: { statusId: null, lastModifiedAt: new Date(), lastModifiedById: userId } });
+    }
     await tx.status.delete({ where: { id } });
-    await audit(tx, { userId, action: "status.delete", entityType: "status", entityId: id, summary: `Deleted status "${s.label}" (${s.stage})` });
+    await audit(tx, {
+      userId, action: "status.delete", entityType: "status", entityId: id,
+      summary: `Deleted status "${s.label}" (${s.stage})${using.length ? `, cleared from ${using.length} ${using.length === 1 ? "opportunity" : "opportunities"}` : ""}`,
+    });
   });
 }
 /** Also removes the tag from every opportunity that has it. */

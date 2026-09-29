@@ -108,6 +108,15 @@ export async function updateOpportunityField(id: string, input: Exclude<Opportun
   return applyChanges(id, { [input.field]: value }, userId);
 }
 
+/** Admin hard delete. Tags, comments, activity, notifications and tasks cascade; meetings stay but lose the link. */
+export async function deleteOpportunity(id: string, userId: string) {
+  return db.$transaction(async (tx) => {
+    const o = await tx.opportunity.delete({ where: { id } });
+    await audit(tx, { userId, action: "opportunity.delete", entityType: "opportunity", entityId: id, summary: `Deleted ${opportunityRef(o.number)} "${o.title}"` });
+    return o;
+  });
+}
+
 export async function listOpportunities() {
   return db.opportunity.findMany({
     orderBy: { lastModifiedAt: "desc" },

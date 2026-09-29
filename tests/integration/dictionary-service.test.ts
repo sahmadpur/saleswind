@@ -20,7 +20,7 @@ describe("dictionary-service", () => {
     expect(tag.label).toBe(label);
     await db.tag.delete({ where: { id: tag.id } });
   });
-  it("deletes unused statuses, refuses ones in use, and detaches deleted tags", async () => {
+  it("deletes statuses (clearing them from opportunities) and detaches deleted tags", async () => {
     const u = await db.user.create({ data: { name: "D", email: `dict${Date.now()}@x.com`, passwordHash: "x" } });
     const a = await db.account.create({ data: { name: "Dict", createdById: u.id } });
     const used = await addStatus("SALES", `Used ${Date.now()}`, userId);
@@ -32,7 +32,10 @@ describe("dictionary-service", () => {
 
     await deleteStatus(unused.id, userId);
     expect(await db.status.findUnique({ where: { id: unused.id } })).toBeNull();
-    await expect(deleteStatus(used.id, userId)).rejects.toThrow(/used by 1 opportunity/);
+    await deleteStatus(used.id, userId);
+    expect(await db.status.findUnique({ where: { id: used.id } })).toBeNull();
+    expect((await db.opportunity.findUniqueOrThrow({ where: { id: o.id } })).statusId).toBeNull();
+    expect(await db.activityLog.count({ where: { opportunityId: o.id, fieldChanged: "status", oldValue: used.label } })).toBe(1);
 
     await deleteTag(tag.id, userId);
     expect(await db.opportunityTag.count({ where: { opportunityId: o.id } })).toBe(0);
@@ -42,7 +45,6 @@ describe("dictionary-service", () => {
     expect(await db.definition.findUnique({ where: { id: d.id } })).toBeNull();
 
     await db.opportunity.delete({ where: { id: o.id } });
-    await db.status.delete({ where: { id: used.id } });
     await db.account.delete({ where: { id: a.id } });
     await db.user.delete({ where: { id: u.id } });
   });

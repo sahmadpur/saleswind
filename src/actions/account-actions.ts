@@ -5,7 +5,7 @@ import { z } from "zod";
 import { requireRole } from "@/lib/session";
 import { formValues } from "@/lib/action-state";
 import { accountFieldSchema, accountSchema, type AccountField } from "@/schemas/account";
-import { createAccount, updateAccount, updateAccountField, updateAccountNotes } from "@/services/account-service";
+import { createAccount, deleteAccount, updateAccount, updateAccountField, updateAccountNotes } from "@/services/account-service";
 
 export async function createAccountAction(_prev: unknown, formData: FormData) {
   const user = await requireRole("account:write");
@@ -50,4 +50,17 @@ export async function updateAccountNotesAction(id: string, _prev: unknown, formD
   await updateAccountNotes(id, parsed.data.notes, user.id);
   revalidatePath(`/accounts/${id}`);
   return { ok: true };
+}
+
+export async function deleteAccountAction(id: string): Promise<{ error?: string }> {
+  const user = await requireRole("account:delete");
+  try {
+    await deleteAccount(id, user.id);
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Delete failed" };
+  }
+  revalidatePath("/accounts");
+  revalidatePath("/opportunities");
+  revalidatePath("/dashboard");
+  redirect("/accounts");
 }

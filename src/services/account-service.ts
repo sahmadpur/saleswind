@@ -24,6 +24,19 @@ export async function getAccount(id: string) {
   return db.account.findUnique({ where: { id }, include: { opportunities: { include: { status: true } } } });
 }
 
+/** Admin hard delete. Its opportunities go too (each cascading its own comments, tasks and history). */
+export async function deleteAccount(id: string, userId: string) {
+  return db.$transaction(async (tx) => {
+    const { count } = await tx.opportunity.deleteMany({ where: { accountId: id } });
+    const a = await tx.account.delete({ where: { id } });
+    await audit(tx, {
+      userId, action: "account.delete", entityType: "account", entityId: id,
+      summary: `Deleted ${accountRef(a.number)} "${a.name}"${count ? ` and its ${count} ${count === 1 ? "opportunity" : "opportunities"}` : ""}`,
+    });
+    return a;
+  });
+}
+
 export async function updateAccount(id: string, input: AccountInput, userId: string) {
   return db.$transaction(async (tx) => {
     const a = await tx.account.update({ where: { id }, data: { ...input, website: input.website || null, primaryContactEmail: input.primaryContactEmail || null } });

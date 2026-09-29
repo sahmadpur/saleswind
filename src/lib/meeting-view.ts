@@ -6,16 +6,18 @@ type Row = {
   id: string; subject: string; start: Date; end: Date; isAllDay: boolean; location: string | null; joinUrl: string | null;
   webLink: string | null; organizer: string | null; isOrganizer: boolean; attendees: Prisma.JsonValue; opportunityId: string | null;
   opportunity: { id: string; number: number; title: string } | null;
+  user?: { name: string };
 };
 type Attendee = { name: string | null; email: string | null };
 
-/** Server-side shaping for the client list: dates pre-formatted in the app zone. */
-export function toMeetingItems(rows: Row[], now = new Date()): MeetingItem[] {
+/** Server-side shaping for the client list: dates pre-formatted in the app zone. `showOwner` tags each row with whose calendar it is from. */
+export function toMeetingItems(rows: Row[], now = new Date(), opts: { showOwner?: boolean } = {}): MeetingItem[] {
   return rows.map((m) => {
     const attendees = (Array.isArray(m.attendees) ? m.attendees : []) as Attendee[];
     return {
       id: m.id,
       subject: m.subject,
+      owner: opts.showOwner ? m.user?.name ?? null : null,
       // All-day events are stored as UTC midnight; don't shift them into the app zone.
       day: m.isAllDay ? dateOnly(m.start) : shortDate(m.start),
       time: `${timeOfDay(m.start)}–${timeOfDay(m.end)}`,

@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/session";
 import { formValues } from "@/lib/action-state";
 import { opportunityCreateSchema, opportunityFieldSchema, opportunityUpdateSchema, type EditableField } from "@/schemas/opportunity";
-import { createOpportunity, updateOpportunity, updateOpportunityField, setOpportunityStage, transitionOpportunity, attachTag, detachTag, type TransitionKind } from "@/services/opportunity-service";
+import { createOpportunity, deleteOpportunity, updateOpportunity, updateOpportunityField, setOpportunityStage, transitionOpportunity, attachTag, detachTag, type TransitionKind } from "@/services/opportunity-service";
 
 export async function createOpportunityAction(_prev: unknown, formData: FormData) {
   const user = await requireRole("opportunity:write");
@@ -82,4 +82,12 @@ export async function detachTagAction(opportunityId: string, tagId: string): Pro
   revalidatePath("/opportunities");
   revalidatePath(`/opportunities/${opportunityId}`);
   return {};
+}
+
+export async function deleteOpportunityAction(id: string): Promise<{ error?: string }> {
+  const user = await requireRole("opportunity:delete");
+  await deleteOpportunity(id, user.id);
+  revalidatePath("/opportunities");
+  revalidatePath("/dashboard");
+  redirect("/opportunities");
 }

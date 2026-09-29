@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { db } from "@/lib/db";
-import { createOpportunity, setOpportunityStage, updateOpportunity, updateOpportunityField } from "@/services/opportunity-service";
+import { createOpportunity, deleteOpportunity, setOpportunityStage, updateOpportunity, updateOpportunityField } from "@/services/opportunity-service";
 
 let userId: string, accountId: string;
 
@@ -17,6 +17,20 @@ afterAll(async () => {
 });
 
 describe("opportunity-service", () => {
+  it("deletes an opportunity with its comments, tasks and activity, and audits it", async () => {
+    const o = await createOpportunity({ accountId, title: "Doomed", accountableId: userId, revenue: 1, marginPct: 1 }, userId);
+    await db.comment.create({ data: { opportunityId: o.id, authorId: userId, body: "bye" } });
+    await db.task.create({ data: { title: "t", assigneeId: userId, createdById: userId, opportunityId: o.id } });
+    await deleteOpportunity(o.id, userId);
+    expect(await db.opportunity.findUnique({ where: { id: o.id } })).toBeNull();
+    expect(await db.comment.count({ where: { opportunityId: o.id } })).toBe(0);
+    expect(await db.task.count({ where: { opportunityId: o.id } })).toBe(0);
+    expect(await db.activityLog.count({ where: { opportunityId: o.id } })).toBe(0);
+    const log = await db.auditLog.findFirstOrThrow({ where: { action: "opportunity.delete", entityId: o.id } });
+    expect(log.summary).toContain("Doomed");
+    await db.auditLog.delete({ where: { id: log.id } });
+  });
+
   it("creates an opportunity and logs creation", async () => {
     const o = await createOpportunity({ accountId, title: "5 Printers", accountableId: userId, revenue: 100000, marginPct: 30 }, userId);
     expect(o.title).toBe("5 Printers");

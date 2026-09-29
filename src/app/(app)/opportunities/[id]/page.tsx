@@ -3,7 +3,9 @@ import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/session";
 import { getOpportunity } from "@/services/opportunity-service";
-import { updateOpportunityAction } from "@/actions/opportunity-actions";
+import { deleteOpportunityAction, updateOpportunityAction } from "@/actions/opportunity-actions";
+import { can } from "@/lib/domain/permissions";
+import { DeleteButton } from "@/components/ui/DeleteButton";
 import { canAdvance, canMoveBack } from "@/lib/domain/lifecycle";
 import { StageStepper } from "@/components/opportunities/StageStepper";
 import { TransitionControls } from "@/components/opportunities/TransitionControls";
@@ -101,15 +103,24 @@ export default async function OpportunityDetail({ params }: { params: Promise<{ 
             )}
           </div>
         </div>
-        <div className="flex gap-6 rounded-lg border border-gline-2 bg-gsurface px-5 py-3">
-          <div>
-            <div className="text-xs text-ggrey">PR</div>
-            <div className="text-lg font-semibold tabular-nums text-gink">{money(Number(o.revenue))}</div>
+        <div className="flex flex-wrap items-start gap-3">
+          <div className="flex gap-6 rounded-lg border border-gline-2 bg-gsurface px-5 py-3">
+            <div>
+              <div className="text-xs text-ggrey">PR</div>
+              <div className="text-lg font-semibold tabular-nums text-gink">{money(Number(o.revenue))}</div>
+            </div>
+            <div className="border-l border-gline-2 pl-6">
+              <div className="text-xs text-ggrey">PGP</div>
+              <div className="text-lg font-semibold tabular-nums text-ggreen">{money(gp)}</div>
+            </div>
           </div>
-          <div className="border-l border-gline-2 pl-6">
-            <div className="text-xs text-ggrey">PGP</div>
-            <div className="text-lg font-semibold tabular-nums text-ggreen">{money(gp)}</div>
-          </div>
+          {can(user.role, "opportunity:delete") && (
+            <DeleteButton
+              action={deleteOpportunityAction.bind(null, o.id)}
+              name={opportunityRef(o.number)}
+              prompt={`Delete ${opportunityRef(o.number)} "${o.title}"? Its comments, tasks and history go with it. This cannot be undone.`}
+            />
+          )}
         </div>
       </div>
 

@@ -4,14 +4,14 @@ import Link from "next/link";
 import { cancelMeetingAction, linkMeetingAction } from "@/actions/meeting-actions";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
-import type { MeetingItem } from "@/components/meetings/MeetingList";
+import { cancelPrompt, type MeetingItem } from "@/components/meetings/MeetingList";
 import type { MeetingDraft } from "@/components/meetings/MeetingDialog";
 
 type Option = { id: string; label: string };
 
 /** Event popup content for the calendar: details, opportunity link, edit (organizer) and cancel. */
-export function MeetingDetails({ m, opportunities, onEdit, onClose, readOnly }: {
-  m: MeetingItem; opportunities: Option[]; onEdit: (d: MeetingDraft) => void; onClose: () => void; readOnly?: boolean;
+export function MeetingDetails({ m, opportunities, onEdit, onClose, readOnly, canCancel = !readOnly }: {
+  m: MeetingItem; opportunities: Option[]; onEdit: (d: MeetingDraft) => void; onClose: () => void; readOnly?: boolean; canCancel?: boolean;
 }) {
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -30,6 +30,7 @@ export function MeetingDetails({ m, opportunities, onEdit, onClose, readOnly }: 
           {m.day} · {m.isAllDay ? "All day" : m.time}
         </p>
         {m.location && <p className="flex items-center gap-2"><Icon name="location_on" />{m.location}</p>}
+        {m.owner && <p className="flex items-center gap-2"><Icon name="calendar_month" />Calendar: {m.owner}</p>}
         {m.organizer && <p className="flex items-center gap-2"><Icon name="person" />Organizer: {m.isOrganizer ? "you" : m.organizer}</p>}
         {m.attendees.length > 0 && (
           <div className="flex items-start gap-2">
@@ -76,19 +77,17 @@ export function MeetingDetails({ m, opportunities, onEdit, onClose, readOnly }: 
             <Icon name="videocam" /> Join
           </a>
         )}
-        {!readOnly && !m.past && (
+        {canCancel && !m.past && (
           <Button
             variant="ghost"
             className="text-gred hover:bg-gred-50"
             disabled={pending}
             onClick={() => {
-              if (confirm(m.isOrganizer ? `Cancel "${m.subject}"? Attendees will be notified.` : `Remove "${m.subject}" from your calendar?`)) {
-                run(() => cancelMeetingAction(m.id, m.opportunity?.id ?? null), true);
-              }
+              if (confirm(cancelPrompt(m, readOnly))) run(() => cancelMeetingAction(m.id, m.opportunity?.id ?? null), true);
             }}
           >
             <Icon name="event_busy" />
-            {m.isOrganizer ? "Cancel meeting" : "Remove"}
+            {m.isOrganizer || readOnly ? "Cancel meeting" : "Remove"}
           </Button>
         )}
         {!readOnly && m.isOrganizer && !m.past && (

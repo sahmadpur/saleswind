@@ -93,18 +93,38 @@ export async function setUserBlocked(id: string, blocked: boolean, actorId: stri
   });
 }
 
-export async function deleteUser(id: string, actorId: string | null) {
-  const [opps, comments, tasks] = await Promise.all([
+export type DeleteUserCounts = { opportunities: number; comments: number; tasks: number };
+
+/**
+ * Deletes a user. Without `force` it refuses while the user still owns work. With `force` (admin), their
+ * opportunities and tasks move to `actorId` and their comments are removed, so nothing dangles.
+ */
+export async function deleteUser(id: string, actorId: string | null, opts: { force?: boolean } = {}): Promise<DeleteUserCounts> {
+  const [opportunities, comments, tasks] = await Promise.all([
     db.opportunity.count({ where: { accountableId: id } }),
     db.comment.count({ where: { authorId: id } }),
     db.task.count({ where: { OR: [{ assigneeId: id }, { createdById: id }] } }),
   ]);
-  if (opps > 0 || comments > 0 || tasks > 0) throw new Error("Cannot delete: user has opportunities, comments or tasks");
+  const owns = opportunities > 0 || comments > 0 || tasks > 0;
+  if (owns && !opts.force) throw new Error("Cannot delete: user has opportunities, comments or tasks");
+  if (owns && !actorId) throw new Error("Cannot delete: no one to reassign their work to");
+  const counts = { opportunities, comments, tasks };
   await db.$transaction(async (tx) => {
+    if (owns && actorId) {
+      await tx.opportunity.updateMany({ where: { accountableId: id }, data: { accountableId: actorId } });
+      await tx.task.updateMany({ where: { assigneeId: id }, data: { assigneeId: actorId } });
+      await tx.task.updateMany({ where: { createdById: id }, data: { createdById: actorId } });
+      await tx.comment.deleteMany({ where: { authorId: id } });
+    }
     await tx.notification.deleteMany({ where: { userId: id } });
     const u = await tx.user.delete({ where: { id } });
-    await audit(tx, { userId: actorId, action: "user.delete", entityType: "user", entityId: id, summary: `Deleted user ${u.name} <${u.email}>` });
+    await audit(tx, {
+      userId: actorId, action: "user.delete", entityType: "user", entityId: id,
+      summary: `Deleted user ${u.name} <${u.email}>`,
+      details: owns ? { reassignedTo: actorId, ...counts } : undefined,
+    });
   });
+  return counts;
 }
 
 export async function getUser(id: string) {
@@ -112,5 +132,12 @@ export async function getUser(id: string) {
 }
 
 export async function listUsers() {
-  return db.user.findMany({ orderBy: { createdAt: "desc" }, select: { id: true, name: true, email: true, role: true, blockedAt: true, createdAt: true } });
+  return db.user.findMany({
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true, name: true, email: true, role: true, blockedAt: true, createdAt: true,
+      // What an admin delete would reassign or remove — shown in the confirm prompt.
+      _count: { select: { accountableOpportunities: true, comments: true, assignedTasks: true, createdTasks: true } },
+    },
+  });
 }

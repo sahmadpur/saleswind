@@ -10,6 +10,10 @@ type TaskRow = {
   assignee: { name: string }; opportunity: { id: string; number: number; title: string } | null;
 };
 
+/** Remembers Board vs List per browser. Read by the Tasks page when the URL has no `view`. */
+export const TASKS_VIEW_COOKIE = "saleswind-tasks-view";
+export type TasksView = "board" | "list";
+
 /** Server-side shaping of tasks for the client list (dates pre-formatted in the app zone). */
 export function toTaskItems(rows: TaskRow[], user: SessionUser, opts: { showAssignee: boolean; showOpportunity: boolean }): TaskItem[] {
   const today = todayIso();

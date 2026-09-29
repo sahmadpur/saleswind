@@ -6,14 +6,22 @@ describe("permissions", () => {
     expect(can("AGENT", "opportunity:write")).toBe(true);
     expect(can("AGENT", "dictionary:manage")).toBe(false);
     expect(can("AGENT", "dashboard:view")).toBe(false);
+    expect(can("AGENT", "opportunity:delete")).toBe(false);
   });
   it("managers can view reports", () => {
     expect(can("MANAGER", "dashboard:view")).toBe(true);
     expect(can("MANAGER", "dictionary:manage")).toBe(false);
+    expect(can("MANAGER", "meetings:viewAll")).toBe(true);
+    expect(can("MANAGER", "meetings:manageAll")).toBe(false);
+    expect(can("MANAGER", "opportunity:delete")).toBe(false);
+    expect(can("MANAGER", "account:delete")).toBe(false);
   });
   it("admins can do everything", () => {
     expect(can("ADMIN", "dictionary:manage")).toBe(true);
     expect(can("ADMIN", "users:manage")).toBe(true);
     expect(can("ADMIN", "dashboard:view")).toBe(true);
+    expect(can("ADMIN", "meetings:manageAll")).toBe(true);
+    expect(can("ADMIN", "opportunity:delete")).toBe(true);
+    expect(can("ADMIN", "account:delete")).toBe(true);
   });
 });

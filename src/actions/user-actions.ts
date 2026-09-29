@@ -18,7 +18,7 @@ export async function deleteUserAction(id: string, _prev: unknown, _fd: FormData
   const me = await requireRole("users:manage");
   if (me.id === id) return { error: { _form: ["You cannot delete yourself"] } };
   try {
-    await deleteUser(id, me.id);
+    await deleteUser(id, me.id, { force: true });
   } catch (e) {
     return { error: { _form: [e instanceof Error ? e.message : "Delete failed"] } };
   }

@@ -264,10 +264,14 @@ export async function updateMeeting(userId: string, id: string, m: MeetingInput)
   return meeting;
 }
 
-/** Organizer: cancels and notifies attendees. Attendee: removes it from their calendar. */
-export async function cancelMeeting(userId: string, id: string) {
-  const m = await ownMeeting(userId, id);
-  const token = await accessToken(userId);
+/**
+ * Organizer: cancels and notifies attendees. Attendee: removes it from their calendar.
+ * With `anyUser` (admins) the meeting may belong to someone else; Graph is then called with the owner's token.
+ */
+export async function cancelMeeting(actorId: string, id: string, opts: { anyUser?: boolean } = {}) {
+  const m = await db.meeting.findUnique({ where: { id }, include: { user: { select: { name: true } } } });
+  if (!m || (m.userId !== actorId && !opts.anyUser)) throw new OutlookError("Meeting not found");
+  const token = await accessToken(m.userId);
   const path = `/me/events/${encodeURIComponent(m.outlookEventId)}`;
   try {
     if (m.isOrganizer) await graphFetch(token, `${path}/cancel`, { method: "POST", body: JSON.stringify({ comment: "" }) });
@@ -277,7 +281,8 @@ export async function cancelMeeting(userId: string, id: string) {
     if (!(e instanceof OutlookError && /not found/i.test(e.message))) throw e;
   }
   await db.meeting.delete({ where: { id } });
-  await audit(db, { userId, action: "meeting.cancel", entityType: "meeting", entityId: id, summary: `${m.isOrganizer ? "Cancelled" : "Removed"} meeting "${m.subject}"` });
+  const whose = m.userId === actorId ? "" : ` on ${m.user.name}'s calendar`;
+  await audit(db, { userId: actorId, action: "meeting.cancel", entityType: "meeting", entityId: id, summary: `${m.isOrganizer ? "Cancelled" : "Removed"} meeting "${m.subject}"${whose}` });
 }
 
 export async function linkMeeting(userId: string, id: string, opportunityId: string | null) {
@@ -294,11 +299,13 @@ export async function listConnectedUsers() {
   return rows.map((r) => r.user);
 }
 
-export async function listMeetings(userId: string) {
+/** Mirrored meetings for one user, or merged across several (admins viewing every calendar). */
+export async function listMeetings(userIds: string | string[]) {
+  const ids = Array.isArray(userIds) ? userIds : [userIds];
   return db.meeting.findMany({
-    where: { userId },
+    where: { userId: { in: ids } },
     orderBy: { start: "asc" },
-    include: { opportunity: { select: { id: true, number: true, title: true } } },
+    include: { opportunity: { select: { id: true, number: true, title: true } }, user: { select: { name: true } } },
   });
 }
 

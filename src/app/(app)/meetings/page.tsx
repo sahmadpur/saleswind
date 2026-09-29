@@ -31,14 +31,17 @@ export default async function MeetingsPage({ searchParams }: { searchParams: Pro
     );
   }
 
-  // Admins and managers can look at a teammate's calendar; everyone else only ever sees their own.
+  // Admins and managers can look at a teammate's calendar, or every calendar at once; everyone else only ever sees their own.
   const canViewAll = can(user.role, "meetings:viewAll");
   const requested = param(params, "user");
-  const targetId = canViewAll && requested && requested !== user.id ? requested : user.id;
-  const readOnly = targetId !== user.id;
+  const all = canViewAll && requested === "all";
+  const targetId = canViewAll && requested && requested !== user.id && !all ? requested : user.id;
+  const readOnly = all || targetId !== user.id;
+  // Admins can still cancel meetings on calendars they only read.
+  const canCancel = !readOnly || can(user.role, "meetings:manageAll");
 
   // Never drive someone else's Graph sync off your own page load — just read what was mirrored.
-  const connection = readOnly ? await getConnection(targetId) : await getConnectionSynced(user.id);
+  const connection = readOnly && !all ? await getConnection(targetId) : await getConnectionSynced(user.id);
   const outlookParam = param(params, "outlook");
   const flash = outlookParam === "error" ? param(params, "message") ?? "Could not connect Outlook." : outlookParam ? MESSAGES[outlookParam] : null;
 
@@ -48,11 +51,11 @@ export default async function MeetingsPage({ searchParams }: { searchParams: Pro
     ? connectedUsers
     : [{ id: user.id, name: user.name ?? "Me" }, ...connectedUsers];
   const picker = canViewAll && pickerUsers.length > 1
-    ? <UserPicker value={targetId} meId={user.id} users={pickerUsers} />
+    ? <UserPicker value={all ? "all" : targetId} meId={user.id} users={pickerUsers} />
     : null;
   const viewing = connectedUsers.find((u) => u.id === targetId)?.name ?? "This user";
 
-  if (!connection) {
+  if (all ? connectedUsers.length === 0 : !connection) {
     return (
       <div className="space-y-5">
         <PageHeader title="Meetings" actions={picker} />
@@ -61,7 +64,9 @@ export default async function MeetingsPage({ searchParams }: { searchParams: Pro
           <span className="grid h-14 w-14 place-items-center rounded-full bg-gblue-50 text-gblue">
             <span className="material-symbols-outlined" style={{ fontSize: 28 }}>calendar_month</span>
           </span>
-          {readOnly ? (
+          {all ? (
+            <p className="text-sm text-ggrey">Nobody has connected an Outlook calendar yet.</p>
+          ) : readOnly ? (
             <p className="text-sm text-ggrey">{viewing} hasn&apos;t connected an Outlook calendar.</p>
           ) : (
             <>
@@ -83,7 +88,7 @@ export default async function MeetingsPage({ searchParams }: { searchParams: Pro
   }
 
   const [rows, opps] = await Promise.all([
-    listMeetings(targetId),
+    listMeetings(all ? connectedUsers.map((u) => u.id) : targetId),
     db.opportunity.findMany({ select: { id: true, number: true, title: true }, orderBy: { number: "desc" } }),
   ]);
   const now = new Date();
@@ -94,30 +99,36 @@ export default async function MeetingsPage({ searchParams }: { searchParams: Pro
     <div className="space-y-5">
       <PageHeader title="Meetings" actions={picker} />
       <div className="flex flex-wrap items-center justify-between gap-2">
-        {readOnly ? (
+        {all ? (
           <p className="inline-flex items-center gap-2 rounded-md bg-ghover px-3 py-1.5 text-xs text-ggrey">
             <span className="material-symbols-outlined" style={{ fontSize: 16 }}>visibility</span>
-            Viewing {viewing}&apos;s calendar ({connection.msEmail}) — read only
-            {connection.lastSyncedAt && ` · synced ${shortDate(connection.lastSyncedAt)}`}
+            Viewing all calendars ({connectedUsers.length} {connectedUsers.length === 1 ? "user" : "users"}) — read only
+          </p>
+        ) : readOnly ? (
+          <p className="inline-flex items-center gap-2 rounded-md bg-ghover px-3 py-1.5 text-xs text-ggrey">
+            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>visibility</span>
+            Viewing {viewing}&apos;s calendar ({connection!.msEmail}) — read only
+            {connection!.lastSyncedAt && ` · synced ${shortDate(connection!.lastSyncedAt)}`}
           </p>
         ) : (
-          <SyncControls email={connection.msEmail} lastSynced={connection.lastSyncedAt ? shortDate(connection.lastSyncedAt) : null} />
+          <SyncControls email={connection!.msEmail} lastSynced={connection!.lastSyncedAt ? shortDate(connection!.lastSyncedAt) : null} />
         )}
         {flash && outlookParam === "connected" && <span className="text-xs text-ggreen">{flash}</span>}
       </div>
-      {!readOnly && connection.lastError && (
+      {!readOnly && connection?.lastError && (
         <div className="flex flex-wrap items-center gap-3 rounded-md bg-gred-50 px-4 py-2.5 text-sm text-gred">
           {connection.lastError}
           <a href="/api/outlook/connect" className="font-medium underline">Reconnect</a>
         </div>
       )}
       <MeetingsView
-        meetings={toMeetingItems(rows, now)}
+        meetings={toMeetingItems(rows, now, { showOwner: all })}
         opportunities={opportunities}
         nowLocal={utcToZonedInput(now)}
         windowStart={utcToZonedInput(range.from).slice(0, 10)}
         windowEnd={utcToZonedInput(range.to).slice(0, 10)}
         readOnly={readOnly}
+        canCancel={canCancel}
       />
     </div>
   );

@@ -150,7 +150,7 @@ function TimeGrid({ days, items, today, nowMin, onSlot, onOpen }: {
                   <button
                     key={s.m.id}
                     type="button"
-                    title={`${s.m.time} ${s.m.subject}`}
+                    title={`${s.m.time} ${s.m.subject}${s.m.owner ? ` · ${s.m.owner}` : ""}`}
                     onClick={(e) => { e.stopPropagation(); onOpen(s.m); }}
                     className={cn("absolute z-10 overflow-hidden rounded border-l-[3px] px-1.5 py-0.5 text-left text-xs leading-tight shadow-g1", EVENT_TONE, s.m.past && "opacity-60")}
                     style={{ top: (s.start / 60) * HOUR + 1, height, left: `calc(${(s.col / s.cols) * 100}% + 2px)`, width: `calc(${100 / s.cols}% - 4px)` }}
@@ -225,10 +225,12 @@ function MonthGrid({ anchor, items, today, onDay: pickDay, onNew, onOpen }: {
   );
 }
 
-export function MeetingsView({ meetings, opportunities, nowLocal, windowStart, windowEnd, readOnly }: {
+export function MeetingsView({ meetings, opportunities, nowLocal, windowStart, windowEnd, readOnly, canCancel = !readOnly }: {
   meetings: MeetingItem[]; opportunities: Option[]; nowLocal: string; windowStart: string; windowEnd: string;
   /** Someone else's calendar: show it, but offer no way to change it. */
   readOnly?: boolean;
+  /** Admins may still cancel meetings on a read-only calendar. */
+  canCancel?: boolean;
 }) {
   const today = nowLocal.slice(0, 10);
   const [view, setView] = useState<View>("week");
@@ -329,9 +331,9 @@ export function MeetingsView({ meetings, opportunities, nowLocal, windowStart, w
         ) : view === "list" ? (
           <div>
             <div className="border-b border-gline-2 px-5 py-3 text-xs font-semibold uppercase tracking-[0.06em] text-ggrey">Upcoming</div>
-            <MeetingList meetings={upcoming} opportunities={opportunities} empty="No upcoming meetings." readOnly={readOnly} />
+            <MeetingList meetings={upcoming} opportunities={opportunities} empty="No upcoming meetings." readOnly={readOnly} canCancel={canCancel} />
             <div className="border-y border-gline-2 px-5 py-3 text-xs font-semibold uppercase tracking-[0.06em] text-ggrey">Past</div>
-            <MeetingList meetings={past} opportunities={opportunities} empty="No past meetings." readOnly={readOnly} />
+            <MeetingList meetings={past} opportunities={opportunities} empty="No past meetings." readOnly={readOnly} canCancel={canCancel} />
           </div>
         ) : (
           <TimeGrid days={days} items={meetings} today={today} nowMin={minutes(nowLocal)} onSlot={newAt} onOpen={(m) => setOpenId(m.id)} />
@@ -346,6 +348,7 @@ export function MeetingsView({ meetings, opportunities, nowLocal, windowStart, w
             onClose={() => setOpenId(null)}
             onEdit={(d) => { setOpenId(null); setDraft(d); }}
             readOnly={readOnly}
+            canCancel={canCancel}
           />
         )}
       </Dialog>

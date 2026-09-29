@@ -2,6 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireUser } from "@/lib/session";
+import { can } from "@/lib/domain/permissions";
 import { zonedToUtc } from "@/lib/format";
 import type { FormState } from "@/lib/action-state";
 import { formValues } from "@/lib/action-state";
@@ -63,7 +64,7 @@ export async function saveMeetingAction(id: string | null, _prev: unknown, fd: F
 export async function cancelMeetingAction(id: string, opportunityId: string | null): Promise<{ error?: string }> {
   const user = await requireUser();
   try {
-    await cancelMeeting(user.id, id);
+    await cancelMeeting(user.id, id, { anyUser: can(user.role, "meetings:manageAll") });
   } catch (e) {
     if (e instanceof OutlookError) return { error: e.message };
     throw e;

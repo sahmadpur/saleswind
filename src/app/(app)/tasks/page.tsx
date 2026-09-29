@@ -1,15 +1,17 @@
+import { cookies } from "next/headers";
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/session";
 import { BOARD_FINISHED_DAYS, countOpenTasks, listTasks, type TaskScope } from "@/services/task-service";
 import { Card } from "@/components/ui/Card";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Segmented } from "@/components/ui/Segmented";
+import { TaskViewSwitch } from "@/components/tasks/TaskViewSwitch";
 import { QuickAddTask } from "@/components/tasks/QuickAddTask";
 import { TaskList } from "@/components/tasks/TaskList";
 import { TaskBoard } from "@/components/tasks/TaskBoard";
 import { AssigneeFilter } from "@/components/tasks/AssigneeFilter";
 import { opportunityRef } from "@/lib/format";
-import { toTaskItems } from "@/lib/task-view";
+import { TASKS_VIEW_COOKIE, toTaskItems } from "@/lib/task-view";
 
 const LIST_TABS = [
   { show: "open", label: "Open", empty: "Nothing to do — add a task above." },
@@ -20,7 +22,9 @@ const LIST_TABS = [
 export default async function TasksPage({ searchParams }: { searchParams: Promise<{ view?: string; show?: string; who?: string }> }) {
   const user = await requireUser();
   const params = await searchParams;
-  const isList = params.view === "list";
+  // The URL wins; otherwise fall back to the view this browser used last. Board is the default.
+  const saved = (await cookies()).get(TASKS_VIEW_COOKIE)?.value;
+  const isList = params.view ? params.view === "list" : saved === "list";
   const tab = LIST_TABS.find((t) => t.show === params.show) ?? LIST_TABS[0];
   const scope: TaskScope = isList ? tab.show : "board";
 
@@ -49,14 +53,9 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
             <AssigneeFilter
               value={who}
               users={users.filter((u) => u.id !== user.id).map((u) => ({ id: u.id, label: u.name }))}
-              baseQuery={{ ...(isList && { view: "list" }), ...(isList && tab.show !== "open" && { show: tab.show }) }}
+              baseQuery={{ view: isList ? "list" : "board", ...(isList && tab.show !== "open" && { show: tab.show }) }}
             />
-            <Segmented
-              segments={[
-                { label: "Board", href: withWho("/tasks"), icon: "view_kanban", active: !isList },
-                { label: "List", href: withWho("/tasks?view=list"), icon: "checklist", active: isList },
-              ]}
-            />
+            <TaskViewSwitch view={isList ? "list" : "board"} boardHref={withWho("/tasks?view=board")} listHref={withWho("/tasks?view=list")} />
           </>
         }
       />

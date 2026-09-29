@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { cn } from "@/lib/cn";
 
-type Segment = { label: string; href: string; icon?: string; active: boolean };
+type Segment = { label: string; href: string; icon?: string; active: boolean; onClick?: () => void };
 
 /** Material segmented buttons — a single outlined pill split into options. */
 export function Segmented({ segments }: { segments: Segment[] }) {
@@ -11,6 +11,7 @@ export function Segmented({ segments }: { segments: Segment[] }) {
         <Link
           key={s.href}
           href={s.href}
+          onClick={s.onClick}
           className={cn(
             "inline-flex h-8 items-center gap-1.5 rounded-[5px] px-3 text-sm font-medium transition-colors",
             "[&_.material-symbols-outlined]:text-[18px]",
